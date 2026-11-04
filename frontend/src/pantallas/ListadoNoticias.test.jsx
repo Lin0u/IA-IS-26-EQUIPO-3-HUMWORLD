@@ -1,10 +1,10 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { obtenerNoticias, obtenerPaises } from '../api/cliente.js'
+import { obtenerNoticia, obtenerNoticias, obtenerPaises } from '../api/cliente.js'
 import ListadoNoticias from './ListadoNoticias.jsx'
 
-vi.mock('../api/cliente.js', () => ({ obtenerNoticias: vi.fn(), obtenerPaises: vi.fn() }))
+vi.mock('../api/cliente.js', () => ({ obtenerNoticia: vi.fn(), obtenerNoticias: vi.fn(), obtenerPaises: vi.fn() }))
 
 function noticia(id, valor, extra = {}) {
   return {
@@ -64,9 +64,7 @@ describe('ListadoNoticias', () => {
 
     await screen.findByText('Página 1 de 3 · 25 noticias')
     await userEvent.click(screen.getByRole('button', { name: 'Negativas' }))
-    expect(obtenerNoticias).toHaveBeenLastCalledWith(
-      expect.objectContaining({ signo: 'negativas', pagina: 1 }),
-    )
+    expect(obtenerNoticias).toHaveBeenLastCalledWith(expect.objectContaining({ signo: 'negativas', pagina: 1 }))
     expect(screen.getByRole('button', { name: 'Negativas' })).toHaveAttribute('aria-pressed', 'true')
   })
 
@@ -88,6 +86,55 @@ describe('ListadoNoticias', () => {
     render(<ListadoNoticias />)
     expect(await screen.findByText('No hay noticias para este filtro.')).toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: 'Páginas' })).not.toBeInTheDocument()
+  })
+
+  it('explica el valor de una noticia y oculta la explicación', async () => {
+    obtenerNoticia.mockResolvedValue({
+      ...noticia(1, -4.5),
+      metodo_calculo: 'diccionario',
+      terminos: [
+        { palabra: 'guerra', idioma: 'es', valor: -4 },
+        { palabra: 'crisis', idioma: 'es', valor: -6 },
+        { palabra: 'paz', idioma: 'es', valor: 1 },
+      ],
+    })
+    render(<ListadoNoticias />)
+    const boton = (await screen.findAllByRole('button', { name: '¿Por qué este valor?' }))[0]
+    await userEvent.click(boton)
+
+    expect(obtenerNoticia).toHaveBeenCalledWith(1)
+    const palabras = await screen.findByRole('list', { name: 'Palabras que explican el humor' })
+    expect(
+      within(palabras)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual(['guerra -4', 'crisis -6', 'paz +1'])
+    expect(screen.getByText(/Promedio de 3 palabras/)).toHaveTextContent('(-4 -6 +1) / 3 = -4.5')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ocultar explicación' }))
+    expect(screen.queryByRole('list', { name: 'Palabras que explican el humor' })).not.toBeInTheDocument()
+  })
+
+  it('aclara cuando el humor lo calculó el modelo de ML', async () => {
+    obtenerNoticia.mockResolvedValue({
+      ...noticia(1, -4.5),
+      metodo_calculo: 'ml',
+      terminos: [{ palabra: 'war', idioma: 'en', valor: -4 }],
+    })
+    render(<ListadoNoticias />)
+    await userEvent.click((await screen.findAllByRole('button', { name: '¿Por qué este valor?' }))[0])
+    expect(await screen.findByText(/Humor calculado con el modelo de ML \(-4\.5\)/)).toBeInTheDocument()
+  })
+
+  it('avisa si la noticia no tiene palabras del diccionario o si falla la carga', async () => {
+    obtenerNoticia.mockResolvedValueOnce({ ...noticia(1, null), terminos: [] })
+    obtenerNoticia.mockRejectedValueOnce(new Error('No se pudo conectar con el servidor.'))
+    render(<ListadoNoticias />)
+    const botones = await screen.findAllByRole('button', { name: '¿Por qué este valor?' })
+    await userEvent.click(botones[0])
+    expect(await screen.findByText('No se encontraron palabras del diccionario en esta noticia.')).toBeInTheDocument()
+    await userEvent.click(screen.getAllByRole('button', { name: '¿Por qué este valor?' })[0])
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo cargar la explicación.')
   })
 
   it('muestra el error de la API', async () => {

@@ -128,6 +128,11 @@ def test_analisis_de_texto(client, db):
         "valor_humor": -1.0,
         "cantidad_terminos_evaluados": 2,
         "polarizacion_terminos": 7.0,
+        # HU-SENT-005-v2: las palabras que explican el valor, de la más negativa a la más positiva.
+        "terminos": [
+            {"palabra": "guerra", "idioma": "es", "valor": -8},
+            {"palabra": "victoria", "idioma": "es", "valor": 6},
+        ],
     }
 
 
@@ -140,7 +145,12 @@ def test_analisis_usa_ambos_idiomas(client, db):
 def test_texto_sin_terminos(client, db):
     _terminos(db, ("guerra", -8, "es"))
     cuerpo = client.post("/api/v1/sentiment", json={"texto": "Un día cualquiera"}).json()
-    assert cuerpo == {"valor_humor": None, "cantidad_terminos_evaluados": 0, "polarizacion_terminos": None}
+    assert cuerpo == {
+        "valor_humor": None,
+        "cantidad_terminos_evaluados": 0,
+        "polarizacion_terminos": None,
+        "terminos": [],
+    }
 
 
 def test_analisis_no_persiste_noticias(client, db):

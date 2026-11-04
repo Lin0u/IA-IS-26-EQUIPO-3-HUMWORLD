@@ -33,11 +33,11 @@ Cada requisito funcional (RF) deriva de una función descrita en el PDF (§4.1 a
 | RF-13 | Cálculo del valor de "humor" (análisis de sentimiento) de cada noticia capturada. | §4.2.4, §10.4 | HU-SENT-002-v3 |
 | RF-14 | Persistencia del valor de humor junto a cada noticia. | §4.2.4 | HU-SENT-003 |
 | RF-15 | Consulta del humor agregado: global, por continente, por país y evolución temporal (timeline). | §4.3.2, §10.2 | HU-SENT-004 |
-| RF-16 | Análisis de sentimiento de un texto arbitrario que devuelve su valor de humor. | §10.2 | HU-SENT-005 |
+| RF-16 | Análisis de sentimiento de un texto arbitrario que devuelve su valor de humor y los términos que lo explican. | §10.2 | HU-SENT-005-v2 |
 | RF-17 | Entrenamiento y versionado de un modelo de ML para el cálculo de humor. | §2 Objetivo específico 2 | HU-SENT-006 |
 | RF-18 | Detección de términos del diccionario presentes en cada noticia (base de la nube de palabras). | §4.3.1 | HU-SENT-008 |
 | RF-19 | Dashboard de humor: mapa mundial con el humor por continente, con selector de fecha dentro del rango con información. | §4.3, §4.3.2 | HU-DASH-001-v3 |
-| RF-20 | Listado de las noticias que más han influido en el cálculo del humor, con detalle y filtros. | §4.3, §4.3.2, §10.2 | HU-DASH-002-v2 |
+| RF-20 | Listado de las noticias que más han influido en el cálculo del humor, con detalle, filtros y las palabras que explican su valor. | §4.3, §4.3.2, §10.2 | HU-DASH-002-v3 |
 | RF-21 | Nube de palabras influyentes, con filtro por continente y por país. | §4.3, §4.3.1, §10.2 | HU-DASH-003-v2 |
 | RF-22 | Configuración de parámetros generales del sistema (periodicidad del cron y caducidad de noticias). | §4.2.5, §10.2 | HU-ADMIN-001 |
 | RF-23 | Purgado automático de noticias anteriores al periodo de caducidad. | §4.2.5 | HU-ADMIN-002 |
@@ -97,11 +97,11 @@ Trazabilidad **requisito → historia → endpoint/mecanismo → prueba**. El en
 | RF-13 | HU-SENT-002-v3 | Servicio interno (post-captura + barrido) | — (sin endpoint) | `test_sentimiento.py`, `test_modelo_ml.py` |
 | RF-14 | HU-SENT-003 | Modelo `Noticia` (`valor_humor`, `polarizacion_terminos`) | — (sin endpoint) | `test_polarizacion_y_analisis.py` |
 | RF-15 | HU-SENT-004 | `GET /api/v1/sentiment` | sentimiento-diccionario | `test_sentiment.py` |
-| RF-16 | HU-SENT-005 | `POST /api/v1/sentiment` | sentimiento-diccionario | `test_polarizacion_y_analisis.py` |
+| RF-16 | HU-SENT-005-v2 | `POST /api/v1/sentiment` | sentimiento-diccionario v1.3.0 | `test_polarizacion_y_analisis.py` |
 | RF-17 | HU-SENT-006 | `POST /api/v1/trainings` | sentimiento-diccionario | `test_modelo_ml.py` |
 | RF-18 | HU-SENT-008 | Tabla `noticia_termino` (consumida por word-cloud) | — (sin endpoint propio) | `test_nube_palabras.py`, `test_lematizacion.py` |
 | RF-19 | HU-DASH-001-v3 | `GET /api/v1/dashboards/map` (+ `GET /api/v1/sentiment` para la serie temporal) | dashboards v1.1.0 | `test_dashboards.py`; frontend: `App.test.jsx` |
-| RF-20 | HU-DASH-002-v2 | `GET /api/v1/news`, `GET /api/v1/news/{id}` | noticias v1.1.0 | `test_news.py`; frontend: `pantallas/ListadoNoticias.test.jsx` |
+| RF-20 | HU-DASH-002-v3 | `GET /api/v1/news`, `GET /api/v1/news/{id}` | noticias v1.2.0 | `test_news.py`; frontend: `pantallas/ListadoNoticias.test.jsx` |
 | RF-21 | HU-DASH-003-v2 | `GET /api/v1/dashboards/word-cloud` | dashboards | `test_nube_palabras.py`; frontend: `pantallas/NubePalabras.test.jsx`, `componentes/SelectorPais.test.jsx` |
 | RF-22 | HU-ADMIN-001 | `GET /api/v1/config`, `PUT /api/v1/config` | canales-fuentes-rss | `test_purgado.py` |
 | RF-23 | HU-ADMIN-002 | Job interno de purgado (APScheduler) | — (sin endpoint) | `test_purgado.py` |
@@ -126,3 +126,4 @@ Trazabilidad **requisito → historia → endpoint/mecanismo → prueba**. El en
 |---|---|---|
 | v1.0 | 2026-10-29 | Creación. Lista formal de requisitos funcionales (RF-01 a RF-26) y no funcionales (RNF-01 a RNF-16) derivada del PDF de especificaciones del proyecto, con matriz de trazabilidad requisito → historia → endpoint → prueba y registro de huecos. Entregable de §4.7 punto 2 y §8.1. |
 | v1.1 | 2026-11-04 | RF-25 (HU-ADMIN-004) pasa de pendiente a implementado, pendiente de revisión. |
+| v1.2 | 2026-11-04 | RF-16 y RF-20 pasan a HU-SENT-005-v2 y HU-DASH-002-v3: la API y el listado muestran los términos que explican el valor de humor. |

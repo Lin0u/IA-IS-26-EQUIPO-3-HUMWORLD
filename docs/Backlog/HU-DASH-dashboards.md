@@ -2,7 +2,7 @@
 
 **Proyecto:** HumWorld — Equipo 3
 **Origen:** PDF de especificaciones (`0 PROYECTO_FINAL_HUMWORLD 260821.pdf`), secciones 4.1 (Procesos principales, punto de visualización), 4.3 (Interfaces y experiencia de usuario), 4.3.1 (Dashboard de palabras influyentes), 4.3.2 (Dashboard de Humor), 6.1 (Capa de presentación) y 10.2 (Endpoints mínimos obligatorios: `/sentiment`, `/news`, `/dashboards`). Stack de la capa de presentación decidido y justificado en `ADR-005-stack-frontend-dashboards.md`.
-**Estado general:** Propuesto — historias generadas a partir de los títulos ya oficializados en el backlog del entregable P3 (`Anexo-I-Planificacion-entregado-P3.md`: HU-DASH-001, HU-DASH-002 y HU-DASH-003; versiones vigentes: HU-DASH-001-v3, HU-DASH-002-v2 y HU-DASH-003-v2) y de la estimación en puntos ya realizada en Planning Poker (Sprint 3 = 12 puntos). Pendiente de revisión crítica del equipo.
+**Estado general:** Propuesto — historias generadas a partir de los títulos ya oficializados en el backlog del entregable P3 (`Anexo-I-Planificacion-entregado-P3.md`: HU-DASH-001, HU-DASH-002 y HU-DASH-003; versiones vigentes: HU-DASH-001-v3, HU-DASH-002-v3 y HU-DASH-003-v2) y de la estimación en puntos ya realizada en Planning Poker (Sprint 3 = 12 puntos). Pendiente de revisión crítica del equipo.
 **Versión del documento:** v1.6. Ver la Tabla de control de versiones al final del documento.
 
 > **Nota de grounding general:** el PDF exige "dashboards interactivos que visualicen el humor global y por regiones" (Objetivos específicos, punto 3) y enumera las vistas en la sección 4.3: Dashboard de humor (mapa mundial interactivo con selector de fecha), Nube de palabras (términos influyentes con filtros por país/continente) y Listado de noticias (detalle de las noticias más relevantes para el humor calculado). Este documento formaliza esas tres vistas; no agrega ninguna vista nueva. El Panel de administración (cuarta vista de la sección 4.3) pertenece a EPIC-ADMIN (HU-ADMIN-004, Sprint 4) y queda fuera de este documento.
@@ -265,7 +265,67 @@ Escenario: El backend no responde o responde con error
 
 ---
 
-## HU-DASH-002-v2 — Listado de noticias más influyentes
+## HU-DASH-002-v3 — Listado de noticias más influyentes, con la explicación de su humor
+
+**Reemplaza a:** HU-DASH-002-v2 (Deprecada). **Qué cambió:** cada noticia del listado puede mostrar las palabras del diccionario que explican su valor de humor, con el valor de cada una y el cálculo del promedio; `GET /api/v1/news/{id}` agrega el campo `terminos`. **Por qué:** en la revisión del 2026-11-04 el profesor no podía ver por qué una noticia tenía un valor determinado. El dato ya existía (coincidencias de HU-SENT-008) pero ninguna vista ni endpoint lo exponía. Decisión de la PO del 2026-11-04. El resto de la historia no cambia.
+
+**Tipo:** Historia de Usuario
+**Como** analista de medios o usuario interesado en la evolución del sentimiento global,
+**quiero** ver el listado de las noticias que más han influido en el humor calculado, con su valor de humor, sus datos de origen y las palabras que explican ese valor, y poder filtrarlo,
+**para** entender qué hechos concretos explican el humor que muestra el dashboard y comprobar cómo se calculó.
+
+**Prioridad:** Alta
+**Estimación:** sin estimar. HU-DASH-002-v2 quedó en 2 puntos de P3 pendiente de reestimar; esta versión agrega alcance. Punto de partida a validar por el equipo en Planning Poker, no un valor definitivo.
+**Depende de contrato de API:** Sí — `GET /api/v1/news` y `GET /api/v1/news/{id}` — ver `contrato-noticias.openapi.yaml` (v1.2.0, campo `terminos` en `NoticiaDetalle`).
+**Variante del algoritmo:** la explicación muestra los términos únicos coincidentes de HU-SENT-007-v3, persistidos por HU-SENT-008. Con `metodo_calculo = "diccionario"`, `valor_humor` es su promedio simple (ADR-003). Con `metodo_calculo = "ml"`, el valor lo calculó el modelo (HU-SENT-006) y las palabras se muestran solo como referencia.
+
+**Decisiones:** las 4 de HU-DASH-002-v2 se mantienen. Se agregan:
+5. **Explicación bajo demanda:** un botón "¿Por qué este valor?" por noticia pide `GET /news/{id}` solo al abrirse, para no cargar los términos de toda la página en el listado.
+6. **Orden de los términos:** del más negativo al más positivo y, a igual valor, por palabra.
+
+**Puntos pendientes de decisión del equipo:** el punto 1 de HU-DASH-002-v2 (ubicación en la interfaz) sigue abierto.
+
+### Criterios de aceptación (Gherkin)
+
+Se mantienen los 10 escenarios de HU-DASH-002-v2. Se agregan:
+
+```gherkin
+Escenario: Explicación del humor calculado por diccionario
+  Dado una noticia con metodo_calculo = "diccionario" cuyas coincidencias son "crisis" (-6) y "war" (-4)
+  Cuando el usuario presiona "¿Por qué este valor?" en esa noticia
+  Entonces la vista muestra "crisis -6" y "war -4", en ese orden
+  Y muestra el cálculo "(-6 -4) / 2 = -5.0", igual al valor_humor de la noticia
+
+Escenario: Explicación del humor calculado por el modelo de ML
+  Dado una noticia con metodo_calculo = "ml" y 1 término coincidente
+  Cuando el usuario presiona "¿Por qué este valor?"
+  Entonces la vista indica que el humor lo calculó el modelo de ML
+  Y muestra el término coincidente como referencia, sin cálculo de promedio
+
+Escenario: Noticia sin términos del diccionario
+  Dado una noticia sin coincidencias registradas
+  Cuando el usuario presiona "¿Por qué este valor?"
+  Entonces la vista muestra "No se encontraron palabras del diccionario en esta noticia."
+
+Escenario: Términos en el detalle por API
+  Cuando se envía GET a /api/v1/news/{id} de una noticia con 2 coincidencias
+  Entonces la respuesta incluye "terminos" con 2 elementos, cada uno con palabra, idioma y valor
+  Y no incluye los términos de otras noticias
+```
+
+### Definition of Done
+(Bloque general DoD, sección 14.) Además de la DoD de HU-DASH-002-v2:
+- `contrato-noticias.openapi.yaml` v1.2.0 revisado por el equipo.
+- Pruebas del backend del detalle con términos (`src/tests/test_news.py`) y del frontend de los 3 escenarios de la vista (`ListadoNoticias.test.jsx`), con la API simulada.
+- Validado visualmente en al menos una resolución de pantalla, registrada en el Pull Request.
+
+**Estado de implementación (2026-11-04):** implementada en la rama `feature/explicacion-humor`, pendiente de revisión en el PR y de ratificación del equipo.
+
+---
+
+## HU-DASH-002-v2 — Listado de noticias más influyentes (DEPRECADA)
+
+> **Estado: Deprecada (2026-11-04).** Reemplazada por **HU-DASH-002-v3**. Se conserva sin cambios para trazabilidad. Motivo: no mostraba qué palabras explican el valor de humor de cada noticia.
 
 **Reemplaza a:** HU-DASH-002 (Deprecada). **Qué cambió:** se resuelven los 4 puntos pendientes y la historia pasa a depender de `contrato-noticias.openapi.yaml` (`GET /api/v1/news` y `GET /api/v1/news/{id}`). **Por qué:** propuesta de Valentín García (influencia = valor absoluto de `valor_humor`, paginación de 10 por defecto y 50 como máximo, filtros) con tres ajustes de la PO del 2026-10-18: día de referencia `COALESCE(fecha_publicacion, fecha_registro)`, desempate estable por `id` y parámetro `orden` (`fecha` o `influencia`). Se agregan 4 escenarios Gherkin.
 
@@ -571,7 +631,8 @@ Escenario: Filtro sin palabras
 | HU-DASH-001-v2 | Historia de Usuario — **Deprecada**, reemplazada por HU-DASH-001-v3 | — | — | — | — |
 | HU-DASH-001-v3 | Historia de Usuario | Alta | 5 (por reestimar) | `GET /api/v1/dashboards/map` — ver `contrato-dashboards.openapi.yaml`; `GET /api/v1/sentiment` (serie temporal, HU-SENT-004) | §4.3, §4.3.2, §10.2 |
 | HU-DASH-002 | Historia de Usuario — **Deprecada**, reemplazada por HU-DASH-002-v2 | — | — | — | — |
-| HU-DASH-002-v2 | Historia de Usuario | Alta | 2 (por reestimar) | `GET /api/v1/news` y `GET /api/v1/news/{id}` — ver `contrato-noticias.openapi.yaml` | §4.3, §4.3.2, §10.2 |
+| HU-DASH-002-v2 | Historia de Usuario — **Deprecada**, reemplazada por HU-DASH-002-v3 | — | — | — | — |
+| HU-DASH-002-v3 | Historia de Usuario | Alta | sin estimar | `GET /api/v1/news` y `GET /api/v1/news/{id}` — ver `contrato-noticias.openapi.yaml` (v1.2.0) | §4.3, §4.3.2, §10.2 |
 | HU-DASH-003 | Historia de Usuario — **Deprecada**, reemplazada por HU-DASH-003-v2 | — | — | — | — |
 | HU-DASH-003-v2 | Historia de Usuario | Media | 5 | `GET /api/v1/dashboards/word-cloud` — ver `contrato-dashboards.openapi.yaml` | §4.3, §4.3.1, §10.2 |
 
@@ -583,7 +644,7 @@ Las estimaciones en puntos provienen del Planning Poker de P3 y son un punto de 
 |---|---|---|
 | HU-DASH-001-v3 | HU-SENT-004, HU-SENT-002-v2, HU-SENT-003 | Sin humor calculado y sin el endpoint de consulta no hay datos reales que mostrar |
 | HU-DASH-001-v3 | HU-RSS-009 | Fija la lista de 5 continentes (América, Europa, Asia, África, Oceanía) que el mapa debe mostrar |
-| HU-DASH-002-v2 | HU-SENT-002-v3 | Necesita `valor_humor` persistido en cada noticia |
+| HU-DASH-002-v3 | HU-SENT-002-v3, HU-SENT-008 | Necesita `valor_humor` persistido en cada noticia y sus coincidencias término–noticia para explicarlo |
 | HU-DASH-003-v2 | HU-SENT-001, HU-SENT-008 | Necesita el diccionario y las coincidencias término–noticia persistidas (`HU-SENT-008-coincidencias-terminos.md`) |
 
 ## Tabla de control de versiones
@@ -597,3 +658,4 @@ Las estimaciones en puntos provienen del Planning Poker de P3 y son un punto de 
 | Todas | v1.4 (editorial) | 2026-10-18 | Copia para el repositorio: las referencias a ADR vuelven a la convención de dos dígitos y a los nombres de archivo de `docs/Adr/` (`ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`, `ADR-004-arquitectura-modelo-ml-sentimiento.md`, `ADR-005-stack-frontend-dashboards.md`). Deja sin efecto la normalización a tres dígitos de la v1.1. Sin cambios de contenido. |
 | HU-DASH-002-v2 | v1.5 | 2026-10-19 | HU-DASH-002 pasa a **Deprecada** y se crea HU-DASH-002-v2: se resuelven sus 4 puntos pendientes con la propuesta de Valentín García (influencia = `|valor_humor|`, paginación 10/50, filtros) y los ajustes de la PO (día de referencia `COALESCE(fecha_publicacion, fecha_registro)`, desempate por `id`, parámetro `orden`). Se crea `contrato-noticias.openapi.yaml` (v1.0.0) y se agregan 4 escenarios Gherkin. Se actualiza la nota de estado de implementación de las tres vistas. La estimación de 2 puntos queda por reestimar. |
 | HU-DASH-002-v2, HU-DASH-003-v2 | v1.6 | 2026-10-19 | Se implementa el filtro por país en la nube de palabras y en el listado de noticias (PDF §4.3.1). Se resuelve el punto pendiente 3 de HU-DASH-003-v2: los países salen de `CanalNoticias.pais` vía `GET /api/v1/channels`. Sin cambios en criterios de aceptación ni contratos. |
+| HU-DASH-002-v3 | v1.7 | 2026-11-04 | HU-DASH-002-v2 pasa a **Deprecada** y se crea HU-DASH-002-v3: cada noticia muestra las palabras que explican su humor ("¿Por qué este valor?") y `GET /api/v1/news/{id}` agrega `terminos` (`contrato-noticias.openapi.yaml` v1.2.0). Origen: observación del profesor en la revisión del 2026-11-04; decisión de la PO. 4 escenarios Gherkin nuevos. |

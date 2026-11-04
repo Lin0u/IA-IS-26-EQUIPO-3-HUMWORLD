@@ -3,7 +3,7 @@ info:
   title: HumWorld API — Módulo Noticias
   description: >
     Contrato de API (OpenSpec) para el listado y el detalle de noticias.
-    Origina en HU-DASH-002-v2 (listado de noticias más influyentes, ver
+    Origina en HU-DASH-002-v3 (listado de noticias más influyentes, ver
     `HU-DASH-dashboards.md`). Fuente funcional: PDF de especificaciones,
     secciones 4.3.2 ("lista de las noticias que más han influido en el cálculo
     del humor"), 4.2.5 (purgado de información antigua) y 10.2 ("/news: GET
@@ -21,7 +21,7 @@ info:
 
     Implementado en el backend (FastAPI) el 2026-10-19. Estado: Propuesto,
     pendiente de ratificación del equipo.
-  version: "1.1.0"
+  version: "1.2.0"
 servers:
   - url: /api/v1
     description: Base URL versionada (PDF, sección 10.3), misma convención que los demás contratos del proyecto.
@@ -238,6 +238,34 @@ components:
             cantidad_terminos_evaluados:
               type: integer
               nullable: true
+            terminos:
+              type: array
+              description: >
+                Términos únicos del diccionario encontrados en la noticia
+                (coincidencias de HU-SENT-008), del más negativo al más
+                positivo y, a igual valor, por palabra. Lista vacía si no hay
+                ninguno. Origina en HU-DASH-002-v3.
+              items:
+                $ref: "#/components/schemas/TerminoCoincidente"
+
+    TerminoCoincidente:
+      type: object
+      description: >
+        Término del diccionario encontrado en el texto, que explica el valor de
+        humor. Con metodo_calculo = "diccionario", valor_humor es el promedio
+        simple de estos valores (ADR-003). Origina en HU-DASH-002-v3 y
+        HU-SENT-005-v2.
+      properties:
+        palabra:
+          type: string
+        idioma:
+          type: string
+          enum: [es, en]
+        valor:
+          type: integer
+          minimum: -10
+          maximum: 10
+      required: [palabra, idioma, valor]
 
     NoticiaListado:
       type: object
@@ -297,3 +325,6 @@ components:
 # v1.1.0 (2026-10-19): se agrega DELETE /news (HU-ADMIN-003, purgado manual)
 #   con el esquema ResultadoPurgado. Con fecha_anterior_a borra lo registrado
 #   antes de ese día; sin ella aplica la caducidad de /config (HU-ADMIN-001).
+# v1.2.0 (2026-11-04): NoticiaDetalle agrega "terminos" (TerminoCoincidente:
+#   palabra, idioma, valor) para explicar el valor de humor (HU-DASH-002-v3).
+#   Cambio compatible: solo agrega un campo a la respuesta de GET /news/{id}.

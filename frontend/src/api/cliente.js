@@ -135,6 +135,11 @@ export function obtenerNoticias({ signo = 'todas', continente = '', pais = '', p
   return obtenerJson(`/news?${consulta}`)
 }
 
+// GET /news/{id} (HU-DASH-002-v3): detalle con los términos que explican el humor.
+export function obtenerNoticia(id) {
+  return obtenerJson(`/news/${id}`)
+}
+
 // --- Panel de administración (HU-ADMIN-004) --------------------------------
 // Ningún endpoint es nuevo: el panel usa los que ya existen en la API.
 

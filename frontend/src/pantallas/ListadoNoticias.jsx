@@ -2,9 +2,11 @@
 // Origen: HU-DASH-002-v2 (PDF, sección 4.3.2: "lista de las noticias que más han
 // influido en el cálculo del humor") y ADR-005. Muestra GET /api/v1/news con
 // orden=influencia: el backend ordena por |valor_humor|, filtra y pagina.
+// HU-DASH-002-v3: cada noticia puede mostrar las palabras que explican su valor.
 import { useEffect, useState } from 'react'
 import { obtenerNoticias } from '../api/cliente.js'
 import Carita from '../componentes/Carita.jsx'
+import ExplicacionHumor from '../componentes/ExplicacionHumor.jsx'
 import SelectorPais from '../componentes/SelectorPais.jsx'
 import { formatoHumor, tipoHumor } from '../utilidades/humor.js'
 import { nombreCategoria } from '../utilidades/iptc.js'
@@ -36,6 +38,7 @@ export default function ListadoNoticias() {
   const [pagina, setPagina] = useState(1)
   const [resultado, setResultado] = useState(null)
   const [error, setError] = useState(null)
+  const [explicada, setExplicada] = useState(null)
 
   useEffect(() => {
     let vigente = true
@@ -119,6 +122,15 @@ export default function ListadoNoticias() {
                 {noticia.categoria_iptc && <span>{nombreCategoria(noticia.categoria_iptc)}</span>}
                 <span>{formatoFecha(noticia.fecha_publicacion ?? noticia.fecha_registro)}</span>
               </div>
+              <button
+                type="button"
+                className="explicacion-boton"
+                aria-expanded={explicada === noticia.id}
+                onClick={() => setExplicada(explicada === noticia.id ? null : noticia.id)}
+              >
+                {explicada === noticia.id ? 'Ocultar explicación' : '¿Por qué este valor?'}
+              </button>
+              {explicada === noticia.id && <ExplicacionHumor noticiaId={noticia.id} />}
             </div>
           </li>
         ))}

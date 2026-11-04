@@ -15,13 +15,14 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.exceptions import RangoFechasInvalidoError
 from app.schemas.common import Error
+from app.schemas.noticia import TerminoCoincidente
 from app.schemas.sentimiento import (
     AnalisisTextoCrear,
     AnalisisTextoResultado,
     SentimientoAgregado,
 )
 from app.services.consulta_sentimiento_service import consultar_sentimiento
-from app.services.sentimiento_service import analizar_texto
+from app.services.sentimiento_service import analizar_texto, terminos_por_ids
 
 router = APIRouter(prefix="/sentiment", tags=["sentiment"])
 
@@ -50,4 +51,9 @@ def analizar(payload: AnalisisTextoCrear, db: Session = Depends(get_db)):
         valor_humor=resultado.valor_humor,
         cantidad_terminos_evaluados=resultado.cantidad_terminos_evaluados,
         polarizacion_terminos=resultado.polarizacion_terminos,
+        # HU-SENT-005-v2: las palabras que explican el valor.
+        terminos=[
+            TerminoCoincidente(palabra=t.palabra, idioma=t.idioma, valor=t.valor)
+            for t in terminos_por_ids(db, resultado.terminos_ids)
+        ],
     )
