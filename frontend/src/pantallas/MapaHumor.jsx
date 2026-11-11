@@ -159,7 +159,7 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
           <Carita tipo="negativo" tamano={20} /> Negativo
         </li>
         <li>
-          <Carita tipo="neutro" tamano={20} /> Neutro
+          <Carita tipo="neutro" tamano={20} /> Neutro (entre -0.5 y +0.5)
         </li>
         <li>
           <Carita tipo="positivo" tamano={20} /> Positivo

@@ -4,7 +4,10 @@ import { caritaComoTexto, datoDeLaFecha, formatoHumor, tipoHumor } from './humor
 describe('tipoHumor', () => {
   it('clasifica por signo y distingue la ausencia de datos', () => {
     expect(tipoHumor(2.5)).toBe('positivo')
-    expect(tipoHumor(-0.1)).toBe('negativo')
+    expect(tipoHumor(-0.5)).toBe('negativo')
+    expect(tipoHumor(-0.1)).toBe('neutro')
+    expect(tipoHumor(0.3)).toBe('neutro')
+    expect(tipoHumor(0.5)).toBe('positivo')
     expect(tipoHumor(0)).toBe('neutro')
     expect(tipoHumor(null)).toBe('sinDatos')
     expect(tipoHumor(undefined)).toBe('sinDatos')
@@ -15,6 +18,9 @@ describe('formatoHumor', () => {
   it('muestra un decimal y el signo + en los positivos', () => {
     expect(formatoHumor(1.26)).toBe('+1.3')
     expect(formatoHumor(-3)).toBe('-3.0')
+    expect(formatoHumor(-0.03)).toBe('0.0')
+    expect(formatoHumor(0.04)).toBe('0.0')
+    expect(formatoHumor(0)).toBe('0.0')
     expect(formatoHumor(0)).toBe('0.0')
     expect(formatoHumor(null)).toBe('Sin datos')
   })

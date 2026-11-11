@@ -135,3 +135,26 @@ def test_la_api_no_arranca_sin_modelos(monkeypatch):
     with pytest.raises(lematizacion.ModelosNoDisponiblesError):
         with TestClient(app):
             pass
+
+
+def test_singular_y_plural_del_diccionario_cuentan_una_vez():
+    # HU-SENT-007-v4, corrección del 2026-11-11: el diccionario tiene "award" y "awards" como términos
+    # distintos; si la noticia trae las dos formas, el concepto cuenta una
+    # sola vez y gana el término en forma base.
+    terminos = [_t("awards", 6, "en"), _t("award", 6, "en"), _t("winner", 8, "en")]
+    texto = "Drone photo award winners: the awards go to the winner"
+    encontrados = terminos_coincidentes(texto, terminos)
+    assert sorted(t.palabra for t in encontrados) == ["award", "winner"]
+    assert calcular_humor_diccionario(texto, terminos) == (7.0, 2)
+
+
+def test_plural_solo_sigue_coincidiendo_con_su_termino():
+    terminos = [_t("awards", 6, "en"), _t("award", 6, "en")]
+    encontrados = terminos_coincidentes("The awards ceremony", terminos)
+    assert len(encontrados) == 1
+
+
+def test_singular_y_plural_en_espanol_cuentan_una_vez():
+    terminos = [_t("guerra", -4), _t("guerras", -4), _t("crisis", -6)]
+    encontrados = terminos_coincidentes("La guerra y otras guerras agravan la crisis", terminos)
+    assert sorted(t.palabra for t in encontrados) == ["crisis", "guerra"]

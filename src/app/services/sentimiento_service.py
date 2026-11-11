@@ -193,10 +193,11 @@ def texto_de_noticia(noticia: Noticia) -> str:
 def terminos_coincidentes(
     texto: str, terminos: list[TerminoDiccionario]
 ) -> list[TerminoDiccionario]:
-    """Términos únicos del diccionario que aparecen en el texto (HU-SENT-007-v3).
+    """Términos únicos del diccionario que aparecen en el texto (HU-SENT-007-v4, corrección del 2026-11-11).
 
     Cada concepto (lema + idioma) cuenta una sola vez aunque aparezca varias
-    veces o en varias formas. También es la base de las coincidencias que
+    veces o en varias formas, también cuando el diccionario tiene varias de
+    esas formas como términos distintos ("award" y "awards"). También es la base de las coincidencias que
     persiste HU-SENT-008. Los términos se recorren en el orden recibido (por
     id), así que ante un empate gana el de menor id.
     """
@@ -217,10 +218,22 @@ def terminos_coincidentes(
             destino.setdefault(forma, termino)
 
         palabras = _palabras_del_texto(texto_limpio, idioma)
+        # Un concepto por lema: "award" y "awards" (lema "award") cuentan una
+        # sola vez aunque el diccionario tenga las dos formas (HU-SENT-007-v4, corrección del 2026-11-11).
+        # Dentro del concepto gana el término escrito en la forma base (la que
+        # coincide con el lema); si no existe, el primero encontrado.
+        por_concepto: dict[str, TerminoDiccionario] = {}
         for forma, lema in palabras:
             termino = palabras_por_forma.get(forma) or (lema and palabras_por_forma.get(lema))
-            if termino is not None:
-                elegidos.add(id(termino))
+            if termino is None:
+                continue
+            concepto = lema or forma
+            actual = por_concepto.get(concepto)
+            if actual is None or (
+                _normalizar(actual.palabra) != concepto and _normalizar(termino.palabra) == concepto
+            ):
+                por_concepto[concepto] = termino
+        elegidos.update(id(termino) for termino in por_concepto.values())
         if frases:
             superficie = " " + " ".join(f for f, _ in palabras) + " "
             lemas = " " + " ".join(l or f for f, l in palabras) + " "
