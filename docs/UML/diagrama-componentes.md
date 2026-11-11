@@ -12,7 +12,12 @@
 ```mermaid
 flowchart TB
     subgraph FE["Frontend — SPA React (frontend/src/, ADR-005)"]
-        FEapp["App.jsx + pantallas/ + componentes/"]
+        FEapp["App.jsx\n(menú y fecha elegida)"]
+        FEmapa["pantallas/MapaHumor.jsx\n+ GraficoEvolucion.jsx (HU-DASH-001-v3)"]
+        FEnube["pantallas/NubePalabras.jsx (HU-DASH-003-v2)"]
+        FEnoticias["pantallas/ListadoNoticias.jsx\n+ ExplicacionHumor.jsx (HU-DASH-002-v3)"]
+        FEadmin["pantallas/Administracion.jsx\n+ admin/*Admin.jsx (HU-ADMIN-004)"]
+        FEguia["componentes/GuiaPantalla.jsx\n+ EscalaHumor.jsx (HU-DASH-004)"]
         FEapi["api/cliente.js"]
     end
 
@@ -73,7 +78,19 @@ flowchart TB
         Gemini[["Google Gemini Embedding (ADR-004)"]]
     end
 
+    FEapp --> FEmapa
+    FEapp --> FEnube
+    FEapp --> FEnoticias
+    FEapp --> FEadmin
+    FEmapa --> FEguia
+    FEnube --> FEguia
+    FEnoticias --> FEguia
+    FEadmin --> FEguia
     FEapp --> FEapi
+    FEmapa --> FEapi
+    FEnube --> FEapi
+    FEnoticias --> FEapi
+    FEadmin --> FEapi
     FEapi -- "HTTP/JSON /api/v1" --> API
 
     Rchannels --> Scanal
@@ -133,7 +150,9 @@ flowchart TB
 - `embeddings_service.py` es el único que llama a Google Gemini Embedding (cálculo e entrenamiento), con Timeout, Retry acotado y Circuit Breaker (ADR-004).
 - `captura_service.py` es el único que llama a los feeds RSS externos, con los mismos patrones de resiliencia (ADR-002); tras cada captura dispara el cálculo de humor.
 - El scheduler (`jobs/scheduler.py`) registra tres jobs (captura, barrido de humor, purgado) y reprograma el de captura cuando cambia la periodicidad en `/config`.
-- El frontend (ADR-005) solo consume `GET`/datos ya agregados vía `api/cliente.js`; no calcula humor ni accede a MySQL.
+- El frontend (ADR-005) accede al backend solo a través de `api/cliente.js`; no calcula humor ni accede a MySQL. Las vistas de dashboards solo leen (`GET`); el panel de administración (HU-ADMIN-004) además crea, modifica y elimina mediante los endpoints existentes (`POST`, `PUT`, `PATCH`, `DELETE`).
+- La explicación del humor de una noticia (`ExplicacionHumor.jsx`, HU-DASH-002-v3) muestra los términos que devuelve `GET /news/{id}`; no recalcula nada.
+- `GuiaPantalla.jsx` y `EscalaHumor.jsx` (HU-DASH-004) son componentes de presentación compartidos por todas las vistas: no llaman a la API.
 
 ## Correspondencia con el código
 
@@ -144,3 +163,4 @@ Todos los nombres de fichero de este diagrama existen en el repositorio: routers
 | Versión | Fecha | Motivo del cambio |
 |---|---|---|
 | v1.0 | 2026-10-29 | Creación. Diagrama de componentes del sistema completo (las cuatro épicas + frontend), construido a partir del código real. Cubre el hueco de §4.7.3.c (no existía diagrama de componentes de EPIC-RSS) y reemplaza a `diagrama-componentes-sentimiento.md`, cuyos nombres de fichero eran propuestos y no coincidían con el código. |
+| v1.1 | 2026-11-11 | El frontend se desglosa por vista: mapa, nube, noticias con su explicación del humor, panel de administración y componentes de la guía visual (HU-ADMIN-004, HU-DASH-002-v3, HU-DASH-004). Se corrige la regla que decía que el frontend solo hacía `GET`: el panel de administración también escribe. |

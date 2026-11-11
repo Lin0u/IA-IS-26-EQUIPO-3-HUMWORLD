@@ -55,12 +55,27 @@ Sin configuración, todo el humor se calcula por diccionario. Para activar el mo
 
 1. Crear una clave de la Gemini API (cuenta del equipo) y dejarla en un archivo `.env` junto a `docker-compose.yml`: `GEMINI_API_KEY=...`. Ese archivo no se sube al repositorio.
 2. `docker compose up -d` para recargar la variable.
-3. Con al menos 1.000 noticias evaluadas por diccionario: `POST /api/v1/trainings`. Desde ese momento el cálculo de humor usa el modelo activo y vuelve al diccionario si Gemini falla o no responde.
+3. Con al menos 1.000 noticias evaluadas por diccionario, en el panel **Administración → Modelo ML → Entrenar modelo** (o `POST /api/v1/trainings`). Desde ese momento el cálculo de humor usa el modelo activo y vuelve al diccionario si Gemini falla o no responde.
 
 ## Administración
 
+En la interfaz web, la vista **Administración** (HU-ADMIN-004) reúne en pestañas: fuentes RSS (canales, fuentes y captura manual), diccionario, parámetros, purgado y entrenamiento del modelo de ML. Cada pestaña abre con una guía de uso. Por API:
+
 - `GET`/`PUT /api/v1/config`: periodicidad del cron (minutos) y caducidad de las noticias (días, 90 por defecto).
 - `DELETE /api/v1/news?fecha_anterior_a=AAAA-MM-DD`: borra las noticias registradas antes de esa fecha. Sin parámetro, aplica la caducidad configurada. Es irreversible.
+
+## Entrega (PDF §9)
+
+Para generar el comprimido que se sube a Canvas, desde la raíz del repositorio en PowerShell:
+
+```powershell
+git fetch origin
+git switch main
+git pull
+.\scripts\empaquetar-entrega.ps1
+```
+
+El script comprueba que estén el código, `/docs`, los ficheros de IA, OpenSpec, Docker, el CI y este README, y genera `EQUIPO3_HUMWORLD.tgz` solo con archivos versionados (sin `.env` ni `node_modules`). Para otro nombre: `.\scripts\empaquetar-entrega.ps1 -Nombre OTRO_NOMBRE`.
 
 ## Dependencias de Python
 

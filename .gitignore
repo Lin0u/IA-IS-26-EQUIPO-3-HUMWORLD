@@ -12,3 +12,6 @@ htmlcov/
 # Modelos de ML entrenados (HU-SENT-006)
 modelos/
 *.joblib
+
+# Registros locales (por ejemplo, salida de pytest)
+*.log
