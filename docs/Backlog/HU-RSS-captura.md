@@ -678,3 +678,4 @@ Escenario: Consulta de detalle de un canal inexistente
  
 **Recordatorio:** todas las estimaciones (S/M/L) son un punto de partida orientativo generado por el agente Product Owner/Arquitecto, sujetas a validación mediante Planning Poker real por el equipo (sección 4 de las instrucciones del proyecto).
  
+| HU-RSS-007 | corrección | 2026-11-11 | Se corrige un error de implementación detectado al usar el panel de Parámetros con la API en ejecución: `PUT /api/v1/config` respondía 500 porque el scheduler llamaba a `modify_job` con el trigger como texto, lo que APScheduler no acepta. Ahora usa `reschedule_job`. Se agrega una prueba con un scheduler real; la anterior usaba un doble y no lo detectaba. Sin cambios en los criterios de aceptación. |

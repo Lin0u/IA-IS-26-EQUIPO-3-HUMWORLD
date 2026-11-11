@@ -142,17 +142,42 @@ def test_reprogramar_periodicidad_modifica_job_existente(monkeypatch):
         {
             "running": True,
             "_eventloop": None,
-            "modify_job": Mock(),
+            "reschedule_job": Mock(),
         },
     )()
     monkeypatch.setattr("app.jobs.scheduler.scheduler", scheduler_instance)
 
     reprogramar_periodicidad(90)
 
-    scheduler_instance.modify_job.assert_called_once()
-    kwargs = scheduler_instance.modify_job.call_args.kwargs
-    assert kwargs["trigger"] == "interval"
-    assert kwargs["minutes"] == 90
-    assert kwargs["max_instances"] == 1
-    assert kwargs["coalesce"] is True
-    assert kwargs["misfire_grace_time"] is None
+    scheduler_instance.reschedule_job.assert_called_once_with(
+        "captura-rss-automatica", trigger="interval", minutes=90
+    )
+
+
+def test_reprogramar_periodicidad_con_un_scheduler_real(monkeypatch):
+    """Con APScheduler real: antes fallaba con TypeError (trigger como texto)."""
+    from datetime import timedelta
+
+    from apscheduler.schedulers.background import BackgroundScheduler
+
+    from app.jobs import scheduler as scheduler_module
+
+    real = BackgroundScheduler()
+    real.add_job(
+        lambda: None,
+        id=scheduler_module.CAPTURA_JOB_ID,
+        trigger="interval",
+        minutes=30,
+        max_instances=1,
+        coalesce=True,
+        misfire_grace_time=None,
+    )
+    real.start(paused=True)
+    monkeypatch.setattr(scheduler_module, "scheduler", real)
+    try:
+        reprogramar_periodicidad(90)
+        job = real.get_job(scheduler_module.CAPTURA_JOB_ID)
+        assert job.trigger.interval == timedelta(minutes=90)
+        assert (job.max_instances, job.coalesce, job.misfire_grace_time) == (1, True, None)
+    finally:
+        real.shutdown(wait=False)
