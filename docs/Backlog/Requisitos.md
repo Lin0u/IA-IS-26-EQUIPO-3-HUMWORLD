@@ -44,6 +44,7 @@ Cada requisito funcional (RF) deriva de una función descrita en el PDF (§4.1 a
 | RF-24 | Purgado manual de noticias antiguas bajo demanda. | §4.2.5, §10.2 | HU-ADMIN-003 |
 | RF-25 | Panel de administración unificado (fuentes, diccionario, parámetros). | §4.3 punto 1 | HU-ADMIN-004 |
 | RF-26 | Documentación interactiva de la API REST con Swagger/OpenAPI (`/api/docs`). | §10.1 | (transversal, FastAPI) |
+| RF-27 | Cada vista explica en pantalla qué significa cada elemento y por qué una noticia, continente o palabra tiene su valor (guía de lectura y escala de -10 a +10). | §4.3, §2 objetivo 3 | HU-DASH-004 |
 
 **Notas:**
 - RF-25 (HU-ADMIN-004) se implementó el 2026-11-04 como la vista "Administración" del frontend (`frontend/src/pantallas/Administracion.jsx` y `pantallas/admin/`), con pestañas de fuentes RSS, diccionario, parámetros, purgado y modelo de ML sobre los endpoints existentes; pruebas en `frontend/src/pantallas/Administracion.test.jsx`. Pendiente de revisión en el PR y de validación visual del equipo.
@@ -108,6 +109,7 @@ Trazabilidad **requisito → historia → endpoint/mecanismo → prueba**. El en
 | RF-24 | HU-ADMIN-003 | `DELETE /api/v1/news?fecha_anterior_a=YYYY-MM-DD` | noticias | `test_purgado.py` |
 | RF-25 | HU-ADMIN-004 | (panel unificado, frontend) | — | — (sin iniciar) |
 | RF-26 | — (transversal) | `/api/docs` (Swagger autogenerado) | — | `test_sources.py` (verifica el esquema OpenAPI del alta) |
+| RF-27 | HU-DASH-004 | (usa los existentes) | — | frontend: `componentes/GuiaVisual.test.jsx`, `ListadoNoticias.test.jsx`, `NubePalabras.test.jsx`, `Administracion.test.jsx` |
 
 **Endpoint implementado no cubierto por un requisito del PDF:** `GET /api/v1/health` (`health.py`) es un health check técnico; informa además si los modelos de spaCy (lematización) están cargados. No proviene de un RF del PDF; se documenta como endpoint operativo del sistema.
 
@@ -127,3 +129,4 @@ Trazabilidad **requisito → historia → endpoint/mecanismo → prueba**. El en
 | v1.0 | 2026-10-29 | Creación. Lista formal de requisitos funcionales (RF-01 a RF-26) y no funcionales (RNF-01 a RNF-16) derivada del PDF de especificaciones del proyecto, con matriz de trazabilidad requisito → historia → endpoint → prueba y registro de huecos. Entregable de §4.7 punto 2 y §8.1. |
 | v1.1 | 2026-11-04 | RF-25 (HU-ADMIN-004) pasa de pendiente a implementado, pendiente de revisión. |
 | v1.2 | 2026-11-04 | RF-16 y RF-20 pasan a HU-SENT-005-v2 y HU-DASH-002-v3: la API y el listado muestran los términos que explican el valor de humor. |
+| v1.3 | 2026-11-11 | Se agrega RF-27 (guía visual de lectura de las vistas, HU-DASH-004), por la observación del profesor de frontend. |

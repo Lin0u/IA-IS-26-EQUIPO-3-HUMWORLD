@@ -2,7 +2,7 @@
 
 **Proyecto:** HumWorld — Equipo 3
 **Origen:** PDF de especificaciones (`0 PROYECTO_FINAL_HUMWORLD 260821.pdf`), secciones 4.1 (Procesos principales, punto de visualización), 4.3 (Interfaces y experiencia de usuario), 4.3.1 (Dashboard de palabras influyentes), 4.3.2 (Dashboard de Humor), 6.1 (Capa de presentación) y 10.2 (Endpoints mínimos obligatorios: `/sentiment`, `/news`, `/dashboards`). Stack de la capa de presentación decidido y justificado en `ADR-005-stack-frontend-dashboards.md`.
-**Estado general:** Propuesto — historias generadas a partir de los títulos ya oficializados en el backlog del entregable P3 (`Anexo-I-Planificacion-entregado-P3.md`: HU-DASH-001, HU-DASH-002 y HU-DASH-003; versiones vigentes: HU-DASH-001-v3, HU-DASH-002-v3 y HU-DASH-003-v2) y de la estimación en puntos ya realizada en Planning Poker (Sprint 3 = 12 puntos). Pendiente de revisión crítica del equipo.
+**Estado general:** Propuesto — historias generadas a partir de los títulos ya oficializados en el backlog del entregable P3 (`Anexo-I-Planificacion-entregado-P3.md`: HU-DASH-001, HU-DASH-002 y HU-DASH-003; versiones vigentes: HU-DASH-001-v3, HU-DASH-002-v3 y HU-DASH-003-v2; se agrega HU-DASH-004) y de la estimación en puntos ya realizada en Planning Poker (Sprint 3 = 12 puntos). Pendiente de revisión crítica del equipo.
 **Versión del documento:** v1.6. Ver la Tabla de control de versiones al final del documento.
 
 > **Nota de grounding general:** el PDF exige "dashboards interactivos que visualicen el humor global y por regiones" (Objetivos específicos, punto 3) y enumera las vistas en la sección 4.3: Dashboard de humor (mapa mundial interactivo con selector de fecha), Nube de palabras (términos influyentes con filtros por país/continente) y Listado de noticias (detalle de las noticias más relevantes para el humor calculado). Este documento formaliza esas tres vistas; no agrega ninguna vista nueva. El Panel de administración (cuarta vista de la sección 4.3) pertenece a EPIC-ADMIN (HU-ADMIN-004, Sprint 4) y queda fuera de este documento.
@@ -623,6 +623,73 @@ Escenario: Filtro sin palabras
 
 ---
 
+## HU-DASH-004 — Guía visual de lectura de las vistas
+
+**Tipo:** Historia de Usuario
+**Como** analista de medios, usuario del sistema o administrador que abre una vista por primera vez,
+**quiero** que cada vista explique en pantalla qué significa cada elemento (números, caritas, colores, tamaños) y cómo usarla, con una escala visual de -10 a +10,
+**para** entender sin ayuda externa qué estoy mirando y por qué una noticia, un continente o una palabra tiene el valor que tiene.
+
+**Origen:** observación del profesor de frontend en la revisión del 2026-11-11: no se entendía qué era cada cosa y pidió que la interfaz fuera más instructiva visualmente, y que se viera por qué una noticia tenía su puntaje. Se apoya en PDF §4.3 ("Se priorizará un diseño limpio, con gráficos interactivos") y §2, objetivo específico 3 (dashboards interactivos). Decisión de la PO del 2026-11-11. No agrega vistas, datos ni endpoints: solo presentación.
+**Prioridad:** Alta *(observación directa del profesor)*
+**Estimación:** sin estimar. Punto de partida a validar por el equipo en Planning Poker, no un valor definitivo.
+**Depende de contrato de API:** No. Usa los endpoints existentes; la explicación por noticia usa `GET /api/v1/news/{id}` (HU-DASH-002-v3).
+**Variante del algoritmo:** no calcula humor. Muestra el promedio simple de ADR-003 tal como lo calcula el backend.
+
+**Decisiones de diseño (propuestas por el agente PO/Arquitecto, a ratificar):**
+1. **Guía "Cómo leer esta pantalla"** al inicio de cada vista (mapa, nube, noticias y cada pestaña de administración): 2 a 4 pasos numerados con un título corto y una frase. Abierta por defecto y con botón "Ocultar guía".
+2. **Escala de humor** reutilizable: barra de color de -10 (rojo) a +10 (verde) con marcas -10, -5, 0, +5, +10 y los textos "Muy negativo", "Neutro" y "Muy positivo". Con un valor, lo marca en su posición.
+3. **Mapa:** la escala marca el humor global ("Mundo"); cada continente dice "promedio de N noticias".
+4. **Nube:** cada palabra se puede tocar para ver su valor, idioma y cantidad de noticias, con su posición en la escala.
+5. **Noticias:** cada tarjeta indica si es positiva, negativa o neutra, y el botón "¿Por qué X?" muestra la explicación en 3 pasos: palabras encontradas, suma y promedio, y resultado en la escala.
+6. **Administración:** cada pestaña explica qué hace; en Fuentes RSS se aclara la diferencia entre canal (el medio) y fuente RSS (un feed del medio), según PDF §4.2.1.
+
+### Criterios de aceptación (Gherkin)
+
+```gherkin
+Escenario: Guía visible al abrir una vista
+  Cuando el usuario abre "Mapa de humor", "Nube de palabras", "Noticias" o una pestaña de "Administración"
+  Entonces la vista muestra el recuadro "Cómo leer esta pantalla" con entre 2 y 4 pasos numerados
+
+Escenario: Ocultar y volver a mostrar la guía
+  Dado que la guía está abierta
+  Cuando el usuario presiona "Ocultar guía"
+  Entonces los pasos dejan de mostrarse
+  Y al presionar "Mostrar guía" vuelven a aparecer
+
+Escenario: Humor global en la escala
+  Dado que el humor global del día elegido es -1.8
+  Cuando el usuario abre "Mapa de humor"
+  Entonces la escala de -10 a +10 marca "Mundo -1.8" a la izquierda del 0
+
+Escenario: Detalle de una palabra de la nube
+  Dado que "guerra" vale -8 y aparece en 10 noticias
+  Cuando el usuario toca "guerra"
+  Entonces la vista muestra "guerra vale -8 en el diccionario (español) y aparece en 10 noticias."
+  Y la escala marca "guerra -8.0"
+
+Escenario: Explicación de una noticia en 3 pasos
+  Dado una noticia calculada por diccionario con los términos -4, -6 y +1
+  Cuando el usuario presiona "¿Por qué -3.0?"
+  Entonces la vista muestra los 3 términos con su valor
+  Y muestra "Suma: (-4) + (-6) + 1 = -9" y "Promedio: -9 ÷ 3 palabras = -3.0"
+  Y la escala marca "Esta noticia -3.0"
+
+Escenario: Diferencia entre canal y fuente RSS
+  Cuando el administrador abre la pestaña "Fuentes RSS"
+  Entonces la guía explica que el canal es el medio, con su continente y país, y que las fuentes RSS son los feeds de ese medio
+```
+
+### Definition of Done
+(Bloque general DoD, sección 14.) Adicionalmente:
+- Pruebas con Vitest y Testing Library de la guía, la escala y los escenarios de cada vista (`GuiaVisual.test.jsx`, `ListadoNoticias.test.jsx`, `NubePalabras.test.jsx`, `Administracion.test.jsx`).
+- Validado visualmente en una resolución de escritorio (1280 px) y una de celular (390 px), con capturas en el Pull Request.
+- Revisión del texto de las guías por al menos un miembro del equipo que no lo haya escrito.
+
+**Estado de implementación (2026-11-11):** implementada en la rama `feature/guia-visual` (sobre `feature/explicacion-humor`), pendiente de revisión en el PR y de ratificación del equipo.
+
+---
+
 ## Resumen de trazabilidad
 
 | ID | Tipo | Prioridad | Puntos (P3) | Endpoint / mecanismo | Referencia PDF |
@@ -635,6 +702,7 @@ Escenario: Filtro sin palabras
 | HU-DASH-002-v3 | Historia de Usuario | Alta | sin estimar | `GET /api/v1/news` y `GET /api/v1/news/{id}` — ver `contrato-noticias.openapi.yaml` (v1.2.0) | §4.3, §4.3.2, §10.2 |
 | HU-DASH-003 | Historia de Usuario — **Deprecada**, reemplazada por HU-DASH-003-v2 | — | — | — | — |
 | HU-DASH-003-v2 | Historia de Usuario | Media | 5 | `GET /api/v1/dashboards/word-cloud` — ver `contrato-dashboards.openapi.yaml` | §4.3, §4.3.1, §10.2 |
+| HU-DASH-004 | Historia de Usuario | Alta | sin estimar | Sin endpoint propio; usa los existentes | §4.3, §2 (objetivo específico 3) |
 
 Las estimaciones en puntos provienen del Planning Poker de P3 y son un punto de partida, no un valor definitivo: deben revalidarse con el equipo ahora que el alcance está detallado.
 
@@ -659,3 +727,4 @@ Las estimaciones en puntos provienen del Planning Poker de P3 y son un punto de 
 | HU-DASH-002-v2 | v1.5 | 2026-10-19 | HU-DASH-002 pasa a **Deprecada** y se crea HU-DASH-002-v2: se resuelven sus 4 puntos pendientes con la propuesta de Valentín García (influencia = `|valor_humor|`, paginación 10/50, filtros) y los ajustes de la PO (día de referencia `COALESCE(fecha_publicacion, fecha_registro)`, desempate por `id`, parámetro `orden`). Se crea `contrato-noticias.openapi.yaml` (v1.0.0) y se agregan 4 escenarios Gherkin. Se actualiza la nota de estado de implementación de las tres vistas. La estimación de 2 puntos queda por reestimar. |
 | HU-DASH-002-v2, HU-DASH-003-v2 | v1.6 | 2026-10-19 | Se implementa el filtro por país en la nube de palabras y en el listado de noticias (PDF §4.3.1). Se resuelve el punto pendiente 3 de HU-DASH-003-v2: los países salen de `CanalNoticias.pais` vía `GET /api/v1/channels`. Sin cambios en criterios de aceptación ni contratos. |
 | HU-DASH-002-v3 | v1.7 | 2026-11-04 | HU-DASH-002-v2 pasa a **Deprecada** y se crea HU-DASH-002-v3: cada noticia muestra las palabras que explican su humor ("¿Por qué este valor?") y `GET /api/v1/news/{id}` agrega `terminos` (`contrato-noticias.openapi.yaml` v1.2.0). Origen: observación del profesor en la revisión del 2026-11-04; decisión de la PO. 4 escenarios Gherkin nuevos. |
+| HU-DASH-004 | v1.8 | 2026-11-11 | Creación de HU-DASH-004 (guía visual de lectura de las vistas) por la observación del profesor de frontend: no se entendía qué era cada cosa. Guía "Cómo leer esta pantalla" en todas las vistas, escala de -10 a +10, detalle de palabras en la nube y explicación en 3 pasos del humor de cada noticia. 6 escenarios Gherkin. Decisión de la PO. |

@@ -53,3 +53,10 @@ export function caritaComoTexto(tipo, tamano) {
     '</svg>'
   )
 }
+
+// Posición horizontal (0 a 100 %) de un valor en la escala de -10 a +10 (HU-DASH-004).
+// Los valores fuera de la escala se acotan a sus extremos.
+export function posicionEnEscala(valor) {
+  const acotado = Math.min(10, Math.max(-10, valor))
+  return ((acotado + 10) / 20) * 100
+}

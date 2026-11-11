@@ -76,6 +76,21 @@ describe('pestañas', () => {
     expect(screen.getByRole('tab', { name: 'Modelo ML' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('button', { name: 'Entrenar modelo' })).toBeInTheDocument()
   })
+
+  it('cada pestaña abre con su guía', async () => {
+    const usuario = await abrir()
+    expect(screen.getByRole('complementary', { name: 'Cómo leer esta pantalla' })).toHaveTextContent(
+      'Primero, el canal',
+    )
+    await usuario.click(screen.getByRole('tab', { name: 'Diccionario' }))
+    const guia = screen.getByRole('complementary', { name: 'Cómo leer esta pantalla' })
+    expect(guia).toHaveTextContent('Así se calcula el humor')
+    expect(within(guia).getByRole('img', { name: 'Escala de humor de -10 a +10' })).toBeInTheDocument()
+    await usuario.click(screen.getByRole('tab', { name: 'Purgado' }))
+    expect(screen.getByRole('complementary', { name: 'Cómo leer esta pantalla' })).toHaveTextContent(
+      'No se puede deshacer',
+    )
+  })
 })
 
 describe('Fuentes RSS', () => {
@@ -375,9 +390,7 @@ describe('Modelo ML', () => {
     api.entrenarModelo.mockResolvedValue({ version: 2, mae_evaluacion: 1.234 })
     const usuario = await abrir('Modelo ML')
     await usuario.click(screen.getByRole('button', { name: 'Entrenar modelo' }))
-    expect(await screen.findByRole('status')).toHaveTextContent(
-      'Versión 2 activa (MAE contra diccionario: 1.23).',
-    )
+    expect(await screen.findByRole('status')).toHaveTextContent('Versión 2 activa (MAE contra diccionario: 1.23).')
   })
 
   it('muestra el error de datos insuficientes', async () => {

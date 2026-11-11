@@ -2,15 +2,37 @@
 // Origen: HU-DASH-001-v3 (PDF, sección 4.3.2) y ADR-005. Muestra los datos de
 // GET /api/v1/dashboards/map, que App.jsx pide al backend, y el gráfico de
 // evolución de GET /api/v1/sentiment (HU-SENT-004). Esta pantalla no calcula humor.
+// HU-DASH-004: guía de lectura y escala de humor.
 import L from 'leaflet'
 import { MapContainer, Marker, TileLayer, Tooltip } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import Carita from '../componentes/Carita.jsx'
 import CerebroHumor from '../componentes/CerebroHumor.jsx'
+import EscalaHumor from '../componentes/EscalaHumor.jsx'
 import GraficoEvolucion from '../componentes/GraficoEvolucion.jsx'
+import GuiaPantalla from '../componentes/GuiaPantalla.jsx'
+import '../componentes/GuiaVisual.css'
 import { buscarContinente } from '../datos/continentes.js'
 import { caritaComoTexto, formatoHumor, tipoHumor } from '../utilidades/humor.js'
 import './MapaHumor.css'
+
+const PASOS_GUIA = [
+  { titulo: 'Elige un día', texto: 'Con el selector de fecha, arriba a la derecha, eliges qué día mirar.' },
+  {
+    titulo: 'El cerebro es el mundo',
+    texto: 'Su número es el humor global: el promedio del humor de todas las noticias de ese día.',
+  },
+  {
+    titulo: 'Cada carita es un continente',
+    texto:
+      'Su número es el promedio de las noticias de ese continente. Rojo y triste: negativo; verde y feliz: positivo.',
+  },
+  {
+    titulo: 'La línea muestra la tendencia',
+    texto:
+      'Al final, el gráfico muestra cómo cambió el humor global día a día. Para ver qué noticias pesaron más, ve a "Noticias".',
+  },
+]
 
 // Esquinas del mapa al abrir: [abajo-izquierda, arriba-derecha] en [latitud, longitud].
 const VISTA_INICIAL = [
@@ -29,9 +51,7 @@ const LIMITES_MUNDO = [
 function marcadorContinente(humor) {
   return L.divIcon({
     className: 'marcador-humor',
-    html:
-      caritaComoTexto(tipoHumor(humor), 46) +
-      `<span class="marcador-valor">${formatoHumor(humor)}</span>`,
+    html: caritaComoTexto(tipoHumor(humor), 46) + `<span class="marcador-valor">${formatoHumor(humor)}</span>`,
     iconSize: [70, 72],
     iconAnchor: [35, 30],
   })
@@ -71,6 +91,8 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
         </label>
       </div>
 
+      <GuiaPantalla pasos={PASOS_GUIA} />
+
       {error && (
         <p className="mapa-aviso mapa-error" role="alert">
           No se pudieron cargar los datos del mapa. {error}
@@ -81,13 +103,16 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
       <div className="mapa-global">
         <CerebroHumor humor={global ? global.humor_promedio : null} tamano={84} />
         {global && global.cantidad_noticias_evaluadas > 0 ? (
-          <p>
-            <span className="mapa-global-titulo">Humor global</span>
-            <strong className={`mapa-global-valor texto-${tipoHumor(global.humor_promedio)}`}>
-              {formatoHumor(global.humor_promedio)}
-            </strong>
-            <span>con {global.cantidad_noticias_evaluadas} noticias evaluadas</span>
-          </p>
+          <div className="mapa-global-datos">
+            <p>
+              <span className="mapa-global-titulo">Humor global</span>
+              <strong className={`mapa-global-valor texto-${tipoHumor(global.humor_promedio)}`}>
+                {formatoHumor(global.humor_promedio)}
+              </strong>
+              <span>promedio de {global.cantidad_noticias_evaluadas} noticias evaluadas</span>
+            </p>
+            <EscalaHumor valor={global.humor_promedio} etiqueta="Mundo" />
+          </div>
         ) : (
           <p>
             {ultimaFecha
@@ -122,7 +147,7 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
                 keyboard={false}
               >
                 <Tooltip direction="top" offset={[0, -26]}>
-                  {continente.nombre}: {continente.noticias} noticias evaluadas
+                  {continente.nombre}: {formatoHumor(continente.humor)}, promedio de {continente.noticias} noticias
                 </Tooltip>
               </Marker>
             ))}
@@ -130,10 +155,18 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
       </div>
 
       <ul className="leyenda" aria-label="Significado de las caritas">
-        <li><Carita tipo="negativo" tamano={20} /> Negativo</li>
-        <li><Carita tipo="neutro" tamano={20} /> Neutro</li>
-        <li><Carita tipo="positivo" tamano={20} /> Positivo</li>
-        <li><Carita tipo="sinDatos" tamano={20} /> Sin datos</li>
+        <li>
+          <Carita tipo="negativo" tamano={20} /> Negativo
+        </li>
+        <li>
+          <Carita tipo="neutro" tamano={20} /> Neutro
+        </li>
+        <li>
+          <Carita tipo="positivo" tamano={20} /> Positivo
+        </li>
+        <li>
+          <Carita tipo="sinDatos" tamano={20} /> Sin datos
+        </li>
         <li className="leyenda-nota">Escala de -10 a +10</li>
       </ul>
 
@@ -146,7 +179,7 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
               <strong className={`continente-humor texto-${tipoHumor(continente.humor)}`}>
                 {formatoHumor(continente.humor)}
               </strong>
-              <span className="continente-noticias">{continente.noticias} noticias</span>
+              <span className="continente-noticias">promedio de {continente.noticias} noticias</span>
             </div>
           </li>
         ))}

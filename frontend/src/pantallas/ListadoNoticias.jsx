@@ -3,11 +3,15 @@
 // influido en el cálculo del humor") y ADR-005. Muestra GET /api/v1/news con
 // orden=influencia: el backend ordena por |valor_humor|, filtra y pagina.
 // HU-DASH-002-v3: cada noticia puede mostrar las palabras que explican su valor.
+// HU-DASH-004: guía de lectura y escala de humor.
 import { useEffect, useState } from 'react'
 import { obtenerNoticias } from '../api/cliente.js'
 import Carita from '../componentes/Carita.jsx'
+import EscalaHumor from '../componentes/EscalaHumor.jsx'
 import ExplicacionHumor from '../componentes/ExplicacionHumor.jsx'
+import GuiaPantalla from '../componentes/GuiaPantalla.jsx'
 import SelectorPais from '../componentes/SelectorPais.jsx'
+import '../componentes/GuiaVisual.css'
 import { formatoHumor, tipoHumor } from '../utilidades/humor.js'
 import { nombreCategoria } from '../utilidades/iptc.js'
 import './ListadoNoticias.css'
@@ -20,6 +24,23 @@ const FILTROS = [
 
 const CONTINENTES = ['América', 'Europa', 'Asia', 'África', 'Oceanía']
 const TAMANIO_PAGINA = 10
+
+const NOMBRE_TIPO = { positivo: 'positiva', negativo: 'negativa', neutro: 'neutra', sinDatos: 'sin datos' }
+
+const PASOS_GUIA = [
+  {
+    titulo: 'Cada tarjeta es una noticia',
+    texto: 'El número de la izquierda es su humor, de -10 (muy negativa) a +10 (muy positiva).',
+  },
+  {
+    titulo: 'Primero, las que más pesaron',
+    texto: 'Se ordenan por influencia: mientras más lejos de 0 está su humor, más arriba aparece.',
+  },
+  {
+    titulo: 'Mira por qué tiene ese número',
+    texto: 'El botón amarillo muestra qué palabras del diccionario encontró el sistema y cómo calculó el promedio.',
+  },
+]
 
 // Convierte la fecha técnica (2026-10-02T09:15:00) en una fecha legible.
 function formatoFecha(fechaIso) {
@@ -103,17 +124,11 @@ export default function ListadoNoticias() {
           <li key={noticia.id} className="noticia" style={{ animationDelay: `${posicion * 50}ms` }}>
             <div className="noticia-humor">
               <Carita tipo={tipoHumor(noticia.valor_humor)} tamano={38} />
-              <strong className={`texto-${tipoHumor(noticia.valor_humor)}`}>
-                {formatoHumor(noticia.valor_humor)}
-              </strong>
+              <strong className={`texto-${tipoHumor(noticia.valor_humor)}`}>{formatoHumor(noticia.valor_humor)}</strong>
+              <span className="noticia-tipo">{NOMBRE_TIPO[tipoHumor(noticia.valor_humor)]}</span>
             </div>
             <div className="noticia-cuerpo">
-              <a
-                className="noticia-titulo"
-                href={noticia.enlace_original}
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a className="noticia-titulo" href={noticia.enlace_original} target="_blank" rel="noreferrer">
                 {noticia.titulo}
               </a>
               <div className="noticia-datos">
@@ -128,7 +143,7 @@ export default function ListadoNoticias() {
                 aria-expanded={explicada === noticia.id}
                 onClick={() => setExplicada(explicada === noticia.id ? null : noticia.id)}
               >
-                {explicada === noticia.id ? 'Ocultar explicación' : '¿Por qué este valor?'}
+                {explicada === noticia.id ? 'Ocultar explicación' : `¿Por qué ${formatoHumor(noticia.valor_humor)}?`}
               </button>
               {explicada === noticia.id && <ExplicacionHumor noticiaId={noticia.id} />}
             </div>
@@ -174,16 +189,15 @@ export default function ListadoNoticias() {
         </div>
       </div>
 
+      <GuiaPantalla pasos={PASOS_GUIA}>
+        <EscalaHumor />
+      </GuiaPantalla>
+
       {contenido}
 
       {resultado && resultado.total > TAMANIO_PAGINA && (
         <nav className="paginacion" aria-label="Páginas">
-          <button
-            type="button"
-            className="filtro"
-            disabled={pagina <= 1}
-            onClick={() => irAPagina(pagina - 1)}
-          >
+          <button type="button" className="filtro" disabled={pagina <= 1} onClick={() => irAPagina(pagina - 1)}>
             Anterior
           </button>
           <span>

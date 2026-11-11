@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { obtenerNubePalabras, obtenerPaises } from '../api/cliente.js'
@@ -43,6 +43,36 @@ describe('NubePalabras', () => {
 
     await userEvent.selectOptions(screen.getByLabelText('Continente'), 'Europa')
     expect(obtenerNubePalabras).toHaveBeenLastCalledWith('Europa', '')
+  })
+
+  it('muestra la guía y el detalle de la palabra elegida', async () => {
+    render(<NubePalabras />)
+    expect(screen.getByRole('complementary', { name: 'Cómo leer esta pantalla' })).toHaveTextContent(
+      'Tamaño: cuántas noticias',
+    )
+    await userEvent.click(await screen.findByRole('button', { name: 'guerra' }))
+    const detalle = screen.getByRole('status')
+    expect(detalle).toHaveTextContent('guerra vale -8 en el diccionario (español) y aparece en 10 noticias.')
+    expect(within(detalle).getByRole('img', { name: 'Escala de humor de -10 a +10. guerra: -8.0' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'guerra' })).toHaveAttribute('aria-pressed', 'true')
+
+    await userEvent.click(screen.getByRole('button', { name: 'guerra' }))
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('el filtro cierra el detalle de la palabra', async () => {
+    obtenerNubePalabras.mockResolvedValue({
+      items: [{ termino_id: 3, palabra: 'paz', idioma: 'en', valor: 4, peso: 1 }],
+    })
+    render(<NubePalabras />)
+    await userEvent.click(await screen.findByRole('button', { name: 'paz' }))
+    expect(screen.getByRole('status')).toHaveTextContent('aparece en 1 noticia.')
+    await userEvent.selectOptions(screen.getByLabelText('Continente'), 'Asia')
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    await userEvent.click(await screen.findByRole('button', { name: 'paz' }))
+    await screen.findByRole('option', { name: 'Chile' })
+    await userEvent.selectOptions(screen.getByLabelText('País'), 'Chile')
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 
   it('avisa cuando no hay palabras', async () => {

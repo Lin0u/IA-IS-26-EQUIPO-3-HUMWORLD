@@ -167,3 +167,9 @@
   position: relative;
   height: 260px;
 }
+
+/* HU-DASH-004: escala de humor junto al valor global. */
+.mapa-global-datos {
+  flex: 1;
+  min-width: 0;
+}
