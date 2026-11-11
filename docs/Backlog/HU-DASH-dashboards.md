@@ -642,7 +642,7 @@ Escenario: Filtro sin palabras
 3. **Mapa:** la escala marca el humor global ("Mundo"); cada continente dice "promedio de N noticias".
 4. **Nube:** cada palabra se puede tocar para ver su valor, idioma y cantidad de noticias, con su posición en la escala.
 5. **Noticias:** cada tarjeta indica si es positiva, negativa o neutra, y el botón "¿Por qué X?" muestra la explicación en 3 pasos: palabras encontradas, suma y promedio, y resultado en la escala.
-6. **Administración:** cada pestaña explica qué hace; en Fuentes RSS se aclara la diferencia entre canal (el medio) y fuente RSS (un feed del medio), según PDF §4.2.1.
+6. **Administración:** cada pestaña explica qué hace. La pestaña Fuentes RSS se divide en 3 bloques numerados, cada uno con título y explicación: (1) canal, el medio, con la lista de canales registrados; (2) fuente RSS, un feed de ese medio, que solo se puede agregar si existe un canal; (3) fuentes registradas, con filtros y captura. Así se distingue canal de fuente RSS, según PDF §4.2.1. El resultado de cada acción aparece en su propio bloque.
 
 ### Criterios de aceptación (Gherkin)
 
@@ -677,7 +677,13 @@ Escenario: Explicación de una noticia en 3 pasos
 
 Escenario: Diferencia entre canal y fuente RSS
   Cuando el administrador abre la pestaña "Fuentes RSS"
-  Entonces la guía explica que el canal es el medio, con su continente y país, y que las fuentes RSS son los feeds de ese medio
+  Entonces ve 3 bloques numerados: "1 Canal: el medio de noticias", "2 Fuente RSS: un feed de ese medio" y "3 Fuentes registradas y captura"
+  Y el bloque 1 lista los canales registrados con su país y continente
+
+Escenario: Fuente sin canal
+  Dado que no existe ningún canal registrado
+  Cuando el administrador abre la pestaña "Fuentes RSS"
+  Entonces el bloque 2 muestra "Primero crea un canal en el bloque 1." en lugar del formulario de fuente
 ```
 
 ### Definition of Done
@@ -728,3 +734,4 @@ Las estimaciones en puntos provienen del Planning Poker de P3 y son un punto de 
 | HU-DASH-002-v2, HU-DASH-003-v2 | v1.6 | 2026-10-19 | Se implementa el filtro por país en la nube de palabras y en el listado de noticias (PDF §4.3.1). Se resuelve el punto pendiente 3 de HU-DASH-003-v2: los países salen de `CanalNoticias.pais` vía `GET /api/v1/channels`. Sin cambios en criterios de aceptación ni contratos. |
 | HU-DASH-002-v3 | v1.7 | 2026-11-04 | HU-DASH-002-v2 pasa a **Deprecada** y se crea HU-DASH-002-v3: cada noticia muestra las palabras que explican su humor ("¿Por qué este valor?") y `GET /api/v1/news/{id}` agrega `terminos` (`contrato-noticias.openapi.yaml` v1.2.0). Origen: observación del profesor en la revisión del 2026-11-04; decisión de la PO. 4 escenarios Gherkin nuevos. |
 | HU-DASH-004 | v1.8 | 2026-11-11 | Creación de HU-DASH-004 (guía visual de lectura de las vistas) por la observación del profesor de frontend: no se entendía qué era cada cosa. Guía "Cómo leer esta pantalla" en todas las vistas, escala de -10 a +10, detalle de palabras en la nube y explicación en 3 pasos del humor de cada noticia. 6 escenarios Gherkin. Decisión de la PO. |
+| HU-DASH-004 | v1.9 | 2026-11-11 | A pedido de la PO, la pestaña Fuentes RSS se divide en 3 bloques numerados (canal, fuente RSS y fuentes registradas). Se ajusta la decisión 6 y el escenario de canal y fuente; se agrega el escenario "Fuente sin canal" (7 escenarios). |

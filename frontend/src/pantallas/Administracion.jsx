@@ -16,15 +16,15 @@ import './Administracion.css'
 const GUIAS = {
   fuentes: [
     {
-      titulo: 'Primero, el canal',
+      titulo: 'Bloque 1: el canal',
       texto: 'Es el medio (por ejemplo, RNZ) con su continente y país. De ahí sale dónde aparece en el mapa.',
     },
     {
-      titulo: 'Después, sus fuentes RSS',
+      titulo: 'Bloque 2: sus fuentes RSS',
       texto: 'Son los feeds del medio (business.xml, sport.xml…), cada uno con su categoría. Un canal tiene varias.',
     },
     {
-      titulo: 'Captura',
+      titulo: 'Bloque 3: captura',
       texto: 'El sistema lee las fuentes activas cada cierto tiempo. "Capturar ahora" lo hace en el momento.',
     },
   ],
