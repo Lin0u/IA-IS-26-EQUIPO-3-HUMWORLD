@@ -11,7 +11,11 @@ export default function ModeloAdmin() {
 
   async function entrenar() {
     setEnCurso(true)
-    setAviso({ tipo: 'info', texto: 'Entrenando el modelo… puede tardar hasta 3 minutos.' })
+    setAviso({
+      tipo: 'info',
+      texto:
+        'Entrenando el modelo… Con la cuota gratuita de Gemini puede tardar varios minutos: no cierres esta página.',
+    })
     try {
       const modelo = await entrenarModelo()
       setAviso({
@@ -28,8 +32,8 @@ export default function ModeloAdmin() {
   return (
     <div className="admin-formulario">
       <p>
-        Entrena una nueva versión del modelo con las noticias ya evaluadas por diccionario. Requiere la
-        clave de Gemini configurada en el servidor.
+        Entrena una nueva versión del modelo con las noticias ya evaluadas por diccionario. Requiere la clave de Gemini
+        configurada en el servidor.
       </p>
       <button type="button" className="filtro activo" disabled={enCurso} onClick={entrenar}>
         Entrenar modelo

@@ -239,6 +239,7 @@ def test_post_trainings_502_si_falla_el_servicio(client, db, fuente, monkeypatch
     respuesta = client.post("/api/v1/trainings")
     assert respuesta.status_code == 502
     assert respuesta.json()["codigo"] == "SERVICIO_EMBEDDINGS_NO_DISPONIBLE"
+    assert "el modelo activo no cambió" in respuesta.json()["mensaje"]
     assert db.execute(select(func.count()).select_from(ModeloSentimiento)).scalar_one() == 0
 
 
@@ -317,6 +318,73 @@ def test_reintentos_acotados_terminan_en_error():
 
     assert ruta.call_count == settings.embeddings_max_reintentos + 1
     assert esperas == [0.5, 1.0, 2.0]
+
+
+def _cuota(demora=None):
+    detalles = [{"@type": "type.googleapis.com/google.rpc.RetryInfo", "retryDelay": demora}] if demora else []
+    return httpx.Response(
+        429, json={"error": {"code": 429, "message": "Quota exceeded for embed_content_requests", "details": detalles}}
+    )
+
+
+def _cliente_entrenamiento(esperas):
+    return ClienteEmbeddingsGemini(
+        api_key="clave-secreta",
+        modelo="gemini-embedding-001",
+        url_base=URL,
+        esperar=esperas.append,
+        max_reintentos=3,
+        esperar_cuota=True,
+    )
+
+
+@respx.mock
+def test_al_entrenar_espera_lo_que_pide_gemini_ante_la_cuota():
+    respx.post(f"{URL}/models/gemini-embedding-001:embedContent").mock(
+        side_effect=[_cuota("34s"), _cuota("120s"), httpx.Response(200, json={"embedding": {"values": [1.0]}})]
+    )
+    esperas = []
+
+    assert _cliente_entrenamiento(esperas).embeber("hola") == [1.0]
+    # retryDelay + 1 s, con tope en embeddings_espera_maxima_segundos (65 s).
+    assert esperas == [35.0, 65.0]
+
+
+@respx.mock
+def test_al_entrenar_sin_retry_delay_espera_cada_vez_mas():
+    respx.post(f"{URL}/models/gemini-embedding-001:embedContent").mock(return_value=_cuota())
+    esperas = []
+
+    with pytest.raises(ErrorServicioEmbeddings, match="HTTP 429: Quota exceeded"):
+        _cliente_entrenamiento(esperas).embeber("hola")
+
+    assert esperas == [15.0, 30.0, 60.0]
+
+
+@respx.mock
+def test_la_prediccion_no_espera_la_cuota():
+    respx.post(f"{URL}/models/gemini-embedding-001:embedContent").mock(return_value=_cuota("34s"))
+    esperas = []
+
+    with pytest.raises(ErrorServicioEmbeddings):
+        _cliente(esperas).embeber("hola")
+
+    assert esperas == [0.5, 1.0, 2.0]
+
+
+@respx.mock
+def test_error_sin_cuerpo_json_informa_el_codigo():
+    respx.post(f"{URL}/models/gemini-embedding-001:embedContent").mock(return_value=httpx.Response(403, text="no"))
+    with pytest.raises(ErrorServicioEmbeddings, match="^HTTP 403$"):
+        _cliente().embeber("hola")
+
+
+def test_el_cliente_de_entrenamiento_espera_la_cuota(monkeypatch):
+    monkeypatch.setattr(settings, "gemini_api_key", "clave")
+    cliente = modelo_ml_service._cliente_por_defecto()
+    assert cliente._esperar_cuota is True
+    assert cliente._max_reintentos == settings.embeddings_reintentos_entrenamiento
+    assert cliente._timeout == settings.embeddings_timeout_entrenamiento_segundos
 
 
 @respx.mock

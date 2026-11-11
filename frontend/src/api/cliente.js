@@ -12,6 +12,9 @@ const TIMEOUT_MS = 10000
 // (src/app/core/config.py), más el cálculo del humor; varias fuentes se capturan en
 // serie. Con 10 s el navegador abandonaba la espera aunque el backend terminara bien.
 export const TIMEOUT_LARGO_MS = 180000
+// El entrenamiento manda todas las noticias a Gemini en lotes y espera su cuota por
+// minuto (HU-SENT-006): con la capa gratuita puede tardar varios minutos.
+export const TIMEOUT_ENTRENAMIENTO_MS = 30 * 60 * 1000
 
 // Error de la API con el código HTTP y el "codigo" de negocio que devuelve el
 // backend (por ejemplo, TERMINO_DUPLICADO). El mensaje es el que manda la API,
@@ -236,5 +239,5 @@ export function purgarNoticias(fecha = '') {
 
 // POST /trainings (HU-SENT-006).
 export function entrenarModelo() {
-  return solicitar('/trainings', { metodo: 'POST', timeoutMs: TIMEOUT_LARGO_MS })
+  return solicitar('/trainings', { metodo: 'POST', timeoutMs: TIMEOUT_ENTRENAMIENTO_MS })
 }

@@ -54,7 +54,16 @@ class Settings(BaseSettings):
     embeddings_timeout_segundos: float = 3.0
     embeddings_max_reintentos: int = 3  # backoff exponencial acotado
     embeddings_backoff_base_segundos: float = 0.5
-    embeddings_lote: int = 100  # textos por solicitud batchEmbedContents
+    embeddings_lote: int = 20  # textos por solicitud batchEmbedContents
+    # Entrenamiento (HU-SENT-006): la capa gratuita de Gemini limita las
+    # solicitudes por minuto y responde 429. Al entrenar se espera lo que pide
+    # el servicio (retryDelay) en vez de abandonar a los pocos segundos; la
+    # predicción de cada noticia mantiene los valores cortos de arriba y cae al
+    # diccionario. Valores PROPUESTOS, pendientes de ratificación.
+    embeddings_timeout_entrenamiento_segundos: float = 60.0
+    embeddings_reintentos_entrenamiento: int = 6
+    embeddings_espera_cuota_segundos: float = 15.0  # sin retryDelay: 15, 30, 60 s…
+    embeddings_espera_maxima_segundos: float = 65.0
     embeddings_max_caracteres: int = 8000  # ~2.048 tokens de entrada del modelo
     ml_circuit_umbral_fallos: int = 5
     ml_circuit_espera_segundos: int = 60

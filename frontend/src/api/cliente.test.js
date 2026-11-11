@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   ErrorApi,
+  TIMEOUT_ENTRENAMIENTO_MS,
   TIMEOUT_LARGO_MS,
   actualizarTermino,
   cambiarEstadoFuente,
@@ -187,7 +188,7 @@ describe('panel de administración (HU-ADMIN-004)', () => {
     await obtenerConfiguracion()
     await capturarFuente(1)
     await entrenarModelo()
-    expect(espera.mock.calls.map((llamada) => llamada[1])).toEqual([10000, TIMEOUT_LARGO_MS, TIMEOUT_LARGO_MS])
+    expect(espera.mock.calls.map((llamada) => llamada[1])).toEqual([10000, TIMEOUT_LARGO_MS, TIMEOUT_ENTRENAMIENTO_MS])
     espera.mockRestore()
   })
 

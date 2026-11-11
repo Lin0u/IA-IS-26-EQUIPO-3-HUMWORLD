@@ -75,7 +75,13 @@ def _ahora_utc() -> datetime:
 def _cliente_por_defecto() -> ClienteEmbeddingsGemini:
     if not settings.gemini_api_key:
         raise MLNoConfiguradoError("GEMINI_API_KEY no está configurada.")
-    return ClienteEmbeddingsGemini()
+    # Entrenar manda muchos textos: espera la cuota por minuto de Gemini (429)
+    # en vez de abandonar, con más tiempo por solicitud y más reintentos.
+    return ClienteEmbeddingsGemini(
+        timeout_segundos=settings.embeddings_timeout_entrenamiento_segundos,
+        max_reintentos=settings.embeddings_reintentos_entrenamiento,
+        esperar_cuota=True,
+    )
 
 
 def entrenar_modelo(
