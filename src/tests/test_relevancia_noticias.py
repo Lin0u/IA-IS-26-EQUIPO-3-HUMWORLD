@@ -269,3 +269,24 @@ def test_el_mismo_minimo_no_recalcula(client, procesadas, db):
 def test_minimo_invalido_responde_400(client, fuente):
     respuesta = client.put("/api/v1/config", json={"periodicidad_cron_minutos": 30, "minimo_terminos_humor": 0})
     assert respuesta.status_code == 400
+
+
+def test_el_barrido_no_recarga_el_diccionario_por_cada_noticia(db, fuente):
+    """Regresión: cada commit vencía los términos y se recargaban uno por uno
+    (unas 950 consultas por noticia con 1.000 términos)."""
+    from sqlalchemy import event
+
+    db.add_all([TerminoDiccionario(palabra=f"termino{i}", idioma="es", valor=1) for i in range(300)])
+    db.commit()
+    noticias = [_noticia(db, fuente, "termino1 termino2 termino3 guerra") for _ in range(10)]
+    consultas = []
+    motor = db.get_bind()
+    contar = lambda *argumentos: consultas.append(1)  # noqa: E731
+    event.listen(motor, "before_cursor_execute", contar)
+    try:
+        assert procesar_noticias(db, noticias, proveedor_ml=None) == 10
+    finally:
+        event.remove(motor, "before_cursor_execute", contar)
+
+    assert len(consultas) < 10 * 8
+    assert all(n.valor_humor is not None for n in noticias)

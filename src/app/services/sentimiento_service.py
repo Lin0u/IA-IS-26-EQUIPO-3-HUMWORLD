@@ -327,9 +327,18 @@ def calcular_humor(
 
 
 def _cargar_terminos(db: Session) -> dict[str, list[TerminoDiccionario]]:
+    """Diccionario completo, separado de la sesión (solo lectura).
+
+    procesar_noticias hace un commit por noticia, y cada commit da por vencidos
+    todos los objetos de la sesión: sin separarlos, SQLAlchemy volvía a pedir a
+    la base de datos cada término, uno por uno, para la noticia siguiente
+    (~3.800 consultas por noticia con el diccionario real). Separados
+    (expunge), conservan sus valores ya cargados y no se recargan.
+    """
     terminos = TerminoDiccionarioRepository().listar_por_idiomas(db, IDIOMAS_SOPORTADOS)
     por_idioma: dict[str, list[TerminoDiccionario]] = {idioma: [] for idioma in IDIOMAS_SOPORTADOS}
     for termino in terminos:
+        db.expunge(termino)
         por_idioma.setdefault(termino.idioma, []).append(termino)
     return por_idioma
 
