@@ -619,7 +619,70 @@ Escenario: Etiquetas HTML en el resumen del feed
 
 ---
 
+## HU-SENT-007-v4 — Fallback determinista con diccionario (mínimo de términos)
+
+**Reemplaza a:** HU-SENT-007-v3 (Deprecada). **Qué cambia:** una noticia necesita un mínimo de términos únicos del diccionario (parámetro `minimo_terminos_humor` de `/config`, valor inicial 2) para recibir humor por este método. Con menos, se guarda sin humor y con `motivo_exclusion = "minimo_terminos"`. El resto de la historia (comparación por forma y lema, idioma, frases, HTML) no cambia. **Por qué:** con los datos del 2026-11-11, 466 noticias se calculaban con un solo término y casos como *outstanding* (+10) decidían el humor de toda la noticia. Decisión de la PO del 2026-11-11; ADR-003, punto 7.
+
+**Tipo:** Historia Técnica / Enabler Story *(el actor es el propio sistema)*
+**Como** sistema HumWorld,
+**quiero** calcular el humor de una noticia por el método de diccionario solo cuando contiene al menos N términos únicos del diccionario,
+**para** que ningún término aislado, quizás usado en otro sentido, decida el humor de toda la noticia.
+
+**Prioridad:** Alta
+**Estimación relativa:** S *(punto de partida propuesto por el agente PO/Arquitecto, sujeto a Planning Poker)*
+**Depende de contrato de API:** Sí, solo por el parámetro: `GET`/`PUT /api/v1/config` (`contrato-canales-fuentes-rss.openapi.yaml` v1.9.0, campo `minimo_terminos_humor`). La noticia expone `motivo_exclusion` en `GET /api/v1/news/{id}` (`contrato-noticias.openapi.yaml` v1.3.0).
+**Variante del algoritmo:** promedio simple de términos únicos más polarización (ADR-003, puntos 1 y 2), con la comparación del punto 5 y el mínimo del punto 7.
+
+### Criterios de aceptación (Gherkin)
+
+Se mantienen los escenarios de HU-SENT-007-v3, evaluados con mínimo 1. Se agregan:
+
+```gherkin
+Escenario: Noticia con menos términos que el mínimo
+  Dado que el mínimo de términos es 2 y el diccionario contiene "guerra" (es, -4)
+  Y una noticia en español cuyo texto solo contiene "guerra"
+  Cuando el sistema calcula su humor por diccionario
+  Entonces valor_humor es null, cantidad_terminos_evaluados = 1 y motivo_exclusion = "minimo_terminos"
+  Y se registra 1 coincidencia, que no cuenta en la nube de palabras
+
+Escenario: Noticia que alcanza el mínimo
+  Dado que el mínimo es 2 y el diccionario contiene "guerra" (es, -4) y "crisis" (es, -6)
+  Cuando el sistema calcula el humor de "Guerra y crisis en la frontera"
+  Entonces valor_humor = -5.0 y motivo_exclusion es null
+
+Escenario: Noticia sin términos
+  Dado que el mínimo es 2
+  Cuando el sistema calcula el humor de una noticia sin ningún término del diccionario
+  Entonces valor_humor es null y motivo_exclusion es null
+
+Escenario: El mínimo no aplica al modelo de ML
+  Dado que hay un modelo de ML activo que responde 3.0 y el mínimo es 2
+  Cuando el sistema calcula el humor de una noticia con 1 término
+  Entonces metodo_calculo = "ml" y valor_humor = 3.0
+
+Escenario: Cambio del mínimo
+  Cuando el administrador cambia minimo_terminos_humor de 2 a 3 con PUT /api/v1/config
+  Entonces las noticias calculadas por diccionario quedan marcadas para recálculo
+  Y si envía el mismo valor, no se marca ninguna
+
+Escenario: Mínimo inválido
+  Cuando se envía PUT /api/v1/config con minimo_terminos_humor = 0
+  Entonces el sistema responde con código HTTP 400
+```
+
+### Definition of Done
+(Bloque general DoD, sección 14.) Adicionalmente:
+- Migración `a9d3f1c7e5b2`: columna `noticias.motivo_exclusion`, parámetro inicial 2 y recálculo de las noticias calculadas por diccionario.
+- Pruebas de los 6 escenarios en `src/tests/test_relevancia_noticias.py`, sin red ni modelo real.
+- El campo se edita en el panel de Parámetros (HU-ADMIN-001-v2).
+
+**Estado de implementación (2026-11-11):** implementada en la rama `feature/relevancia-noticias`, pendiente de revisión en el PR y de ratificación del equipo.
+
+---
+
 ## HU-SENT-007-v3 — Fallback determinista con diccionario (comparación por lema)
+
+**Estado:** **Deprecada (2026-11-11)** — reemplazada por **HU-SENT-007-v4** (ver arriba), que agrega el mínimo de términos por noticia. Se conserva este bloque íntegro como registro histórico, conforme a la sección 3 de las instrucciones del proyecto.
 
 **Tipo:** Historia Técnica / Enabler Story *(el actor es el propio sistema)*
 **Como** sistema HumWorld,
@@ -630,7 +693,6 @@ Escenario: Etiquetas HTML en el resumen del feed
 **Estimación relativa:** M *(punto de partida propuesto por el agente PO/Arquitecto, sujeto a Planning Poker: agrega una dependencia nueva, la detección de idioma y el recálculo de las noticias)*
 **Depende de contrato de API:** No expone endpoint propio. Servicio interno invocado por HU-SENT-002-v3 y HU-SENT-005; `POST /api/v1/sentiment` no cambia de contrato.
 **Variante del algoritmo:** promedio simple de términos únicos más polarización (`ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`, puntos 1 y 2); regla de comparación del punto 5.
-**Estado:** Implementada el 2026-10-19 (rama `feature/lematizacion`), pendiente de revisión en el PR y de ratificación del equipo.
 
 **Qué cambia respecto de HU-SENT-007-v2** (decisión de la PO del 2026-10-19, por sugerencia del profesor):
 
@@ -707,6 +769,77 @@ Escenario: Estado del lematizador
 
 ---
 
+## HU-SENT-009 — Exclusión de noticias no relevantes para el humor
+
+**Tipo:** Historia de Usuario
+**Como** administrador del sistema,
+**quiero** mantener una lista de palabras o frases que, si aparecen en el título de una noticia, la dejen fuera del cálculo de humor, y ver cuántas noticias quedan fuera y por qué,
+**para** que noticias que no reflejan el ánimo del mundo (sorteos, horóscopo, pasatiempos) no distorsionen el mapa, la nube ni el listado.
+
+**Origen:** caso observado el 2026-11-11 (resultados de una lotería con humor +8 por *ganador* y *ganó*). Se apoya en PDF §2, objetivo general ("determine el humor… predominante") y §4.2.2 (mantenimiento de los datos del cálculo desde la aplicación). Decisión de la PO del 2026-11-11; ADR-003, punto 7.
+**Prioridad:** Media
+**Estimación relativa:** M *(punto de partida propuesto por el agente PO/Arquitecto, sujeto a Planning Poker)*
+**Depende de contrato de API:** Sí — `GET`/`POST /api/v1/exclusions` y `DELETE /api/v1/exclusions/{id}` (`contrato-sentimiento-diccionario.openapi.yaml` v1.4.0) y `GET /api/v1/news/statistics` (`contrato-noticias.openapi.yaml` v1.3.0).
+**Variante del algoritmo:** no calcula humor; decide si una noticia se evalúa (ADR-003, punto 7). Aplica con diccionario y con ML.
+
+**Decisiones:**
+1. Se compara contra el **título**, por palabra o frase completa, sin mayúsculas ni tildes y sin lematizar ("sorteos" no coincide con "sorteo").
+2. La noticia excluida se guarda, sin humor, sin coincidencias y con `motivo_exclusion = "palabra_exclusion"`.
+3. Dos entradas que solo difieren en mayúsculas, tildes o espacios son la misma (409).
+4. Lista inicial propuesta, a revisar por el equipo: lotería, sorteo, baloto, horóscopo, crucigrama, sudoku, lottery, powerball, mega millions, horoscope, crossword, wordle.
+
+### Criterios de aceptación (Gherkin)
+
+```gherkin
+Escenario: Noticia excluida por su título
+  Dado que la lista contiene "lotería"
+  Cuando el sistema calcula el humor de "LOTERIA del Quindío: número ganador"
+  Entonces valor_humor es null, no se registran coincidencias y motivo_exclusion = "palabra_exclusion"
+
+Escenario: La exclusión aplica también con el modelo de ML
+  Dado que hay un modelo de ML activo y la lista contiene "horoscope"
+  Cuando el sistema calcula el humor de "Your horoscope for today"
+  Entonces valor_humor es null y motivo_exclusion = "palabra_exclusion"
+
+Escenario: Palabra completa
+  Dado que la lista contiene "sorteo"
+  Cuando el título es "Los sorteos de la semana"
+  Entonces la noticia no se excluye
+
+Escenario: Alta y baja de una palabra
+  Cuando el administrador envía POST /api/v1/exclusions con palabra = "  Mega   Millions "
+  Entonces el sistema responde 201 con palabra = "mega millions"
+  Y las noticias calculadas por diccionario quedan marcadas para recálculo
+  Y al enviar DELETE /api/v1/exclusions/{id}, responde 204 y vuelve a marcarlas
+
+Escenario: Palabra duplicada o inválida
+  Dado que la lista contiene "lotería"
+  Cuando se envía POST con "LOTERIA"
+  Entonces el sistema responde 409 con codigo "PALABRA_DUPLICADA"
+  Y con una palabra vacía, sin letras ni números o de más de 100 caracteres responde 400
+
+Escenario: Cobertura de noticias
+  Dado 5 noticias: 1 con humor, 1 sin términos, 1 bajo el mínimo, 1 excluida por la lista y 1 pendiente
+  Cuando se envía GET /api/v1/news/statistics
+  Entonces responde total = 5 y 1 en cada categoría, junto con el mínimo vigente
+
+Escenario: Las noticias sin humor no cuentan en la nube
+  Dado una noticia excluida o bajo el mínimo con coincidencias registradas
+  Cuando se consulta GET /api/v1/dashboards/word-cloud
+  Entonces sus términos no suman peso
+```
+
+### Definition of Done
+(Bloque general DoD, sección 14.) Adicionalmente:
+- Migración `a9d3f1c7e5b2` con la tabla `palabras_exclusion` y la lista inicial.
+- Pruebas de los escenarios en `src/tests/test_relevancia_noticias.py` y del panel en `frontend/src/pantallas/Administracion.test.jsx`.
+- Panel de Parámetros con la lista editable y la cobertura (HU-ADMIN-001-v2), validado visualmente.
+- Revisión de la lista inicial por el equipo.
+
+**Estado de implementación (2026-11-11):** implementada en la rama `feature/relevancia-noticias`, pendiente de revisión en el PR y de ratificación del equipo.
+
+---
+
 ## Resumen de trazabilidad
  
 | ID | Tipo | Prioridad | Puntos (P3) | Endpoint / mecanismo | Referencia PDF |
@@ -720,7 +853,9 @@ Escenario: Estado del lematizador
 | HU-SENT-005-v2 | Historia de Usuario | Media | 2 (por revalidar) | `POST /api/v1/sentiment` — ver `contrato-sentimiento-diccionario.openapi.yaml` (v1.3.0) | §10.2 |
 | HU-SENT-006 | Historia de Usuario | Media | 5 | `POST /api/v1/trainings` — ver `contrato-sentimiento-diccionario.openapi.yaml` — embeddings externos (Google Gemini Embedding) + regresor local scikit-learn, disparo manual, umbral propuesto: 1.000 noticias (ver ADR-004) | Objetivos específicos #2 (no detallado) |
 | HU-SENT-007-v2 | **Deprecada** (ver HU-SENT-007-v3) | Alta | 2 | Interno (servicio compartido) — n = términos únicos; palabra completa, sin mayúsculas ni tildes (conserva ñ), sin lematización | §10.4, sección 11 instrucciones proyecto |
-| HU-SENT-007-v3 | Enabler Story | Alta | M (propuesta) | Interno (servicio compartido) — n = términos únicos; comparación por forma y lema (spaCy), detección de idioma | §4.4, §10.4, sección 11 instrucciones proyecto |
+| HU-SENT-007-v3 | **Deprecada** (ver HU-SENT-007-v4) | Alta | M (propuesta) | Interno — comparación por forma y lema (spaCy), detección de idioma | §4.4, §10.4 |
+| HU-SENT-007-v4 | Enabler Story | Alta | S (propuesta) | Interno + parámetro `minimo_terminos_humor` de `/config` — mínimo de términos únicos (2 por defecto) | §4.4, §10.4 |
+| HU-SENT-009 | Historia de Usuario | Media | M (propuesta) | `/api/v1/exclusions` (GET, POST, DELETE) y `GET /api/v1/news/statistics` | §2, §4.2.2 |
  
 ## Tabla de control de versiones
  
@@ -740,3 +875,4 @@ Escenario: Estado del lematizador
 | HU-SENT-007-v3 | v1.11 | 2026-10-20 | Ajuste antes de la ratificación del equipo: la falta de un modelo de spaCy deja de degradar en silencio. Por defecto la API no arranca (`LEMATIZACION_OBLIGATORIA=true`) y `/health` informa el estado de cada modelo; la degradación a forma exacta queda solo para desarrollo. Se reemplaza el escenario "Lematizador no disponible" por tres escenarios. |
 | HU-SENT-001 → HU-SENT-001-v2 | v1.12 | 2026-10-20 | Decisión de la PO: `GET /api/v1/dictionary` pasa a estar paginado (10 por defecto, máximo 50) por el volumen de la carga inicial y el panel de administración. HU-SENT-001 queda Deprecada. Contrato v1.2.0. |
 | HU-SENT-005 → HU-SENT-005-v2 | v1.13 | 2026-11-04 | Decisión de la PO tras la revisión del profesor: `POST /api/v1/sentiment` agrega `terminos` (palabra, idioma, valor) para explicar el valor de humor. HU-SENT-005 queda Deprecada. Contrato v1.3.0. Se coordina con HU-DASH-002-v3. |
+| HU-SENT-007-v3 → HU-SENT-007-v4, HU-SENT-009 | v1.14 | 2026-11-11 | Decisión de la PO con los datos reales (466 noticias con un solo término; casos *outstanding* y lotería): mínimo de términos por noticia, configurable, con valor inicial 2 (HU-SENT-007-v4), y lista de exclusión por palabras del título con contador de cobertura (HU-SENT-009, nueva). HU-SENT-007-v3 queda Deprecada. ADR-003 v1.5; contratos canales-fuentes-rss v1.9.0, sentimiento-diccionario v1.4.0 y noticias v1.3.0. |

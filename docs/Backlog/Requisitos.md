@@ -39,12 +39,13 @@ Cada requisito funcional (RF) deriva de una función descrita en el PDF (§4.1 a
 | RF-19 | Dashboard de humor: mapa mundial con el humor por continente, con selector de fecha dentro del rango con información. | §4.3, §4.3.2 | HU-DASH-001-v3 |
 | RF-20 | Listado de las noticias que más han influido en el cálculo del humor, con detalle, filtros y las palabras que explican su valor. | §4.3, §4.3.2, §10.2 | HU-DASH-002-v3 |
 | RF-21 | Nube de palabras influyentes, con filtro por continente y por país. | §4.3, §4.3.1, §10.2 | HU-DASH-003-v2 |
-| RF-22 | Configuración de parámetros generales del sistema (periodicidad del cron y caducidad de noticias). | §4.2.5, §10.2 | HU-ADMIN-001 |
+| RF-22 | Configuración de parámetros generales del sistema (periodicidad del cron, caducidad de noticias y mínimo de palabras por noticia). | §4.2.5, §10.2 | HU-ADMIN-001-v2 |
 | RF-23 | Purgado automático de noticias anteriores al periodo de caducidad. | §4.2.5 | HU-ADMIN-002 |
 | RF-24 | Purgado manual de noticias antiguas bajo demanda. | §4.2.5, §10.2 | HU-ADMIN-003 |
 | RF-25 | Panel de administración unificado (fuentes, diccionario, parámetros). | §4.3 punto 1 | HU-ADMIN-004 |
 | RF-26 | Documentación interactiva de la API REST con Swagger/OpenAPI (`/api/docs`). | §10.1 | (transversal, FastAPI) |
 | RF-27 | Cada vista explica en pantalla qué significa cada elemento y por qué una noticia, continente o palabra tiene su valor (guía de lectura y escala de -10 a +10). | §4.3, §2 objetivo 3 | HU-DASH-004 |
+| RF-28 | Una noticia necesita un mínimo configurable de palabras del diccionario para recibir humor, y las noticias no relevantes (sorteos, horóscopo…) se excluyen con una lista editable; el panel muestra la cobertura. | §2 (objetivo general), §4.2.2 | HU-SENT-007-v4, HU-SENT-009 |
 
 **Notas:**
 - RF-25 (HU-ADMIN-004) se implementó el 2026-11-04 como la vista "Administración" del frontend (`frontend/src/pantallas/Administracion.jsx` y `pantallas/admin/`), con pestañas de fuentes RSS, diccionario, parámetros, purgado y modelo de ML sobre los endpoints existentes; pruebas en `frontend/src/pantallas/Administracion.test.jsx`. Pendiente de revisión en el PR y de validación visual del equipo.
@@ -104,12 +105,13 @@ Trazabilidad **requisito → historia → endpoint/mecanismo → prueba**. El en
 | RF-19 | HU-DASH-001-v3 | `GET /api/v1/dashboards/map` (+ `GET /api/v1/sentiment` para la serie temporal) | dashboards v1.1.0 | `test_dashboards.py`; frontend: `App.test.jsx` |
 | RF-20 | HU-DASH-002-v3 | `GET /api/v1/news`, `GET /api/v1/news/{id}` | noticias v1.2.0 | `test_news.py`; frontend: `pantallas/ListadoNoticias.test.jsx` |
 | RF-21 | HU-DASH-003-v2 | `GET /api/v1/dashboards/word-cloud` | dashboards | `test_nube_palabras.py`; frontend: `pantallas/NubePalabras.test.jsx`, `componentes/SelectorPais.test.jsx` |
-| RF-22 | HU-ADMIN-001 | `GET /api/v1/config`, `PUT /api/v1/config` | canales-fuentes-rss | `test_purgado.py` |
+| RF-22 | HU-ADMIN-001-v2 | `GET /api/v1/config`, `PUT /api/v1/config` | canales-fuentes-rss v1.9.0 | `test_purgado.py`, `test_relevancia_noticias.py` |
 | RF-23 | HU-ADMIN-002 | Job interno de purgado (APScheduler) | — (sin endpoint) | `test_purgado.py` |
 | RF-24 | HU-ADMIN-003 | `DELETE /api/v1/news?fecha_anterior_a=YYYY-MM-DD` | noticias | `test_purgado.py` |
 | RF-25 | HU-ADMIN-004 | (frontend) usa `/channels`, `/sources`, `/captures`, `/dictionary`, `/config`, `/news`, `/trainings` | — | frontend: `pantallas/Administracion.test.jsx` |
 | RF-26 | — (transversal) | `/api/docs` (Swagger autogenerado) | — | `test_sources.py` (verifica el esquema OpenAPI del alta) |
 | RF-27 | HU-DASH-004 | (usa los existentes) | — | frontend: `componentes/GuiaVisual.test.jsx`, `ListadoNoticias.test.jsx`, `NubePalabras.test.jsx`, `Administracion.test.jsx` |
+| RF-28 | HU-SENT-007-v4, HU-SENT-009 | `/api/v1/exclusions` (GET, POST, DELETE), `GET /api/v1/news/statistics`, `minimo_terminos_humor` en `/config` | sentimiento-diccionario v1.4.0, noticias v1.3.0 | `test_relevancia_noticias.py`; frontend: `Administracion.test.jsx` |
 
 **Endpoint implementado no cubierto por un requisito del PDF:** `GET /api/v1/health` (`health.py`) es un health check técnico; informa además si los modelos de spaCy (lematización) están cargados. No proviene de un RF del PDF; se documenta como endpoint operativo del sistema.
 
@@ -131,3 +133,4 @@ Trazabilidad **requisito → historia → endpoint/mecanismo → prueba**. El en
 | v1.2 | 2026-11-04 | RF-16 y RF-20 pasan a HU-SENT-005-v2 y HU-DASH-002-v3: la API y el listado muestran los términos que explican el valor de humor. |
 | v1.3 | 2026-11-11 | Se agrega RF-27 (guía visual de lectura de las vistas, HU-DASH-004), por la observación del profesor de frontend. |
 | v1.4 | 2026-11-11 | La matriz de trazabilidad y los huecos detectados seguían mostrando RF-25 sin iniciar; se corrigen. |
+| v1.5 | 2026-11-11 | Se agrega RF-28 (mínimo de palabras y exclusión de noticias no relevantes) y RF-22 pasa a HU-ADMIN-001-v2. |

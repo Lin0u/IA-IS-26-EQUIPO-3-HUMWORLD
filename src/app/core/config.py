@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     sentimiento_timeout_ml_segundos: float = 3.0  # TODO(equipo): ratificar
     sentimiento_barrido_minutos: int = 30  # TODO(equipo): ratificar
     sentimiento_barrido_lote: int = 500  # noticias por ejecución del barrido
+    # HU-SENT-007-v4: mínimo de términos del diccionario para calcular el humor
+    # de una noticia. Se edita en /config; este es el valor si no está guardado.
+    # Valor PROPUESTO (decisión de la PO del 2026-11-11), pendiente de ratificación.
+    sentimiento_minimo_terminos_defecto: int = 2
 
     # Purgado de noticias (HU-ADMIN-002, PDF §4.2.5). La caducidad vigente se
     # lee de la tabla configuracion (GET/PUT /api/v1/config); este valor solo

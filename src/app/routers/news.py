@@ -20,11 +20,12 @@ from app.schemas.dashboard import Continente
 from app.schemas.noticia import (
     NoticiaDetalle,
     NoticiaListado,
+    NoticiasEstadisticas,
     OrdenNoticias,
     ResultadoPurgado,
     SignoHumor,
 )
-from app.services.noticia_consulta_service import listar_noticias, obtener_noticia
+from app.services.noticia_consulta_service import estadisticas_noticias, listar_noticias, obtener_noticia
 from app.services.purgado_service import purgar_anteriores_a, purgar_por_caducidad
 
 router = APIRouter(prefix="/news", tags=["news"])
@@ -76,6 +77,15 @@ def purgar(
             mensaje="La fecha límite no puede ser posterior a hoy.",
         )
         return JSONResponse(status_code=400, content=cuerpo.model_dump(exclude_none=True))
+
+
+@router.get("/statistics", response_model=NoticiasEstadisticas)
+def estadisticas(db: Session = Depends(get_db)):
+    """Cuántas noticias tienen humor y por qué quedaron fuera las demás (HU-SENT-009).
+
+    Se declara antes de /{noticia_id} para que "statistics" no se lea como un id.
+    """
+    return estadisticas_noticias(db)
 
 
 @router.get("/{noticia_id}", response_model=NoticiaDetalle, responses={404: {"model": Error}})

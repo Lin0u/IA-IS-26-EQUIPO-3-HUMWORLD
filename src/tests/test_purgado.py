@@ -236,7 +236,7 @@ def test_get_config_incluye_la_caducidad(client, db):
     respuesta = client.get("/api/v1/config")
 
     assert respuesta.status_code == 200
-    assert respuesta.json() == {"periodicidad_cron_minutos": 45, "caducidad_noticias_dias": 60}
+    assert respuesta.json() == {"periodicidad_cron_minutos": 45, "caducidad_noticias_dias": 60, "minimo_terminos_humor": 1}
 
 
 def test_put_config_actualiza_la_caducidad(client, db, monkeypatch):
@@ -260,7 +260,7 @@ def test_put_config_sin_caducidad_la_conserva(client, db, monkeypatch):
     respuesta = client.put("/api/v1/config", json={"periodicidad_cron_minutos": 60})
 
     assert respuesta.status_code == 200
-    assert respuesta.json() == {"periodicidad_cron_minutos": 60, "caducidad_noticias_dias": 90}
+    assert respuesta.json() == {"periodicidad_cron_minutos": 60, "caducidad_noticias_dias": 90, "minimo_terminos_humor": 1}
 
 
 @pytest.mark.parametrize("caducidad", [0, -5])

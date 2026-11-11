@@ -44,6 +44,7 @@ def actualizar_configuracion(
             payload.periodicidad_cron_minutos,
             reprogramar=scheduler_module.reprogramar_periodicidad,
             caducidad_dias=payload.caducidad_noticias_dias,
+            minimo_terminos=payload.minimo_terminos_humor,
         )
     except ValueError as exc:
         return JSONResponse(

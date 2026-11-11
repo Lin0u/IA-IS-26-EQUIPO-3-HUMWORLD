@@ -46,6 +46,7 @@ classDiagram
         +int cantidad_terminos_evaluados
         +float polarizacion_terminos
         +int modelo_sentimiento_id
+        +string motivo_exclusion
     }
 
     class TerminoDiccionario {
@@ -68,6 +69,11 @@ classDiagram
         +float mae_evaluacion
         +datetime fecha_entrenamiento
         +bool activo
+    }
+
+    class PalabraExclusion {
+        +int id
+        +string palabra
     }
 
     class Configuracion {
@@ -113,6 +119,9 @@ classDiagram
 - **`cantidad_terminos_evaluados`** (int): términos únicos del diccionario que coincidieron (divisor `n` del promedio).
 - **`polarizacion_terminos`** (float, nullable): desviación estándar poblacional de los valores de los términos coincidentes (HU-SENT-003, migración `a7c3e9b5d1f4`); NULL si no hubo términos, 0.0 con un solo término.
 - **`modelo_sentimiento_id`** (int, nullable): versión del modelo usada cuando `metodo_calculo="ml"` (HU-SENT-006, migración `d8b2f6a4c7e3`).
+- **`motivo_exclusion`** (`"minimo_terminos"` | `"palabra_exclusion"` | NULL): por qué la noticia quedó sin humor aunque se evaluó (HU-SENT-007-v4, HU-SENT-009, migración `a9d3f1c7e5b2`). NULL si tiene humor o si no tiene ningún término.
+
+**`PalabraExclusion`** (tabla `palabras_exclusion`, HU-SENT-009): palabra o frase que, si aparece completa en el título, deja la noticia fuera del cálculo de humor. Entidad independiente, sin relación persistida con `Noticia`: la regla se aplica al calcular y el resultado queda en `Noticia.motivo_exclusion`. El mínimo de términos (HU-SENT-007-v4) se guarda en `Configuracion` con la clave `minimo_terminos_humor`.
 
 ## Correspondencia con el código implementado
 
@@ -123,6 +132,7 @@ classDiagram
 | `Noticia` | `src/app/models/noticia.py` |
 | `TerminoDiccionario` | `src/app/models/termino_diccionario.py` |
 | `CoincidenciaTermino` (`noticia_termino`) | `src/app/models/coincidencia_termino.py` |
+| `PalabraExclusion` (`palabras_exclusion`) | `src/app/models/palabra_exclusion.py` |
 | `ModeloSentimiento` | `src/app/models/modelo_sentimiento.py` |
 | `Configuracion` | `src/app/models/configuracion.py` |
 
@@ -132,3 +142,4 @@ classDiagram
 |---|---|---|
 | v1.0 | 2026-09-02 | Creación como modelo de EPIC-RSS (CanalNoticias, FuenteRSS, Noticia, EstadoCircuitBreaker). |
 | v2.0 | 2026-10-29 | Consolidación en el modelo del sistema completo (rol Documentación): se integran las entidades de EPIC-SENT (TerminoDiccionario, CoincidenciaTermino, ModeloSentimiento y la extensión de Noticia) antes en `diagrama-clases-sentimiento.md`, y se agrega `Configuracion` (EPIC-ADMIN). Fiel al código y las migraciones. Reemplaza y absorbe a `diagrama-clases-sentimiento.md`. |
+| v2.1 | 2026-11-11 | Se agrega `PalabraExclusion` (HU-SENT-009) y el atributo `Noticia.motivo_exclusion` (HU-SENT-007-v4, HU-SENT-009). |

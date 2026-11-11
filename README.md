@@ -61,7 +61,8 @@ Sin configuración, todo el humor se calcula por diccionario. Para activar el mo
 
 En la interfaz web, la vista **Administración** (HU-ADMIN-004) reúne en pestañas: fuentes RSS (canales, fuentes y captura manual), diccionario, parámetros, purgado y entrenamiento del modelo de ML. Cada pestaña abre con una guía de uso. Por API:
 
-- `GET`/`PUT /api/v1/config`: periodicidad del cron (minutos) y caducidad de las noticias (días, 90 por defecto).
+- `GET`/`PUT /api/v1/config`: periodicidad del cron (minutos), caducidad de las noticias (días, 90 por defecto) y mínimo de palabras del diccionario por noticia (2 por defecto).
+- `GET`/`POST /api/v1/exclusions`, `DELETE /api/v1/exclusions/{id}`: lista de palabras que, en el título, dejan una noticia fuera del humor (lotería, horóscopo…). `GET /api/v1/news/statistics`: cuántas noticias tienen humor y por qué no las demás.
 - `DELETE /api/v1/news?fecha_anterior_a=AAAA-MM-DD`: borra las noticias registradas antes de esa fecha. Sin parámetro, aplica la caducidad configurada. Es irreversible.
 
 ## Entrega (PDF §9)

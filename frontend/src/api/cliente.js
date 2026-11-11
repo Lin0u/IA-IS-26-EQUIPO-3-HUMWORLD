@@ -223,12 +223,36 @@ export function obtenerConfiguracion() {
   return obtenerJson('/config')
 }
 
-// PUT /config (HU-RSS-007, HU-ADMIN-001).
-export function guardarConfiguracion({ periodicidad, caducidad }) {
+// PUT /config (HU-RSS-007, HU-ADMIN-001-v2, HU-SENT-007-v4).
+export function guardarConfiguracion({ periodicidad, caducidad, minimoTerminos }) {
   return solicitar('/config', {
     metodo: 'PUT',
-    cuerpo: { periodicidad_cron_minutos: periodicidad, caducidad_noticias_dias: caducidad },
+    cuerpo: {
+      periodicidad_cron_minutos: periodicidad,
+      caducidad_noticias_dias: caducidad,
+      minimo_terminos_humor: minimoTerminos,
+    },
   })
+}
+
+// GET /exclusions (HU-SENT-009): palabras que excluyen una noticia del humor.
+export function obtenerExclusiones() {
+  return obtenerJson('/exclusions')
+}
+
+// POST /exclusions (HU-SENT-009).
+export function crearExclusion(palabra) {
+  return solicitar('/exclusions', { metodo: 'POST', cuerpo: { palabra } })
+}
+
+// DELETE /exclusions/{id} (HU-SENT-009).
+export function eliminarExclusion(id) {
+  return solicitar(`/exclusions/${id}`, { metodo: 'DELETE' })
+}
+
+// GET /news/statistics (HU-SENT-009): cuántas noticias tienen humor y por qué no las demás.
+export function obtenerEstadisticasNoticias() {
+  return obtenerJson('/news/statistics')
 }
 
 // DELETE /news (HU-ADMIN-003). Sin fecha, aplica la caducidad configurada.

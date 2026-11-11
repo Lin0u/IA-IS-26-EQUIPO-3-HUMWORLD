@@ -21,6 +21,10 @@ vi.mock('../api/cliente.js', () => ({
   guardarConfiguracion: vi.fn(),
   purgarNoticias: vi.fn(),
   entrenarModelo: vi.fn(),
+  obtenerExclusiones: vi.fn(),
+  crearExclusion: vi.fn(),
+  eliminarExclusion: vi.fn(),
+  obtenerEstadisticasNoticias: vi.fn(),
 }))
 
 function fuente(id, extra = {}) {
@@ -53,7 +57,24 @@ beforeEach(() => {
     tamanio_pagina: 25,
     total: 1,
   })
-  api.obtenerConfiguracion.mockResolvedValue({ periodicidad_cron_minutos: 60, caducidad_noticias_dias: 90 })
+  api.obtenerConfiguracion.mockResolvedValue({
+    periodicidad_cron_minutos: 60,
+    caducidad_noticias_dias: 90,
+    minimo_terminos_humor: 2,
+  })
+  api.obtenerExclusiones.mockResolvedValue([
+    { id: 1, palabra: 'horóscopo' },
+    { id: 2, palabra: 'lotería' },
+  ])
+  api.obtenerEstadisticasNoticias.mockResolvedValue({
+    total: 2171,
+    con_humor: 1256,
+    sin_terminos: 449,
+    bajo_minimo_terminos: 440,
+    excluidas_por_lista: 26,
+    pendientes: 0,
+    minimo_terminos_humor: 2,
+  })
   confirmar = vi.spyOn(window, 'confirm').mockReturnValue(true)
 })
 
@@ -335,21 +356,46 @@ describe('Diccionario', () => {
 })
 
 describe('Parámetros', () => {
-  it('carga, valida y guarda los parámetros', async () => {
-    api.guardarConfiguracion.mockResolvedValue({ periodicidad_cron_minutos: 30, caducidad_noticias_dias: 90 })
+  it('carga, valida y guarda los parámetros, incluido el mínimo de palabras', async () => {
+    api.guardarConfiguracion.mockResolvedValue({
+      periodicidad_cron_minutos: 30,
+      caducidad_noticias_dias: 90,
+      minimo_terminos_humor: 3,
+    })
     const usuario = await abrir('Parámetros')
     const periodicidad = await screen.findByLabelText('Periodicidad del cron (minutos)')
     expect(periodicidad).toHaveValue(60)
     expect(screen.getByLabelText('Caducidad de las noticias (días)')).toHaveValue(90)
-    await usuario.clear(periodicidad)
-    await usuario.type(periodicidad, '0')
-    expect(screen.getByText('Los dos valores deben ser enteros mayores o iguales a 1.')).toBeInTheDocument()
+    const minimo = screen.getByLabelText('Mínimo de palabras del diccionario por noticia')
+    expect(minimo).toHaveValue(2)
+    await usuario.clear(minimo)
+    await usuario.type(minimo, '0')
+    expect(screen.getByText('Los valores deben ser enteros mayores o iguales a 1.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Guardar' })).toBeDisabled()
+    await usuario.clear(minimo)
+    await usuario.type(minimo, '3')
     await usuario.clear(periodicidad)
     await usuario.type(periodicidad, '30')
     await usuario.click(screen.getByRole('button', { name: 'Guardar' }))
-    expect(api.guardarConfiguracion).toHaveBeenCalledWith({ periodicidad: 30, caducidad: 90 })
-    expect(await screen.findByRole('status')).toHaveTextContent('Parámetros guardados.')
+    expect(api.guardarConfiguracion).toHaveBeenCalledWith({ periodicidad: 30, caducidad: 90, minimoTerminos: 3 })
+    const bloque = screen.getByRole('form', { name: '1 Captura, caducidad y mínimo de palabras' })
+    expect(await within(bloque).findByRole('status')).toHaveTextContent(
+      'Parámetros guardados. El humor de las noticias se recalculará en el próximo barrido.',
+    )
+    expect(api.obtenerEstadisticasNoticias).toHaveBeenCalledTimes(2)
+  })
+
+  it('sin cambiar el mínimo no avisa del recálculo', async () => {
+    api.guardarConfiguracion.mockResolvedValue({
+      periodicidad_cron_minutos: 60,
+      caducidad_noticias_dias: 90,
+      minimo_terminos_humor: 2,
+    })
+    const usuario = await abrir('Parámetros')
+    await screen.findByLabelText('Periodicidad del cron (minutos)')
+    await usuario.click(screen.getByRole('button', { name: 'Guardar' }))
+    const bloque = screen.getByRole('form', { name: '1 Captura, caducidad y mínimo de palabras' })
+    expect(await within(bloque).findByRole('status')).toHaveTextContent(/^Parámetros guardados\.$/)
   })
 
   it('muestra el error al guardar', async () => {
@@ -362,6 +408,88 @@ describe('Parámetros', () => {
 
   it('muestra el error si no puede cargar', async () => {
     api.obtenerConfiguracion.mockRejectedValue(new Error('No se pudo conectar con el servidor.'))
+    await abrir('Parámetros')
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo conectar con el servidor.')
+  })
+
+  it('agrega y quita palabras de la lista de exclusión', async () => {
+    api.crearExclusion.mockResolvedValue({ id: 3, palabra: 'baloto' })
+    api.eliminarExclusion.mockResolvedValue(null)
+    const usuario = await abrir('Parámetros')
+    const lista = await screen.findByRole('list', { name: 'Palabras de exclusión' })
+    expect(
+      within(lista)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual(['horóscopo×', 'lotería×'])
+
+    const formulario = screen.getByRole('form', { name: 'Nueva palabra de exclusión' })
+    expect(within(formulario).getByRole('button', { name: 'Agregar' })).toBeDisabled()
+    await usuario.type(within(formulario).getByLabelText('Palabra o frase'), ' Baloto ')
+    await usuario.click(within(formulario).getByRole('button', { name: 'Agregar' }))
+    expect(api.crearExclusion).toHaveBeenCalledWith('Baloto')
+    expect(
+      await screen.findByText('"baloto" agregada. El humor de las noticias se recalculará en el próximo barrido.'),
+    ).toBeInTheDocument()
+    expect(
+      within(lista)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual(['baloto×', 'horóscopo×', 'lotería×'])
+
+    await usuario.click(screen.getByRole('button', { name: 'Quitar lotería' }))
+    expect(api.eliminarExclusion).toHaveBeenCalledWith(2)
+    expect(await screen.findByText(/"lotería" quitada/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Quitar lotería' })).not.toBeInTheDocument()
+  })
+
+  it('muestra los errores de la lista de exclusión', async () => {
+    api.crearExclusion.mockRejectedValue(new Error('Esa palabra ya está en la lista de exclusión.'))
+    api.eliminarExclusion.mockRejectedValue(new Error('La palabra no existe en la lista de exclusión.'))
+    const usuario = await abrir('Parámetros')
+    await usuario.type(await screen.findByLabelText('Palabra o frase'), 'lotería')
+    await usuario.click(screen.getByRole('button', { name: 'Agregar' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Esa palabra ya está en la lista de exclusión.')
+    await usuario.click(screen.getByRole('button', { name: 'Quitar horóscopo' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('La palabra no existe en la lista de exclusión.')
+  })
+
+  it('avisa si la lista está vacía o no se pudo cargar', async () => {
+    api.obtenerExclusiones.mockResolvedValueOnce([])
+    await abrir('Parámetros')
+    expect(await screen.findByText('La lista está vacía: no se excluye ninguna noticia.')).toBeInTheDocument()
+  })
+
+  it('muestra la cobertura de noticias y la actualiza', async () => {
+    const usuario = await abrir('Parámetros')
+    const bloque = await screen.findByRole('region', { name: '3 Cobertura de noticias' })
+    await within(bloque).findByText('1256')
+    expect(within(bloque).getByText('Con menos de 2 palabras').nextSibling).toHaveTextContent('440')
+    expect(within(bloque).getByText('Excluidas por la lista').nextSibling).toHaveTextContent('26')
+    expect(within(bloque).queryByText(/se procesan en el próximo barrido/)).not.toBeInTheDocument()
+
+    api.obtenerEstadisticasNoticias.mockResolvedValue({
+      total: 2171,
+      con_humor: 900,
+      sin_terminos: 449,
+      bajo_minimo_terminos: 0,
+      excluidas_por_lista: 0,
+      pendientes: 822,
+      minimo_terminos_humor: 2,
+    })
+    await usuario.click(within(bloque).getByRole('button', { name: 'Actualizar' }))
+    expect(await within(bloque).findByText('822')).toBeInTheDocument()
+    expect(within(bloque).getByText(/se procesan en el próximo barrido/)).toBeInTheDocument()
+  })
+
+  it('avisa si no puede cargar la cobertura', async () => {
+    api.obtenerEstadisticasNoticias.mockRejectedValue(new Error('x'))
+    await abrir('Parámetros')
+    expect(await screen.findByText('No se pudo cargar la cobertura.')).toBeInTheDocument()
+  })
+
+  it('avisa si no puede cargar la lista de exclusión', async () => {
+    api.obtenerExclusiones.mockRejectedValue(new Error('No se pudo conectar con el servidor.'))
     await abrir('Parámetros')
     expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo conectar con el servidor.')
   })

@@ -7,7 +7,7 @@ info:
     HU-RSS-001 a HU-RSS-010 (y su versión HU-RSS-003-v2) y en ADR-001 (framework de la API backend)
     y ADR-002 (relación de composición CanalNoticias/FuenteRSS). Fuente funcional: PDF de especificaciones,
     secciones 4.2.1, 4.2.3, 10.2 y 10.3.
-  version: "1.8.0"
+  version: "1.9.0"
 servers:
   - url: /api/v1
     description: Base URL versionada (PDF, sección 10.3)
@@ -408,7 +408,7 @@ components:
   schemas:
     Configuracion:
       type: object
-      description: Configuración general persistida. Origina en HU-RSS-007 (periodicidad) y HU-ADMIN-001 (caducidad).
+      description: Configuración general persistida. Origina en HU-RSS-007 (periodicidad), HU-ADMIN-001-v2 (caducidad) y HU-SENT-007-v4 (mínimo de términos).
       properties:
         periodicidad_cron_minutos:
           type: integer
@@ -417,7 +417,14 @@ components:
           type: integer
           minimum: 1
           description: Días tras los cuales una noticia se purga (HU-ADMIN-002).
-      required: [periodicidad_cron_minutos, caducidad_noticias_dias]
+        minimo_terminos_humor:
+          type: integer
+          minimum: 1
+          description: >
+            Mínimo de términos únicos del diccionario que necesita una noticia
+            para recibir humor por diccionario (HU-SENT-007-v4, ADR-003 punto 7).
+            Valor inicial propuesto: 2.
+      required: [periodicidad_cron_minutos, caducidad_noticias_dias, minimo_terminos_humor]
 
     ConfiguracionActualizar:
       type: object
@@ -430,6 +437,13 @@ components:
           type: integer
           minimum: 1
           description: Opcional. Si se omite, se conserva el valor vigente.
+        minimo_terminos_humor:
+          type: integer
+          minimum: 1
+          description: >
+            Opcional (HU-SENT-007-v4). Si se omite, se conserva el valor
+            vigente. Si cambia, las noticias calculadas por diccionario se
+            recalculan en el próximo barrido.
       required: [periodicidad_cron_minutos]
 
     CanalNoticias:
@@ -653,3 +667,6 @@ components:
 # v1.8.0 (2026-10-19): /config agrega caducidad_noticias_dias (HU-ADMIN-001,
 #   PDF §4.2.5), obligatoria en la respuesta y opcional en el PUT. Valor por
 #   defecto propuesto: 90 días, pendiente de ratificación del equipo.
+# v1.9.0 (2026-11-11): /config agrega minimo_terminos_humor (HU-SENT-007-v4,
+#   HU-ADMIN-001-v2; ADR-003 punto 7), obligatorio en la respuesta y opcional
+#   en el PUT. Valor inicial propuesto: 2. Cambio compatible.

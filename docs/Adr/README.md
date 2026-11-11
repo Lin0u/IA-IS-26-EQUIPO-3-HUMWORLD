@@ -8,7 +8,7 @@
 |---|---|---|---|---|---|
 | [ADR-001](ADR-001-framework-api-backend.md) | Framework de la API backend (FastAPI) | Aceptado | 2026-08-19 | Equipo 3 | HU-RSS-001 a HU-RSS-010 |
 | [ADR-002](ADR-002-relacion-composicion-canal-fuente.md) | Relación de composición entre `CanalNoticias` y `FuenteRSS` | Aceptado | 2026-08-19 | Equipo 3 | HU-RSS-001 a HU-RSS-005, HU-RSS-010 |
-| [ADR-003](ADR-003-eleccion-algoritmo-agregacion-sentimiento.md) | Algoritmo de agregación de sentimiento (promedio simple, polarización y lematización) | Propuesto | 2026-09-28 | Equipo 3 (PO y arquitectura) | HU-SENT-002-v3, HU-SENT-003, HU-SENT-005-v2, HU-SENT-007-v3 |
+| [ADR-003](ADR-003-eleccion-algoritmo-agregacion-sentimiento.md) | Algoritmo de agregación de sentimiento (promedio simple, polarización, lematización y reglas de relevancia) | Propuesto | 2026-09-28 | Equipo 3 (PO y arquitectura) | HU-SENT-002-v3, HU-SENT-003, HU-SENT-005-v2, HU-SENT-007-v4, HU-SENT-009 |
 | [ADR-004](ADR-004-arquitectura-modelo-ml-sentimiento.md) | Arquitectura del modelo de ML para el cálculo de humor (Gemini Embedding + Ridge) | Aceptado | 2026-09-28 | Equipo 3 (PO y arquitectura) | HU-SENT-002-v3, HU-SENT-006 |
 | [ADR-005](ADR-005-stack-frontend-dashboards.md) | Stack y arquitectura del frontend (React, Vite, Leaflet, Chart.js) | Propuesto | 2026-10-03 | Equipo 3 (PO y frontend) | HU-DASH-001-v3, HU-DASH-002-v3, HU-DASH-003-v2, HU-DASH-004, HU-ADMIN-004 |
 
@@ -36,3 +36,4 @@
 | Versión | Fecha | Motivo del cambio |
 |---|---|---|
 | v1.0 | 2026-11-11 | Creación del índice (checklist, punto 13). Estados tomados de cada ADR a esta fecha. |
+| v1.1 | 2026-11-11 | ADR-003 v1.5 (reglas de relevancia): se actualizan su título y sus historias. |

@@ -44,10 +44,18 @@ const GUIAS = {
   ],
   parametros: [
     {
-      titulo: 'Periodicidad',
-      texto: 'Cada cuántos minutos el sistema captura noticias nuevas de las fuentes activas.',
+      titulo: 'Periodicidad y caducidad',
+      texto: 'Cada cuántos minutos se capturan noticias y cuántos días se guardan.',
     },
-    { titulo: 'Caducidad', texto: 'Cuántos días se guarda una noticia antes de que el purgado automático la borre.' },
+    {
+      titulo: 'Mínimo de palabras',
+      texto: 'Una noticia necesita al menos esa cantidad de palabras del diccionario para tener humor.',
+    },
+    {
+      titulo: 'Lista de exclusión',
+      texto: 'Las noticias con estas palabras en el título (lotería, horóscopo…) no se cuentan.',
+    },
+    { titulo: 'Cobertura', texto: 'Muestra cuántas noticias tienen humor y por qué quedaron fuera las demás.' },
   ],
   purgado: [
     { titulo: 'Por fecha', texto: 'Borra las noticias registradas antes del día que elijas.' },

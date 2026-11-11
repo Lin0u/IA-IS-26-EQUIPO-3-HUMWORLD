@@ -9,7 +9,52 @@
 
 ---
 
+## HU-ADMIN-001-v2 — Configuración de parámetros generales del sistema
+
+**Reemplaza a:** HU-ADMIN-001 (Deprecada). **Qué cambia:** se agrega el parámetro `minimo_terminos_humor` (mínimo de términos del diccionario por noticia, HU-SENT-007-v4; valor inicial 2), y la pestaña Parámetros del panel (HU-ADMIN-004) pasa a tener 3 bloques: parámetros, lista de exclusión (HU-SENT-009) y cobertura de noticias. **Por qué:** decisión de la PO del 2026-11-11 (ADR-003, punto 7). Los escenarios de HU-ADMIN-001 siguen vigentes; la respuesta de `/config` incluye ahora el campo nuevo.
+
+**Tipo:** Historia de Usuario
+**Como** administrador del sistema,
+**quiero** consultar y modificar los parámetros generales del sistema, incluido el mínimo de palabras del diccionario que necesita una noticia para tener humor,
+**para** ajustar su comportamiento operativo sin tocar el código ni reiniciar la aplicación.
+
+**Prioridad:** Media
+**Estimación:** HU-ADMIN-001 tenía 2 puntos en P3; el cambio es acotado. A revalidar por el equipo en Planning Poker, no es un valor definitivo.
+**Depende de contrato de API:** Sí — `GET`/`PUT /api/v1/config` (`contrato-canales-fuentes-rss.openapi.yaml` v1.9.0).
+**Alcance:** `periodicidad_cron_minutos` (§4.2.3), `caducidad_noticias_dias` (§4.2.5) y `minimo_terminos_humor` (HU-SENT-007-v4). Los tres son enteros ≥ 1; `caducidad_noticias_dias` y `minimo_terminos_humor` son opcionales en el `PUT`, y si se omiten se conserva el valor vigente.
+
+### Criterios de aceptación (Gherkin)
+
+Se mantienen los 5 escenarios de HU-ADMIN-001, con el campo nuevo en las respuestas. Se agregan:
+
+```gherkin
+Escenario: Consulta con el mínimo de palabras
+  Dado que el mínimo de términos es 2
+  Cuando el administrador envía GET a /api/v1/config
+  Entonces el cuerpo incluye "minimo_terminos_humor": 2
+
+Escenario: Cambio del mínimo desde el panel
+  Cuando el administrador cambia el mínimo de 2 a 3 en la pestaña Parámetros y guarda
+  Entonces se envía PUT /api/v1/config con minimo_terminos_humor = 3
+  Y la vista avisa que el humor de las noticias se recalculará en el próximo barrido
+
+Escenario: Cobertura en el panel
+  Cuando el administrador abre la pestaña Parámetros
+  Entonces ve cuántas noticias tienen humor, cuántas no tienen palabras del diccionario, cuántas tienen menos palabras que el mínimo, cuántas excluyó la lista y cuántas faltan por calcular
+```
+
+### Definition of Done
+(Bloque general DoD, sección 14.) Adicionalmente:
+- Migración `a9d3f1c7e5b2` que inserta el mínimo inicial (2).
+- Pruebas del panel en `frontend/src/pantallas/Administracion.test.jsx` y de la API en `src/tests/test_relevancia_noticias.py`; las pruebas de HU-ADMIN-001 y HU-RSS-007 siguen pasando.
+
+**Estado de implementación (2026-11-11):** implementada en la rama `feature/relevancia-noticias`, pendiente de revisión en el PR y de ratificación del equipo.
+
+---
+
 ## HU-ADMIN-001 — Configuración de parámetros generales del sistema
+
+**Estado:** **Deprecada (2026-11-11)** — reemplazada por **HU-ADMIN-001-v2** (ver arriba), que agrega el mínimo de términos por noticia. Se conserva este bloque como registro histórico.
 
 **Tipo:** Historia de Usuario
 **Como** administrador del sistema,
@@ -178,7 +223,7 @@ Escenario: Idempotencia
 |---|---|---|
 | Fuentes RSS | `GET`/`POST /channels`, `GET`/`POST /sources`, `PUT`/`PATCH`/`DELETE /sources/{id}`, `POST /sources/{id}/captures`, `POST /captures` | `contrato-canales-fuentes-rss.openapi.yaml` v1.8.0 |
 | Diccionario | `GET`/`POST /dictionary` (paginado, HU-SENT-001-v2), `PUT`/`PATCH`/`DELETE /dictionary/{id}` | `contrato-sentimiento-diccionario.openapi.yaml` v1.2.0 |
-| Parámetros | `GET`/`PUT /config` | `contrato-canales-fuentes-rss.openapi.yaml` v1.8.0 |
+| Parámetros | `GET`/`PUT /config`, `GET`/`POST`/`DELETE /exclusions`, `GET /news/statistics` | `contrato-canales-fuentes-rss.openapi.yaml` v1.9.0, `contrato-sentimiento-diccionario.openapi.yaml` v1.4.0, `contrato-noticias.openapi.yaml` v1.3.0 |
 | Purgado | `DELETE /news` | `contrato-noticias.openapi.yaml` v1.1.0 |
 | Modelo ML *(opcional)* | `POST /trainings` | `contrato-sentimiento-diccionario.openapi.yaml` v1.1.0 |
 
@@ -321,7 +366,8 @@ Escenario: API no disponible
 
 | HU | Tipo | Prioridad | Endpoint(s) | Origen (PDF) |
 |---|---|---|---|---|
-| HU-ADMIN-001 | Historia de Usuario | Media | `GET`/`PUT /api/v1/config` | §4.2.5, §10.2 |
+| HU-ADMIN-001 | **Deprecada** (ver HU-ADMIN-001-v2) | — | — | — |
+| HU-ADMIN-001-v2 | Historia de Usuario | Media | `GET`/`PUT /api/v1/config` (con `minimo_terminos_humor`) | §4.2.5, §10.2 |
 | HU-ADMIN-002 | Enabler Story | Media | (interno — scheduler) | §4.2.5 |
 | HU-ADMIN-003 | Historia de Usuario | Baja | `DELETE /api/v1/news` | §4.2.5, §10.2 |
 | HU-ADMIN-004 | Historia de Usuario | Alta | (frontend) consume `/channels`, `/sources`, `/captures`, `/dictionary`, `/config`, `/news`, `/trainings` | §4.1, §4.2.2, §4.2.3, §4.2.5, §4.3 vista 1 |
@@ -339,3 +385,4 @@ Escenario: API no disponible
 | HU-ADMIN-004 | v1.2 | 2026-10-20 | Decisión de la PO: el diccionario se pagina en el backend (HU-SENT-001-v2), no en el navegador. Se ajustan la decisión de diseño 2, el escenario de búsqueda y la tabla de endpoints. |
 | HU-ADMIN-004 | v1.3 | 2026-11-04 | Implementación en el frontend (`pantallas/Administracion.jsx` y `pantallas/admin/`, 29 pruebas Vitest). Se corrige el escenario "URL inválida o duplicada": la API acepta URLs repetidas, por lo que queda "URL mal formada" (validación en el formulario y 400 de la API) y se agrega la decisión de diseño 6. El escenario de captura de una fuente inactiva refleja que el botón se deshabilita. |
 | HU-ADMIN-001 a 004 | v1.4 | 2026-11-11 | Actualización de estado: las 4 historias están en `main`; HU-ADMIN-001 deja de figurar como parcial porque su interfaz quedó en el panel de HU-ADMIN-004. Sin cambios en los criterios de aceptación. |
+| HU-ADMIN-001 → HU-ADMIN-001-v2 | v1.5 | 2026-11-11 | Se agrega el parámetro `minimo_terminos_humor` (HU-SENT-007-v4) y la pestaña Parámetros pasa a 3 bloques (parámetros, lista de exclusión de HU-SENT-009 y cobertura). HU-ADMIN-001 queda Deprecada. Contrato canales-fuentes-rss v1.9.0. |

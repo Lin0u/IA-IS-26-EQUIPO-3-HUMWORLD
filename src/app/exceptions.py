@@ -35,3 +35,11 @@ class NoticiaNotFoundError(Exception):
 
 class FechaPurgadoInvalidaError(Exception):
     """La fecha límite de un purgado manual es posterior a hoy (HU-ADMIN-003)."""
+
+
+class PalabraExclusionNotFoundError(Exception):
+    """La palabra de exclusión no existe (HU-SENT-009)."""
+
+
+class PalabraExclusionConflictError(Exception):
+    """Ya existe esa palabra en la lista de exclusión (HU-SENT-009)."""
