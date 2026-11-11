@@ -173,21 +173,13 @@
   overflow-wrap: anywhere;
 }
 
-.admin-canales ul {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 6px 0 0;
-  padding: 0;
+.admin-canales {
+  margin-top: 4px;
 }
 
-.admin-canales li {
-  font-size: 13px;
-  padding: 2px 10px;
-  border: 1px solid var(--texto-suave);
-  border-radius: 999px;
-  background: var(--papel);
+/* La tabla de canales es corta: no necesita el ancho mínimo de la de fuentes. */
+.admin-tabla.admin-tabla-canales {
+  min-width: 0;
 }
 
 .pantalla .admin-flecha {

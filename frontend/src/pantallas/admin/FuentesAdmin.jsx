@@ -60,6 +60,7 @@ export default function FuentesAdmin() {
   const [enCurso, setEnCurso] = useState(false)
   const [nuevaFuente, setNuevaFuente] = useState({ canalId: '', url: '', categoriaIptc: '' })
   const [nuevoCanal, setNuevoCanal] = useState({ nombre: '', continente: '', pais: '' })
+  const [verCanales, setVerCanales] = useState(false)
 
   useEffect(() => {
     let vigente = true
@@ -82,6 +83,14 @@ export default function FuentesAdmin() {
   }, [filtros, pagina, version])
 
   const nombreCanal = (id) => canales.find((canal) => canal.id === id)?.nombre ?? `Canal ${id}`
+
+  // Desde la tabla de canales: muestra en el bloque 3 solo las fuentes de ese canal.
+  function verFuentesDe(canal) {
+    setFiltros({ ...FILTROS_VACIOS, canalId: String(canal.id) })
+    setPagina(1)
+    setSeleccion([])
+    document.getElementById('bloque-lista')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+  }
 
   function cambiarFiltro(clave, valor) {
     setFiltros({ ...filtros, [clave]: valor })
@@ -216,15 +225,45 @@ export default function FuentesAdmin() {
         <Aviso aviso={aviso?.bloque === 'canal' ? aviso : null} />
         {canales.length > 0 && (
           <div className="admin-canales">
-            <span className="admin-ayuda">Canales registrados ({canales.length}):</span>
-            <ul aria-label="Canales registrados">
-              {canales.map((canal) => (
-                <li key={canal.id}>
-                  <strong>{canal.nombre}</strong> ·{' '}
-                  {canal.pais ? `${canal.pais}, ${canal.continente}` : canal.continente}
-                </li>
-              ))}
-            </ul>
+            <button
+              type="button"
+              className="filtro"
+              aria-expanded={verCanales}
+              aria-controls="tabla-canales"
+              onClick={() => setVerCanales(!verCanales)}
+            >
+              {verCanales ? 'Ocultar canales registrados' : `Ver canales registrados (${canales.length})`}
+            </button>
+            {verCanales && (
+              <div className="admin-tabla-contenedor" id="tabla-canales">
+                <table className="admin-tabla admin-tabla-canales" aria-label="Canales registrados">
+                  <thead>
+                    <tr>
+                      <th>Canal</th>
+                      <th>Continente</th>
+                      <th>País</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {canales.map((canal) => (
+                      <tr key={canal.id}>
+                        <td>
+                          <strong>{canal.nombre}</strong>
+                        </td>
+                        <td>{canal.continente}</td>
+                        <td>{canal.pais ?? '—'}</td>
+                        <td>
+                          <button type="button" className="filtro" onClick={() => verFuentesDe(canal)}>
+                            Ver sus fuentes
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </section>

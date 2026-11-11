@@ -189,8 +189,38 @@ describe('Fuentes RSS', () => {
     expect(screen.getByRole('region', { name: '1 Canal: el medio de noticias' })).toBeInTheDocument()
     expect(screen.getByRole('region', { name: '2 Fuente RSS: un feed de ese medio' })).toBeInTheDocument()
     expect(screen.getByRole('region', { name: '3 Fuentes registradas y captura' })).toBeInTheDocument()
-    const canales = await screen.findByRole('list', { name: 'Canales registrados' })
-    expect(canales).toHaveTextContent('BBC Mundo · Reino Unido, Europa')
+    expect(screen.queryByRole('table', { name: 'Canales registrados' })).not.toBeInTheDocument()
+  })
+
+  it('muestra los canales registrados al pedirlo y filtra sus fuentes', async () => {
+    const usuario = await abrir()
+    const boton = await screen.findByRole('button', { name: 'Ver canales registrados (1)' })
+    expect(boton).toHaveAttribute('aria-expanded', 'false')
+    await usuario.click(boton)
+
+    const tabla = screen.getByRole('table', { name: 'Canales registrados' })
+    const fila = within(tabla).getByText('BBC Mundo').closest('tr')
+    expect(within(fila).getByText('Europa')).toBeInTheDocument()
+    expect(within(fila).getByText('Reino Unido')).toBeInTheDocument()
+
+    await usuario.click(within(fila).getByRole('button', { name: 'Ver sus fuentes' }))
+    await waitFor(() =>
+      expect(api.obtenerFuentes).toHaveBeenLastCalledWith(expect.objectContaining({ canalId: '1', pagina: 1 })),
+    )
+    expect(screen.getByLabelText('Filtrar por canal')).toHaveValue('1')
+
+    await usuario.click(screen.getByRole('button', { name: 'Ocultar canales registrados' }))
+    expect(screen.queryByRole('table', { name: 'Canales registrados' })).not.toBeInTheDocument()
+  })
+
+  it('muestra un guion si el canal no tiene país', async () => {
+    api.obtenerCanales.mockResolvedValue([{ id: 2, nombre: 'AllAfrica', continente: 'África', pais: null }])
+    const usuario = await abrir()
+    await usuario.click(await screen.findByRole('button', { name: 'Ver canales registrados (1)' }))
+    const fila = within(screen.getByRole('table', { name: 'Canales registrados' }))
+      .getByText('AllAfrica')
+      .closest('tr')
+    expect(within(fila).getByText('—')).toBeInTheDocument()
   })
 
   it('pide crear un canal antes de agregar fuentes', async () => {
