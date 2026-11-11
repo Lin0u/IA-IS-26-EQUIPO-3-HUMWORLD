@@ -354,7 +354,50 @@ Escenario: Filtro sin datos disponibles
 - Pruebas de agregación con datos fixture (no reales) cubriendo al menos dos continentes y un rango de fechas.
 ---
  
+## HU-SENT-005-v2 — Análisis de sentimiento de un texto arbitrario, con sus términos (endpoint)
+
+**Reemplaza a:** HU-SENT-005 (Deprecada). **Qué cambió:** la respuesta de `POST /api/v1/sentiment` agrega `terminos`: la lista de términos del diccionario encontrados en el texto, con palabra, idioma y valor. **Por qué:** en la revisión del 2026-11-04 el profesor no podía ver por qué un texto obtenía un valor determinado. Decisión de la PO del 2026-11-04, junto con HU-DASH-002-v3. El resto de la historia no cambia: sigue usando siempre el diccionario y no persiste nada.
+
+**Tipo:** Historia de Usuario
+**Como** analista de medios o usuario del sistema,
+**quiero** enviar un texto arbitrario a la API y recibir su valor de humor junto con los términos que lo explican,
+**para** probar el análisis de sentimiento y comprobar cómo se calculó, sin depender de que el texto provenga de una noticia ya capturada.
+
+**Prioridad:** Media
+**Estimación:** HU-SENT-005 tenía 2 puntos en P3; el cambio es acotado. A revalidar por el equipo en Planning Poker, no es un valor definitivo.
+**Depende de contrato de API:** Sí — `POST /api/v1/sentiment` — ver `contrato-sentimiento-diccionario.openapi.yaml` (v1.3.0, campo `terminos` en `AnalisisTextoResultado`).
+**Variante del algoritmo:** promedio simple de los términos únicos coincidentes (HU-SENT-007-v3, ADR-003). `terminos` son exactamente los términos promediados, ordenados del más negativo al más positivo y, a igual valor, por palabra.
+
+### Criterios de aceptación (Gherkin)
+
+```gherkin
+Escenario: Análisis exitoso con los términos que explican el valor
+  Dado que el diccionario contiene "victoria" (es, +6) y "guerra" (es, -8)
+  Cuando se envía POST a /api/v1/sentiment con texto="Gran victoria, aunque hubo momentos de guerra"
+  Entonces el sistema responde con código HTTP 200
+  Y valor_humor = -1.0, cantidad_terminos_evaluados = 2 y polarizacion_terminos = 7.0
+  Y terminos = [{"palabra": "guerra", "idioma": "es", "valor": -8}, {"palabra": "victoria", "idioma": "es", "valor": 6}]
+
+Escenario: Rechazo de texto vacío
+  Cuando se envía POST a /api/v1/sentiment con texto=""
+  Entonces el sistema responde con código HTTP 400
+
+Escenario: Texto sin términos del diccionario coincidentes
+  Cuando se envía POST a /api/v1/sentiment con un texto que no contiene ningún término del diccionario
+  Entonces el sistema responde con código HTTP 200
+  Y valor_humor es null, cantidad_terminos_evaluados = 0 y terminos es una lista vacía
+```
+
+### Definition of Done
+(Bloque general DoD, sección 14.) Adicionalmente: pruebas de los 3 escenarios en `src/tests/test_polarizacion_y_analisis.py` y Swagger actualizado.
+
+**Estado de implementación (2026-11-04):** implementada en la rama `feature/explicacion-humor`, pendiente de revisión en el PR y de ratificación del equipo.
+
+---
+
 ## HU-SENT-005 — Análisis de sentimiento de un texto arbitrario (endpoint)
+
+**Estado:** **Deprecada (2026-11-04)** — reemplazada por **HU-SENT-005-v2** (ver arriba), que agrega a la respuesta los términos que explican el valor. Se conserva este bloque íntegro como registro histórico, conforme a la sección 3 de las instrucciones del proyecto.
  
 **Tipo:** Historia de Usuario
 **Como** analista de medios o usuario del sistema,
@@ -673,7 +716,8 @@ Escenario: Estado del lematizador
 | HU-SENT-002-v3 | Enabler Story | Alta | 5 | Interno — síncrono + Timeout explícito (propuesto: 3s) + fallback a diccionario + job de barrido de respaldo (propuesto: cada 30 min) sobre `metodo_calculo IS NULL` + recálculo tras cambios del diccionario | §4.2.4, Objetivos específicos #2 |
 | HU-SENT-003 | Enabler Story | Alta | 3 | Extiende modelo `Noticia` | §4.2.4 |
 | HU-SENT-004 | Historia de Usuario | Alta | 1 | `GET /api/v1/sentiment` — ver `contrato-sentimiento-diccionario.openapi.yaml` | §4.1, §10.2 |
-| HU-SENT-005 | Historia de Usuario | Media | 2 | `POST /api/v1/sentiment` — ver `contrato-sentimiento-diccionario.openapi.yaml` | §10.2 |
+| HU-SENT-005 | Historia de Usuario — **Deprecada**, reemplazada por HU-SENT-005-v2 | — | — | — | — |
+| HU-SENT-005-v2 | Historia de Usuario | Media | 2 (por revalidar) | `POST /api/v1/sentiment` — ver `contrato-sentimiento-diccionario.openapi.yaml` (v1.3.0) | §10.2 |
 | HU-SENT-006 | Historia de Usuario | Media | 5 | `POST /api/v1/trainings` — ver `contrato-sentimiento-diccionario.openapi.yaml` — embeddings externos (Google Gemini Embedding) + regresor local scikit-learn, disparo manual, umbral propuesto: 1.000 noticias (ver ADR-004) | Objetivos específicos #2 (no detallado) |
 | HU-SENT-007-v2 | **Deprecada** (ver HU-SENT-007-v3) | Alta | 2 | Interno (servicio compartido) — n = términos únicos; palabra completa, sin mayúsculas ni tildes (conserva ñ), sin lematización | §10.4, sección 11 instrucciones proyecto |
 | HU-SENT-007-v3 | Enabler Story | Alta | M (propuesta) | Interno (servicio compartido) — n = términos únicos; comparación por forma y lema (spaCy), detección de idioma | §4.4, §10.4, sección 11 instrucciones proyecto |
@@ -695,3 +739,4 @@ Escenario: Estado del lematizador
 | HU-SENT-007-v2 → HU-SENT-007-v3 | v1.10 | 2026-10-19 | Decisión de la PO, por sugerencia del profesor: comparación de términos por lema con spaCy (sobre el texto de la noticia, sin lematizar el diccionario) y detección de idioma. HU-SENT-007-v2 queda Deprecada. Se reemplaza el escenario "Plural no cargado en el diccionario" y se agregan 6 escenarios. Ver ADR-003, punto 5. |
 | HU-SENT-007-v3 | v1.11 | 2026-10-20 | Ajuste antes de la ratificación del equipo: la falta de un modelo de spaCy deja de degradar en silencio. Por defecto la API no arranca (`LEMATIZACION_OBLIGATORIA=true`) y `/health` informa el estado de cada modelo; la degradación a forma exacta queda solo para desarrollo. Se reemplaza el escenario "Lematizador no disponible" por tres escenarios. |
 | HU-SENT-001 → HU-SENT-001-v2 | v1.12 | 2026-10-20 | Decisión de la PO: `GET /api/v1/dictionary` pasa a estar paginado (10 por defecto, máximo 50) por el volumen de la carga inicial y el panel de administración. HU-SENT-001 queda Deprecada. Contrato v1.2.0. |
+| HU-SENT-005 → HU-SENT-005-v2 | v1.13 | 2026-11-04 | Decisión de la PO tras la revisión del profesor: `POST /api/v1/sentiment` agrega `terminos` (palabra, idioma, valor) para explicar el valor de humor. HU-SENT-005 queda Deprecada. Contrato v1.3.0. Se coordina con HU-DASH-002-v3. |

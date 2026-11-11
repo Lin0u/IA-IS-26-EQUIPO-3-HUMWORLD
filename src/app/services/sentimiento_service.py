@@ -334,6 +334,18 @@ def invalidar_calculos_diccionario(db: Session) -> int:
     return marcadas
 
 
+def terminos_por_ids(db: Session, ids: tuple[int, ...]) -> list[TerminoDiccionario]:
+    """Términos de los ids dados, del más negativo al más positivo (HU-SENT-005-v2)."""
+    if not ids:
+        return []
+    return (
+        db.query(TerminoDiccionario)
+        .filter(TerminoDiccionario.id.in_(ids))
+        .order_by(TerminoDiccionario.valor, TerminoDiccionario.palabra)
+        .all()
+    )
+
+
 def analizar_texto(db: Session, texto: str) -> ResultadoHumor:
     """HU-SENT-005: humor de un texto arbitrario, siempre por diccionario.
 

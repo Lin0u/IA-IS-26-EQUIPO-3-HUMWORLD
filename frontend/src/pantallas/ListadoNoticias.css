@@ -127,3 +127,120 @@
   opacity: 0.4;
   cursor: default;
 }
+
+/* HU-DASH-002-v3 y HU-DASH-004: explicación del valor de humor. */
+.explicacion-boton {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--texto);
+  background: var(--amarillo);
+  border: var(--borde);
+  border-radius: 999px;
+  padding: 3px 12px;
+  margin-top: 8px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--tinta);
+}
+
+.explicacion-boton[aria-expanded='true'] {
+  background: var(--superficie);
+}
+
+.explicacion-boton:focus-visible {
+  outline: 3px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.explicacion {
+  list-style: none;
+  counter-reset: paso;
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  font-size: 14px;
+  background: var(--papel);
+  border: var(--borde);
+  border-radius: 12px;
+}
+
+.explicacion-paso {
+  counter-increment: paso;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 0;
+}
+
+.explicacion-paso + .explicacion-paso {
+  border-top: 1px dashed var(--texto-suave);
+}
+
+.explicacion-titulo {
+  font-weight: 700;
+  color: var(--texto);
+}
+
+.explicacion-titulo::before {
+  content: counter(paso) '. ';
+}
+
+.explicacion-formula {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.explicacion-nota {
+  font-size: 12px;
+  color: var(--texto-suave);
+}
+
+.explicacion-terminos {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+}
+
+.termino {
+  border: var(--borde);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 13px;
+  background: var(--superficie);
+}
+
+.termino-positivo {
+  background: #d9f6ee;
+}
+
+.termino-negativo {
+  background: #ffe1e2;
+}
+
+.noticia-tipo {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.noticia-cuerpo {
+  flex: 1;
+}
+
+/* HU-DASH-004: en pantallas angostas el humor va arriba y el texto usa todo el ancho. */
+@media (max-width: 600px) {
+  .noticia {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .noticia-humor {
+    width: auto;
+    flex-direction: row;
+    gap: 8px;
+  }
+}

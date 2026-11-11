@@ -9,6 +9,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.schemas.noticia import TerminoCoincidente
+
 
 class SentimientoPorFecha(BaseModel):
     fecha: date
@@ -43,3 +45,5 @@ class AnalisisTextoResultado(BaseModel):
     valor_humor: Optional[float] = None
     cantidad_terminos_evaluados: int
     polarizacion_terminos: Optional[float] = None
+    # HU-SENT-005-v2: términos encontrados, que explican el valor.
+    terminos: List[TerminoCoincidente] = Field(default_factory=list)

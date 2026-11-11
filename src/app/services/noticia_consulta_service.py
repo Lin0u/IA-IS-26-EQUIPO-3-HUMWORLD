@@ -19,6 +19,7 @@ from app.schemas.noticia import (
     NoticiaDetalle,
     NoticiaListado,
     NoticiaResumen,
+    TerminoCoincidente,
     OrdenNoticias,
     SignoHumor,
 )
@@ -82,7 +83,13 @@ def listar_noticias(
 def obtener_noticia(
     db: Session, noticia_id: int, repository: NoticiaConsultaRepository | None = None
 ) -> NoticiaDetalle:
-    fila = (repository or NoticiaConsultaRepository()).buscar(db, noticia_id)
+    repositorio = repository or NoticiaConsultaRepository()
+    fila = repositorio.buscar(db, noticia_id)
     if fila is None:
         raise NoticiaNotFoundError(noticia_id)
-    return NoticiaDetalle(**_a_dict(fila))
+    # HU-DASH-002-v3: los términos que explican el valor de humor.
+    terminos = [
+        TerminoCoincidente(palabra=t.palabra, idioma=t.idioma, valor=t.valor)
+        for t in repositorio.terminos(db, noticia_id)
+    ]
+    return NoticiaDetalle(**_a_dict(fila), terminos=terminos)

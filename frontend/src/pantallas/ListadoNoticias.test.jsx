@@ -1,10 +1,10 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { obtenerNoticias, obtenerPaises } from '../api/cliente.js'
+import { obtenerNoticia, obtenerNoticias, obtenerPaises } from '../api/cliente.js'
 import ListadoNoticias from './ListadoNoticias.jsx'
 
-vi.mock('../api/cliente.js', () => ({ obtenerNoticias: vi.fn(), obtenerPaises: vi.fn() }))
+vi.mock('../api/cliente.js', () => ({ obtenerNoticia: vi.fn(), obtenerNoticias: vi.fn(), obtenerPaises: vi.fn() }))
 
 function noticia(id, valor, extra = {}) {
   return {
@@ -64,9 +64,7 @@ describe('ListadoNoticias', () => {
 
     await screen.findByText('Página 1 de 3 · 25 noticias')
     await userEvent.click(screen.getByRole('button', { name: 'Negativas' }))
-    expect(obtenerNoticias).toHaveBeenLastCalledWith(
-      expect.objectContaining({ signo: 'negativas', pagina: 1 }),
-    )
+    expect(obtenerNoticias).toHaveBeenLastCalledWith(expect.objectContaining({ signo: 'negativas', pagina: 1 }))
     expect(screen.getByRole('button', { name: 'Negativas' })).toHaveAttribute('aria-pressed', 'true')
   })
 
@@ -88,6 +86,65 @@ describe('ListadoNoticias', () => {
     render(<ListadoNoticias />)
     expect(await screen.findByText('No hay noticias para este filtro.')).toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: 'Páginas' })).not.toBeInTheDocument()
+  })
+
+  it('muestra la guía de lectura y la escala', async () => {
+    render(<ListadoNoticias />)
+    await screen.findByText('Noticia 1')
+    const guia = screen.getByRole('complementary', { name: 'Cómo leer esta pantalla' })
+    expect(within(guia).getByText('Cada tarjeta es una noticia')).toBeInTheDocument()
+    expect(within(guia).getByRole('img', { name: 'Escala de humor de -10 a +10' })).toBeInTheDocument()
+    expect(screen.getAllByText('negativa')[0]).toBeInTheDocument()
+  })
+
+  it('explica el valor de una noticia paso a paso y oculta la explicación', async () => {
+    obtenerNoticia.mockResolvedValue({
+      ...noticia(1, -3),
+      metodo_calculo: 'diccionario',
+      terminos: [
+        { palabra: 'guerra', idioma: 'es', valor: -4 },
+        { palabra: 'crisis', idioma: 'es', valor: -6 },
+        { palabra: 'paz', idioma: 'es', valor: 1 },
+      ],
+    })
+    render(<ListadoNoticias />)
+    await userEvent.click(await screen.findByRole('button', { name: '¿Por qué -4.5?' }))
+
+    expect(obtenerNoticia).toHaveBeenCalledWith(1)
+    const palabras = await screen.findByRole('list', { name: 'Palabras que explican el humor' })
+    expect(
+      within(palabras)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual(['guerra -4', 'crisis -6', 'paz +1'])
+    expect(screen.getByText(/^Suma:/)).toHaveTextContent('Suma: (-4) + (-6) + 1 = -9')
+    expect(screen.getByText(/^Promedio:/)).toHaveTextContent('Promedio: -9 ÷ 3 palabras = -3.0')
+    expect(screen.getByRole('img', { name: 'Escala de humor de -10 a +10. Esta noticia: -3.0' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ocultar explicación' }))
+    expect(screen.queryByRole('list', { name: 'Palabras que explican el humor' })).not.toBeInTheDocument()
+  })
+
+  it('aclara cuando el humor lo calculó el modelo de ML', async () => {
+    obtenerNoticia.mockResolvedValue({
+      ...noticia(1, -4.5),
+      metodo_calculo: 'ml',
+      terminos: [{ palabra: 'war', idioma: 'en', valor: -4 }],
+    })
+    render(<ListadoNoticias />)
+    await userEvent.click(await screen.findByRole('button', { name: '¿Por qué -4.5?' }))
+    expect(await screen.findByText('Cálculo con el modelo de ML')).toBeInTheDocument()
+    expect(screen.queryByText(/^Promedio:/)).not.toBeInTheDocument()
+  })
+
+  it('avisa si la noticia no tiene palabras del diccionario o si falla la carga', async () => {
+    obtenerNoticia.mockResolvedValueOnce({ ...noticia(1, null), terminos: [] })
+    obtenerNoticia.mockRejectedValueOnce(new Error('No se pudo conectar con el servidor.'))
+    render(<ListadoNoticias />)
+    await userEvent.click(await screen.findByRole('button', { name: '¿Por qué -4.5?' }))
+    expect(await screen.findByText('No se encontraron palabras del diccionario en esta noticia.')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: '¿Por qué +2.0?' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo cargar la explicación.')
   })
 
   it('muestra el error de la API', async () => {

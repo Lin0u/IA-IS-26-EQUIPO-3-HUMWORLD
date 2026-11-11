@@ -76,6 +76,21 @@ describe('pestañas', () => {
     expect(screen.getByRole('tab', { name: 'Modelo ML' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('button', { name: 'Entrenar modelo' })).toBeInTheDocument()
   })
+
+  it('cada pestaña abre con su guía', async () => {
+    const usuario = await abrir()
+    expect(screen.getByRole('complementary', { name: 'Cómo leer esta pantalla' })).toHaveTextContent(
+      'Bloque 1: el canal',
+    )
+    await usuario.click(screen.getByRole('tab', { name: 'Diccionario' }))
+    const guia = screen.getByRole('complementary', { name: 'Cómo leer esta pantalla' })
+    expect(guia).toHaveTextContent('Así se calcula el humor')
+    expect(within(guia).getByRole('img', { name: 'Escala de humor de -10 a +10' })).toBeInTheDocument()
+    await usuario.click(screen.getByRole('tab', { name: 'Purgado' }))
+    expect(screen.getByRole('complementary', { name: 'Cómo leer esta pantalla' })).toHaveTextContent(
+      'No se puede deshacer',
+    )
+  })
 })
 
 describe('Fuentes RSS', () => {
@@ -116,42 +131,59 @@ describe('Fuentes RSS', () => {
     const formulario = screen.getByRole('form', { name: 'Nuevo canal' })
     const boton = within(formulario).getByRole('button', { name: 'Agregar canal' })
     expect(boton).toBeDisabled()
-    await usuario.type(within(formulario).getByLabelText('Canal'), 'El País')
+    await usuario.type(within(formulario).getByLabelText('Nombre del medio'), 'El País')
     await usuario.selectOptions(within(formulario).getByLabelText('Continente'), 'Europa')
-    await usuario.type(within(formulario).getByLabelText('País'), 'España')
+    await usuario.type(within(formulario).getByLabelText('País (opcional)'), 'España')
     await usuario.click(boton)
     expect(api.crearCanal).toHaveBeenCalledWith({ nombre: 'El País', continente: 'Europa', pais: 'España' })
-    expect(await screen.findByText('Canal "El País" creado.')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Canal "El País" creado. Ya puedes agregarle fuentes RSS en el bloque 2.'),
+    ).toBeInTheDocument()
     expect(api.obtenerCanales).toHaveBeenCalledTimes(2)
   })
 
   it('valida la URL y crea la fuente', async () => {
     api.crearFuente.mockResolvedValue({ id: 3 })
     const usuario = await abrir()
-    const formulario = screen.getByRole('form', { name: 'Nueva fuente' })
-    await screen.findByText('https://medio.test/rss/1')
-    await usuario.selectOptions(within(formulario).getByLabelText('Canal de la fuente'), '1')
+    const formulario = await screen.findByRole('form', { name: 'Nueva fuente' })
+    await usuario.selectOptions(within(formulario).getByLabelText('Canal (medio)'), '1')
     await usuario.selectOptions(within(formulario).getByLabelText('Categoría'), '15000000')
-    await usuario.type(within(formulario).getByLabelText('URL'), 'medio.test')
+    await usuario.type(within(formulario).getByLabelText('URL del feed'), 'medio.test')
     expect(screen.getByText('La URL debe empezar con http:// o https://.')).toBeInTheDocument()
     const boton = within(formulario).getByRole('button', { name: 'Agregar fuente' })
     expect(boton).toBeDisabled()
-    await usuario.clear(within(formulario).getByLabelText('URL'))
-    await usuario.type(within(formulario).getByLabelText('URL'), 'https://medio.test/deportes')
+    await usuario.clear(within(formulario).getByLabelText('URL del feed'))
+    await usuario.type(within(formulario).getByLabelText('URL del feed'), 'https://medio.test/deportes')
     await usuario.click(boton)
     expect(api.crearFuente).toHaveBeenCalledWith({
       canalId: '1',
       url: 'https://medio.test/deportes',
       categoriaIptc: '15000000',
     })
-    expect(await screen.findByText('Fuente creada.')).toBeInTheDocument()
+    expect(await screen.findByText('Fuente creada. Aparece en la tabla del bloque 3.')).toBeInTheDocument()
+  })
+
+  it('separa la pestaña en 3 bloques y lista los canales registrados', async () => {
+    await abrir()
+    expect(screen.getByRole('region', { name: '1 Canal: el medio de noticias' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: '2 Fuente RSS: un feed de ese medio' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: '3 Fuentes registradas y captura' })).toBeInTheDocument()
+    const canales = await screen.findByRole('list', { name: 'Canales registrados' })
+    expect(canales).toHaveTextContent('BBC Mundo · Reino Unido, Europa')
+  })
+
+  it('pide crear un canal antes de agregar fuentes', async () => {
+    api.obtenerCanales.mockResolvedValue([])
+    await abrir()
+    expect(await screen.findByText('Primero crea un canal en el bloque 1.')).toBeInTheDocument()
+    expect(screen.queryByRole('form', { name: 'Nueva fuente' })).not.toBeInTheDocument()
   })
 
   it('muestra el mensaje de error de la API', async () => {
     api.crearCanal.mockRejectedValue(new Error('Los datos enviados no son válidos.'))
     const usuario = await abrir()
     const formulario = screen.getByRole('form', { name: 'Nuevo canal' })
-    await usuario.type(within(formulario).getByLabelText('Canal'), 'X')
+    await usuario.type(within(formulario).getByLabelText('Nombre del medio'), 'X')
     await usuario.selectOptions(within(formulario).getByLabelText('Continente'), 'Asia')
     await usuario.click(within(formulario).getByRole('button', { name: 'Agregar canal' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Los datos enviados no son válidos.')
@@ -375,9 +407,7 @@ describe('Modelo ML', () => {
     api.entrenarModelo.mockResolvedValue({ version: 2, mae_evaluacion: 1.234 })
     const usuario = await abrir('Modelo ML')
     await usuario.click(screen.getByRole('button', { name: 'Entrenar modelo' }))
-    expect(await screen.findByRole('status')).toHaveTextContent(
-      'Versión 2 activa (MAE contra diccionario: 1.23).',
-    )
+    expect(await screen.findByRole('status')).toHaveTextContent('Versión 2 activa (MAE contra diccionario: 1.23).')
   })
 
   it('muestra el error de datos insuficientes', async () => {

@@ -18,6 +18,7 @@ import {
   obtenerTerminos,
   purgarNoticias,
   obtenerMapa,
+  obtenerNoticia,
   obtenerNoticias,
   obtenerNubePalabras,
   obtenerPaises,
@@ -49,6 +50,11 @@ describe('rutas y filtros', () => {
     await obtenerMapa('2026-10-01')
     expect(rutaLlamada(0)).toBe('/dashboards/map')
     expect(rutaLlamada(1)).toBe('/dashboards/map?fecha=2026-10-01')
+  })
+
+  it('pide el detalle de una noticia', async () => {
+    await obtenerNoticia(7)
+    expect(rutaLlamada()).toBe('/news/7')
   })
 
   it('pide la serie global con el rango', async () => {

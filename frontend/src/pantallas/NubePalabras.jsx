@@ -4,11 +4,15 @@
 // que los contienen (HU-SENT-008). El peso lo calcula el backend; aquí solo
 // define el tamaño de la letra.
 // Filtros: continente o país (PDF §4.3.1). Los países salen de los canales registrados.
+// HU-DASH-004: guía de lectura y detalle de una palabra al elegirla.
 import { useEffect, useState } from 'react'
 import { obtenerNubePalabras } from '../api/cliente.js'
 import Carita from '../componentes/Carita.jsx'
+import EscalaHumor from '../componentes/EscalaHumor.jsx'
+import GuiaPantalla from '../componentes/GuiaPantalla.jsx'
 import SelectorPais from '../componentes/SelectorPais.jsx'
 import { tipoHumor } from '../utilidades/humor.js'
+import '../componentes/GuiaVisual.css'
 import './NubePalabras.css'
 
 // Tamaño de letra de la palabra menos influyente y de la más influyente.
@@ -19,6 +23,20 @@ const TAMANO_MAXIMO = 50
 const CONTINENTES = ['América', 'Europa', 'Asia', 'África', 'Oceanía']
 
 const IDIOMAS = { es: 'español', en: 'inglés' }
+
+const PASOS_GUIA = [
+  {
+    titulo: 'Cada palabra viene del diccionario',
+    texto: 'Son términos con un valor de humor que el sistema encontró en las noticias capturadas.',
+  },
+  { titulo: 'Tamaño: cuántas noticias', texto: 'Mientras más grande la palabra, en más noticias apareció.' },
+  { titulo: 'Color: hacia dónde empuja', texto: 'Rojo: la palabra baja el humor. Verde: lo sube.' },
+  { titulo: 'Toca una palabra', texto: 'Verás su valor exacto en la escala y en cuántas noticias aparece.' },
+]
+
+function formatoValor(valor) {
+  return valor > 0 ? `+${valor}` : String(valor)
+}
 
 // Ordena alfabéticamente para que la nube no quede como una lista por tamaño.
 function ordenAlfabetico(a, b) {
@@ -31,6 +49,7 @@ export default function NubePalabras() {
   const [pais, setPais] = useState('')
   const [palabras, setPalabras] = useState(null)
   const [error, setError] = useState(null)
+  const [elegida, setElegida] = useState(null)
 
   useEffect(() => {
     let vigente = true
@@ -50,20 +69,21 @@ export default function NubePalabras() {
   // Cambiar de continente borra el país: podría no pertenecer al nuevo continente.
   function cambiarContinente(nuevo) {
     setPalabras(null)
+    setElegida(null)
     setPais('')
     setContinente(nuevo)
   }
 
   function cambiarPais(nuevo) {
     setPalabras(null)
+    setElegida(null)
     setPais(nuevo)
   }
 
   // La palabra con más peso define el tamaño máximo; las demás se escalan.
   const lista = palabras ?? []
   const pesoMaximo = Math.max(...lista.map((p) => p.peso), 1)
-  const tamano = (peso) =>
-    TAMANO_MINIMO + (TAMANO_MAXIMO - TAMANO_MINIMO) * (peso / pesoMaximo)
+  const tamano = (peso) => TAMANO_MINIMO + (TAMANO_MAXIMO - TAMANO_MINIMO) * (peso / pesoMaximo)
 
   let contenido
   if (error) {
@@ -85,9 +105,16 @@ export default function NubePalabras() {
             key={item.termino_id}
             className={`palabra texto-${tipoHumor(item.valor)}`}
             style={{ fontSize: `${tamano(item.peso)}px`, animationDelay: `${posicion * 20}ms` }}
-            title={`Valor ${item.valor > 0 ? '+' : ''}${item.valor} · aparece en ${item.peso} noticias · ${IDIOMAS[item.idioma] ?? item.idioma}`}
+            title={`Valor ${formatoValor(item.valor)} · aparece en ${item.peso} noticias · ${IDIOMAS[item.idioma] ?? item.idioma}`}
           >
-            {item.palabra}
+            <button
+              type="button"
+              className="palabra-boton"
+              aria-pressed={elegida?.termino_id === item.termino_id}
+              onClick={() => setElegida(elegida?.termino_id === item.termino_id ? null : item)}
+            >
+              {item.palabra}
+            </button>
           </li>
         ))}
       </ul>
@@ -117,12 +144,30 @@ export default function NubePalabras() {
         </div>
       </div>
 
+      <GuiaPantalla pasos={PASOS_GUIA} />
+
       {contenido}
 
+      {elegida && (
+        <div className="nube-detalle" role="status">
+          <p>
+            <strong className={`texto-${tipoHumor(elegida.valor)}`}>{elegida.palabra}</strong> vale{' '}
+            <strong>{formatoValor(elegida.valor)}</strong> en el diccionario (
+            {IDIOMAS[elegida.idioma] ?? elegida.idioma}) y aparece en <strong>{elegida.peso}</strong>{' '}
+            {elegida.peso === 1 ? 'noticia' : 'noticias'}.
+          </p>
+          <EscalaHumor valor={elegida.valor} etiqueta={elegida.palabra} />
+        </div>
+      )}
+
       <ul className="leyenda" aria-label="Significado de los colores">
-        <li><Carita tipo="negativo" tamano={20} /> Palabra negativa</li>
-        <li><Carita tipo="positivo" tamano={20} /> Palabra positiva</li>
-        <li className="leyenda-nota">Pasa el mouse sobre una palabra para ver su valor</li>
+        <li>
+          <Carita tipo="negativo" tamano={20} /> Palabra negativa
+        </li>
+        <li>
+          <Carita tipo="positivo" tamano={20} /> Palabra positiva
+        </li>
+        <li className="leyenda-nota">Toca una palabra para ver su valor</li>
       </ul>
     </section>
   )

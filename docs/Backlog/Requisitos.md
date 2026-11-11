@@ -33,17 +33,18 @@ Cada requisito funcional (RF) deriva de una función descrita en el PDF (§4.1 a
 | RF-13 | Cálculo del valor de "humor" (análisis de sentimiento) de cada noticia capturada. | §4.2.4, §10.4 | HU-SENT-002-v3 |
 | RF-14 | Persistencia del valor de humor junto a cada noticia. | §4.2.4 | HU-SENT-003 |
 | RF-15 | Consulta del humor agregado: global, por continente, por país y evolución temporal (timeline). | §4.3.2, §10.2 | HU-SENT-004 |
-| RF-16 | Análisis de sentimiento de un texto arbitrario que devuelve su valor de humor. | §10.2 | HU-SENT-005 |
+| RF-16 | Análisis de sentimiento de un texto arbitrario que devuelve su valor de humor y los términos que lo explican. | §10.2 | HU-SENT-005-v2 |
 | RF-17 | Entrenamiento y versionado de un modelo de ML para el cálculo de humor. | §2 Objetivo específico 2 | HU-SENT-006 |
 | RF-18 | Detección de términos del diccionario presentes en cada noticia (base de la nube de palabras). | §4.3.1 | HU-SENT-008 |
 | RF-19 | Dashboard de humor: mapa mundial con el humor por continente, con selector de fecha dentro del rango con información. | §4.3, §4.3.2 | HU-DASH-001-v3 |
-| RF-20 | Listado de las noticias que más han influido en el cálculo del humor, con detalle y filtros. | §4.3, §4.3.2, §10.2 | HU-DASH-002-v2 |
+| RF-20 | Listado de las noticias que más han influido en el cálculo del humor, con detalle, filtros y las palabras que explican su valor. | §4.3, §4.3.2, §10.2 | HU-DASH-002-v3 |
 | RF-21 | Nube de palabras influyentes, con filtro por continente y por país. | §4.3, §4.3.1, §10.2 | HU-DASH-003-v2 |
 | RF-22 | Configuración de parámetros generales del sistema (periodicidad del cron y caducidad de noticias). | §4.2.5, §10.2 | HU-ADMIN-001 |
 | RF-23 | Purgado automático de noticias anteriores al periodo de caducidad. | §4.2.5 | HU-ADMIN-002 |
 | RF-24 | Purgado manual de noticias antiguas bajo demanda. | §4.2.5, §10.2 | HU-ADMIN-003 |
 | RF-25 | Panel de administración unificado (fuentes, diccionario, parámetros). | §4.3 punto 1 | HU-ADMIN-004 |
 | RF-26 | Documentación interactiva de la API REST con Swagger/OpenAPI (`/api/docs`). | §10.1 | (transversal, FastAPI) |
+| RF-27 | Cada vista explica en pantalla qué significa cada elemento y por qué una noticia, continente o palabra tiene su valor (guía de lectura y escala de -10 a +10). | §4.3, §2 objetivo 3 | HU-DASH-004 |
 
 **Notas:**
 - RF-25 (HU-ADMIN-004) se implementó el 2026-11-04 como la vista "Administración" del frontend (`frontend/src/pantallas/Administracion.jsx` y `pantallas/admin/`), con pestañas de fuentes RSS, diccionario, parámetros, purgado y modelo de ML sobre los endpoints existentes; pruebas en `frontend/src/pantallas/Administracion.test.jsx`. Pendiente de revisión en el PR y de validación visual del equipo.
@@ -97,23 +98,24 @@ Trazabilidad **requisito → historia → endpoint/mecanismo → prueba**. El en
 | RF-13 | HU-SENT-002-v3 | Servicio interno (post-captura + barrido) | — (sin endpoint) | `test_sentimiento.py`, `test_modelo_ml.py` |
 | RF-14 | HU-SENT-003 | Modelo `Noticia` (`valor_humor`, `polarizacion_terminos`) | — (sin endpoint) | `test_polarizacion_y_analisis.py` |
 | RF-15 | HU-SENT-004 | `GET /api/v1/sentiment` | sentimiento-diccionario | `test_sentiment.py` |
-| RF-16 | HU-SENT-005 | `POST /api/v1/sentiment` | sentimiento-diccionario | `test_polarizacion_y_analisis.py` |
+| RF-16 | HU-SENT-005-v2 | `POST /api/v1/sentiment` | sentimiento-diccionario v1.3.0 | `test_polarizacion_y_analisis.py` |
 | RF-17 | HU-SENT-006 | `POST /api/v1/trainings` | sentimiento-diccionario | `test_modelo_ml.py` |
 | RF-18 | HU-SENT-008 | Tabla `noticia_termino` (consumida por word-cloud) | — (sin endpoint propio) | `test_nube_palabras.py`, `test_lematizacion.py` |
 | RF-19 | HU-DASH-001-v3 | `GET /api/v1/dashboards/map` (+ `GET /api/v1/sentiment` para la serie temporal) | dashboards v1.1.0 | `test_dashboards.py`; frontend: `App.test.jsx` |
-| RF-20 | HU-DASH-002-v2 | `GET /api/v1/news`, `GET /api/v1/news/{id}` | noticias v1.1.0 | `test_news.py`; frontend: `pantallas/ListadoNoticias.test.jsx` |
+| RF-20 | HU-DASH-002-v3 | `GET /api/v1/news`, `GET /api/v1/news/{id}` | noticias v1.2.0 | `test_news.py`; frontend: `pantallas/ListadoNoticias.test.jsx` |
 | RF-21 | HU-DASH-003-v2 | `GET /api/v1/dashboards/word-cloud` | dashboards | `test_nube_palabras.py`; frontend: `pantallas/NubePalabras.test.jsx`, `componentes/SelectorPais.test.jsx` |
 | RF-22 | HU-ADMIN-001 | `GET /api/v1/config`, `PUT /api/v1/config` | canales-fuentes-rss | `test_purgado.py` |
 | RF-23 | HU-ADMIN-002 | Job interno de purgado (APScheduler) | — (sin endpoint) | `test_purgado.py` |
 | RF-24 | HU-ADMIN-003 | `DELETE /api/v1/news?fecha_anterior_a=YYYY-MM-DD` | noticias | `test_purgado.py` |
-| RF-25 | HU-ADMIN-004 | (panel unificado, frontend) | — | — (sin iniciar) |
+| RF-25 | HU-ADMIN-004 | (frontend) usa `/channels`, `/sources`, `/captures`, `/dictionary`, `/config`, `/news`, `/trainings` | — | frontend: `pantallas/Administracion.test.jsx` |
 | RF-26 | — (transversal) | `/api/docs` (Swagger autogenerado) | — | `test_sources.py` (verifica el esquema OpenAPI del alta) |
+| RF-27 | HU-DASH-004 | (usa los existentes) | — | frontend: `componentes/GuiaVisual.test.jsx`, `ListadoNoticias.test.jsx`, `NubePalabras.test.jsx`, `Administracion.test.jsx` |
 
 **Endpoint implementado no cubierto por un requisito del PDF:** `GET /api/v1/health` (`health.py`) es un health check técnico; informa además si los modelos de spaCy (lematización) están cargados. No proviene de un RF del PDF; se documenta como endpoint operativo del sistema.
 
 ### Huecos de trazabilidad detectados
 
-1. **RF-25 (HU-ADMIN-004, panel de administración unificado):** sin implementar. Pendiente del equipo.
+1. ~~**RF-25 (HU-ADMIN-004, panel de administración unificado)**~~: implementado el 2026-11-04.
 2. **RNF-13 (pruebas de carga, §7):** no existen pruebas de carga con múltiples fuentes RSS. Pendiente del equipo.
 3. **RNF-12 (integración Frontend ↔ API real, §7):** las pruebas del frontend simulan la API; no hay una prueba de integración extremo a extremo contra el backend real. Pendiente del equipo.
 4. **RNF-05 (SonarQube sin issues críticos, §4.6.2):** el pipeline ejecuta el análisis pero no incluye un Quality Gate bloqueante; la ausencia de issues críticos debe confirmarse en el dashboard de SonarQube. Pendiente del equipo.
@@ -126,3 +128,6 @@ Trazabilidad **requisito → historia → endpoint/mecanismo → prueba**. El en
 |---|---|---|
 | v1.0 | 2026-10-29 | Creación. Lista formal de requisitos funcionales (RF-01 a RF-26) y no funcionales (RNF-01 a RNF-16) derivada del PDF de especificaciones del proyecto, con matriz de trazabilidad requisito → historia → endpoint → prueba y registro de huecos. Entregable de §4.7 punto 2 y §8.1. |
 | v1.1 | 2026-11-04 | RF-25 (HU-ADMIN-004) pasa de pendiente a implementado, pendiente de revisión. |
+| v1.2 | 2026-11-04 | RF-16 y RF-20 pasan a HU-SENT-005-v2 y HU-DASH-002-v3: la API y el listado muestran los términos que explican el valor de humor. |
+| v1.3 | 2026-11-11 | Se agrega RF-27 (guía visual de lectura de las vistas, HU-DASH-004), por la observación del profesor de frontend. |
+| v1.4 | 2026-11-11 | La matriz de trazabilidad y los huecos detectados seguían mostrando RF-25 sin iniciar; se corrigen. |

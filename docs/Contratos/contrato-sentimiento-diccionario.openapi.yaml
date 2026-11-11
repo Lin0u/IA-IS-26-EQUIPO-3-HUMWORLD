@@ -15,7 +15,7 @@ info:
     servicios internos invocados tras la captura de cada noticia o desde los
     endpoints de este contrato) y por lo tanto no aparecen aquí — ver
     `HU-SENT-motor-sentimiento.md` para su detalle.
-  version: "1.2.0"
+  version: "1.3.0"
 servers:
   - url: /api/v1
     description: Base URL versionada (PDF, sección 10.3), misma convención que contrato-canales-fuentes-rss.openapi.yaml.
@@ -496,7 +496,7 @@ components:
 
     AnalisisTextoResultado:
       type: object
-      description: Origina en HU-SENT-005. Calculado siempre mediante el método de diccionario (HU-SENT-007).
+      description: Origina en HU-SENT-005-v2. Calculado siempre mediante el método de diccionario (HU-SENT-007-v3).
       properties:
         valor_humor:
           type: number
@@ -514,7 +514,35 @@ components:
             Gherkin de HU-SENT-005; se expone por consistencia con HU-SENT-003
             (implementado el 2026-10-19, v1.0.1, pendiente de ratificación
             del equipo en el PR).
-      required: [valor_humor, cantidad_terminos_evaluados]
+        terminos:
+          type: array
+          description: >
+            Términos únicos del diccionario encontrados en el texto, que son
+            los promediados en valor_humor; del más negativo al más positivo
+            y, a igual valor, por palabra. Lista vacía si no hay ninguno.
+            Origina en HU-SENT-005-v2.
+          items:
+            $ref: "#/components/schemas/TerminoCoincidente"
+      required: [valor_humor, cantidad_terminos_evaluados, terminos]
+
+    TerminoCoincidente:
+      type: object
+      description: >
+        Término del diccionario encontrado en el texto, que explica el valor de
+        humor. Con metodo_calculo = "diccionario", valor_humor es el promedio
+        simple de estos valores (ADR-003). Origina en HU-DASH-002-v3 y
+        HU-SENT-005-v2.
+      properties:
+        palabra:
+          type: string
+        idioma:
+          type: string
+          enum: [es, en]
+        valor:
+          type: integer
+          minimum: -10
+          maximum: 10
+      required: [palabra, idioma, valor]
 
     ModeloSentimiento:
       type: object
@@ -599,3 +627,6 @@ components:
 #   parámetros pagina y tamanio_pagina (10 por defecto, máximo 50), respuesta
 #   TerminoDiccionarioListado y orden alfabético. Cambio incompatible con v1.1.0:
 #   la respuesta deja de ser un array simple.
+# v1.3.0 (2026-11-04): AnalisisTextoResultado agrega "terminos"
+#   (TerminoCoincidente: palabra, idioma, valor) para explicar el valor de humor
+#   (HU-SENT-005-v2). Cambio compatible: solo agrega un campo a la respuesta.

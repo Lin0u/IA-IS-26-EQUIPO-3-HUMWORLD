@@ -14,7 +14,9 @@ from app.database import Base, get_db
 from app.main import app
 from app.models.canal import CanalNoticias
 from app.models.fuente import FuenteRSS
+from app.models.coincidencia_termino import CoincidenciaTermino
 from app.models.noticia import Noticia
+from app.models.termino_diccionario import TerminoDiccionario
 
 
 @pytest.fixture()
@@ -162,6 +164,35 @@ def test_detalle(client, db):
     assert cuerpo["titulo"] == "Detalle"
     assert cuerpo["contenido"] == "Texto de Detalle"
     assert cuerpo["canal"] == "Dawn"
+    assert cuerpo["terminos"] == []
+
+
+def test_detalle_explica_el_humor_con_sus_terminos(client, db):
+    """HU-DASH-002-v3: el detalle devuelve las palabras que explican el valor."""
+    noticia = _noticia(db, _fuente(db, "NPR", "América", "Estados Unidos"), "Crisis y guerra", -5.0, 19)
+    otra = _noticia(db, _fuente(db, "ABC", "Oceanía", "Australia"), "Paz", 4.0, 19)
+    terminos = [
+        TerminoDiccionario(palabra="war", idioma="en", valor=-4),
+        TerminoDiccionario(palabra="crisis", idioma="en", valor=-6),
+        TerminoDiccionario(palabra="peace", idioma="en", valor=4),
+    ]
+    db.add_all(terminos)
+    db.flush()
+    db.add_all([
+        CoincidenciaTermino(noticia_id=noticia.id, termino_id=terminos[0].id),
+        CoincidenciaTermino(noticia_id=noticia.id, termino_id=terminos[1].id),
+        CoincidenciaTermino(noticia_id=otra.id, termino_id=terminos[2].id),
+    ])
+    db.commit()
+
+    cuerpo = client.get(f"/api/v1/news/{noticia.id}").json()
+
+    assert cuerpo["terminos"] == [
+        {"palabra": "crisis", "idioma": "en", "valor": -6},
+        {"palabra": "war", "idioma": "en", "valor": -4},
+    ]
+    promedio = sum(t["valor"] for t in cuerpo["terminos"]) / len(cuerpo["terminos"])
+    assert promedio == cuerpo["valor_humor"]
 
 
 def test_detalle_inexistente_responde_404(client):

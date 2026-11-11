@@ -10,8 +10,10 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.canal import CanalNoticias
+from app.models.coincidencia_termino import CoincidenciaTermino
 from app.models.fuente import FuenteRSS
 from app.models.noticia import Noticia
+from app.models.termino_diccionario import TerminoDiccionario
 from app.repositories.dashboards import fecha_referencia
 
 _COLUMNAS = (
@@ -80,3 +82,17 @@ class NoticiaConsultaRepository:
     def buscar(self, db: Session, noticia_id: int) -> tuple | None:
         fila = db.execute(self._base().where(Noticia.id == noticia_id)).first()
         return tuple(fila) if fila else None
+
+    def terminos(self, db: Session, noticia_id: int) -> list[TerminoDiccionario]:
+        """Términos coincidentes de la noticia (HU-SENT-008), para explicar su humor.
+
+        Orden: del más negativo al más positivo y, a igual valor, por palabra.
+        """
+        return list(
+            db.scalars(
+                select(TerminoDiccionario)
+                .join(CoincidenciaTermino, CoincidenciaTermino.termino_id == TerminoDiccionario.id)
+                .where(CoincidenciaTermino.noticia_id == noticia_id)
+                .order_by(TerminoDiccionario.valor, TerminoDiccionario.palabra)
+            )
+        )
