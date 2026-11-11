@@ -107,7 +107,7 @@ Trazabilidad **requisito → historia → endpoint/mecanismo → prueba**. El en
 | RF-22 | HU-ADMIN-001 | `GET /api/v1/config`, `PUT /api/v1/config` | canales-fuentes-rss | `test_purgado.py` |
 | RF-23 | HU-ADMIN-002 | Job interno de purgado (APScheduler) | — (sin endpoint) | `test_purgado.py` |
 | RF-24 | HU-ADMIN-003 | `DELETE /api/v1/news?fecha_anterior_a=YYYY-MM-DD` | noticias | `test_purgado.py` |
-| RF-25 | HU-ADMIN-004 | (panel unificado, frontend) | — | — (sin iniciar) |
+| RF-25 | HU-ADMIN-004 | (frontend) usa `/channels`, `/sources`, `/captures`, `/dictionary`, `/config`, `/news`, `/trainings` | — | frontend: `pantallas/Administracion.test.jsx` |
 | RF-26 | — (transversal) | `/api/docs` (Swagger autogenerado) | — | `test_sources.py` (verifica el esquema OpenAPI del alta) |
 | RF-27 | HU-DASH-004 | (usa los existentes) | — | frontend: `componentes/GuiaVisual.test.jsx`, `ListadoNoticias.test.jsx`, `NubePalabras.test.jsx`, `Administracion.test.jsx` |
 
@@ -115,7 +115,7 @@ Trazabilidad **requisito → historia → endpoint/mecanismo → prueba**. El en
 
 ### Huecos de trazabilidad detectados
 
-1. **RF-25 (HU-ADMIN-004, panel de administración unificado):** sin implementar. Pendiente del equipo.
+1. ~~**RF-25 (HU-ADMIN-004, panel de administración unificado)**~~: implementado el 2026-11-04.
 2. **RNF-13 (pruebas de carga, §7):** no existen pruebas de carga con múltiples fuentes RSS. Pendiente del equipo.
 3. **RNF-12 (integración Frontend ↔ API real, §7):** las pruebas del frontend simulan la API; no hay una prueba de integración extremo a extremo contra el backend real. Pendiente del equipo.
 4. **RNF-05 (SonarQube sin issues críticos, §4.6.2):** el pipeline ejecuta el análisis pero no incluye un Quality Gate bloqueante; la ausencia de issues críticos debe confirmarse en el dashboard de SonarQube. Pendiente del equipo.
@@ -130,3 +130,4 @@ Trazabilidad **requisito → historia → endpoint/mecanismo → prueba**. El en
 | v1.1 | 2026-11-04 | RF-25 (HU-ADMIN-004) pasa de pendiente a implementado, pendiente de revisión. |
 | v1.2 | 2026-11-04 | RF-16 y RF-20 pasan a HU-SENT-005-v2 y HU-DASH-002-v3: la API y el listado muestran los términos que explican el valor de humor. |
 | v1.3 | 2026-11-11 | Se agrega RF-27 (guía visual de lectura de las vistas, HU-DASH-004), por la observación del profesor de frontend. |
+| v1.4 | 2026-11-11 | La matriz de trazabilidad y los huecos detectados seguían mostrando RF-25 sin iniciar; se corrigen. |
