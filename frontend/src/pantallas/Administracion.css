@@ -304,7 +304,60 @@
   margin-bottom: 12px;
 }
 
-/* HU-SENT-001-v3: separa "Agregar un término" de "Buscar y filtrar". */
+/* HU-SENT-001-v3: filtros del diccionario a la izquierda y "+ Agregar término" a
+   la derecha; el formulario de alta se abre debajo, en su propio recuadro. */
+.admin-barra-diccionario {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Los filtros ocupan el espacio libre y, si no caben, bajan de línea entre
+   ellos; el botón de agregar queda siempre a la derecha. */
+.admin-barra-diccionario .admin-fila-formulario {
+  flex: 1;
+  min-width: 0;
+  gap: 10px 14px;
+  margin-bottom: 0;
+}
+
+.admin-barra-diccionario .admin-buscador {
+  margin: 0;
+}
+
+.admin-barra-diccionario .admin-buscador input {
+  width: 160px;
+}
+
+@media (max-width: 720px) {
+  .admin-barra-diccionario {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-barra-diccionario .admin-buscador input {
+    width: auto;
+  }
+}
+
+.admin-boton-agregar {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.admin-panel-nuevo {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  background: #fff8e0;
+  border: var(--borde);
+  border-radius: 12px;
+}
+
+.admin-panel-nuevo .admin-fila-formulario {
+  margin-bottom: 0;
+}
+
 .admin-subtitulo {
   margin: 4px 0 6px;
   font-weight: 700;

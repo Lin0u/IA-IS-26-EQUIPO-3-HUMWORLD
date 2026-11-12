@@ -315,6 +315,7 @@ describe('Diccionario', () => {
   it('crea un término validando la escala -10..+10', async () => {
     api.crearTermino.mockResolvedValue({ id: 6 })
     const usuario = await abrir('Diccionario')
+    await usuario.click(screen.getByRole('button', { name: '+ Agregar término' }))
     const formulario = screen.getByRole('form', { name: 'Nuevo término' })
     await usuario.type(within(formulario).getByLabelText('Palabra'), 'paz')
     await usuario.type(within(formulario).getByLabelText('Valor'), '11')
@@ -328,11 +329,28 @@ describe('Diccionario', () => {
     expect(await screen.findByRole('status')).toHaveTextContent(
       'Término "paz" creado. El humor de las noticias se recalculará en el próximo barrido.',
     )
+    // Al crear, el formulario se cierra.
+    expect(screen.queryByRole('form', { name: 'Nuevo término' })).not.toBeInTheDocument()
+  })
+
+  it('el formulario de alta empieza oculto y se cierra con Cancelar', async () => {
+    const usuario = await abrir('Diccionario')
+    const boton = screen.getByRole('button', { name: '+ Agregar término' })
+    expect(boton).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('form', { name: 'Nuevo término' })).not.toBeInTheDocument()
+    await usuario.click(boton)
+    expect(boton).toHaveAttribute('aria-expanded', 'true')
+    await usuario.type(screen.getByLabelText('Palabra'), 'paz')
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('form', { name: 'Nuevo término' })).not.toBeInTheDocument()
+    await usuario.click(boton)
+    expect(screen.getByLabelText('Palabra')).toHaveValue('')
   })
 
   it('muestra el error de término duplicado', async () => {
     api.crearTermino.mockRejectedValue(new Error('El término ya existe en ese idioma.'))
     const usuario = await abrir('Diccionario')
+    await usuario.click(screen.getByRole('button', { name: '+ Agregar término' }))
     const formulario = screen.getByRole('form', { name: 'Nuevo término' })
     await usuario.type(within(formulario).getByLabelText('Palabra'), 'guerra')
     await usuario.type(within(formulario).getByLabelText('Valor'), '-8')
@@ -359,17 +377,18 @@ describe('Diccionario', () => {
   it('filtra por idioma y por rango de valor (HU-SENT-001-v3)', async () => {
     const usuario = await abrir('Diccionario')
     await screen.findByText('guerra')
-    await usuario.selectOptions(screen.getByLabelText('Filtrar por idioma'), 'en')
+    const filtros = screen.getByRole('search', { name: 'Filtros del diccionario' })
+    await usuario.selectOptions(within(filtros).getByLabelText('Idioma'), 'en')
     await waitFor(() =>
       expect(api.obtenerTerminos).toHaveBeenLastCalledWith(expect.objectContaining({ idioma: 'en', pagina: 1 })),
     )
-    await usuario.selectOptions(screen.getByLabelText('Filtrar por valor'), 'negativos')
+    await usuario.selectOptions(within(filtros).getByLabelText('Valor'), 'negativos')
     await waitFor(() =>
       expect(api.obtenerTerminos).toHaveBeenLastCalledWith(
         expect.objectContaining({ idioma: 'en', valorMin: null, valorMax: -1 }),
       ),
     )
-    await usuario.selectOptions(screen.getByLabelText('Filtrar por valor'), 'muyPositivos')
+    await usuario.selectOptions(within(filtros).getByLabelText('Valor'), 'muyPositivos')
     await waitFor(() =>
       expect(api.obtenerTerminos).toHaveBeenLastCalledWith(expect.objectContaining({ valorMin: 6, valorMax: null })),
     )

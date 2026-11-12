@@ -65,7 +65,7 @@ Escenario: Eliminación de un término inexistente
  
 ## HU-SENT-001-v3 — Gestión CRUD del diccionario de términos (filtros de idioma y valor)
 
-**Reemplaza a:** HU-SENT-001-v2 (Deprecada). **Qué cambia:** el listado `GET /api/v1/dictionary` agrega filtros opcionales de **idioma** (`es` o `en`) y de **rango de valor** (`valor_min` y `valor_max`, ambos incluidos, dentro de -10..+10), combinables con la búsqueda y la paginación. En el panel (HU-ADMIN-004), la pestaña Diccionario separa "Agregar un término" de "Buscar y filtrar", con los selectores "Filtrar por idioma" (Todos, Español, Inglés) y "Filtrar por valor" (Todos, Negativos -10 a -1, Positivos +1 a +10, Muy negativos -10 a -6, Muy positivos +6 a +10). **Por qué:** con los ~4.100 términos del diccionario base y del léxico de noticias (`Dataset-lexico-noticias.md`), la PO no podía revisar los términos por idioma ni por valor. Además, los campos "Idioma" y "Valor" del formulario de alta se confundían con filtros del listado. Decisión de la PO del 2026-11-12.
+**Reemplaza a:** HU-SENT-001-v2 (Deprecada). **Qué cambia:** el listado `GET /api/v1/dictionary` agrega filtros opcionales de **idioma** (`es` o `en`) y de **rango de valor** (`valor_min` y `valor_max`, ambos incluidos, dentro de -10..+10), combinables con la búsqueda y la paginación. En el panel (HU-ADMIN-004), la pestaña Diccionario muestra arriba una barra de búsqueda con los selectores "Idioma" (Todos, Español, Inglés) y "Valor" (Todos, Negativos -10 a -1, Positivos +1 a +10, Muy negativos -10 a -6, Muy positivos +6 a +10), y a su derecha el botón "+ Agregar término", que abre debajo el formulario de alta con "Agregar" y "Cancelar". **Por qué:** con los ~4.100 términos del diccionario base y del léxico de noticias (`Dataset-lexico-noticias.md`), la PO no podía revisar los términos por idioma ni por valor. Además, los campos "Idioma" y "Valor" del formulario de alta se confundían con filtros del listado. Decisión de la PO del 2026-11-12.
 
 **Tipo:** Historia de Usuario
 **Como** administrador del sistema,
@@ -110,9 +110,16 @@ Escenario: Rango invertido
 
 Escenario: Filtros en el panel
   Dado que el administrador está en la pestaña "Diccionario"
-  Cuando elige "Inglés" en "Filtrar por idioma" y "Negativos (-10 a -1)" en "Filtrar por valor"
+  Cuando elige "Inglés" en "Idioma" y "Negativos (-10 a -1)" en "Valor" de la barra de búsqueda
   Entonces el listado muestra solo términos en inglés con valor entre -10 y -1
   Y vuelve a la página 1
+
+Escenario: Formulario de alta a pedido
+  Dado que el administrador está en la pestaña "Diccionario"
+  Entonces el formulario de alta no se muestra
+  Cuando presiona "+ Agregar término"
+  Entonces se abre el formulario "Nuevo término" debajo de la barra de búsqueda
+  Y se cierra al presionar "Cancelar" o al crear el término
 ```
 
 ### Definition of Done
@@ -942,4 +949,4 @@ Escenario: Las noticias sin humor no cuentan en la nube
 | HU-SENT-007-v3 → HU-SENT-007-v4, HU-SENT-009 | v1.14 | 2026-11-11 | Decisión de la PO con los datos reales (466 noticias con un solo término; casos *outstanding* y lotería): mínimo de términos por noticia, configurable, con valor inicial 2 (HU-SENT-007-v4), y lista de exclusión por palabras del título con contador de cobertura (HU-SENT-009, nueva). HU-SENT-007-v3 queda Deprecada. ADR-003 v1.5; contratos canales-fuentes-rss v1.9.0, sentimiento-diccionario v1.4.0 y noticias v1.3.0. |
 | HU-SENT-002-v3 | corrección | 2026-11-11 | Corrección de rendimiento detectada al recalcular 2.200 noticias: cada commit por noticia daba por vencidos los términos del diccionario y SQLAlchemy los recargaba uno por uno (unas 950 consultas por noticia con 1.000 términos; la API llegó al 142 % de CPU y dejó de responder). Los términos se separan de la sesión al cargarlos: 4 consultas por noticia. Prueba de regresión agregada. Sin cambios en los criterios de aceptación. |
 | HU-SENT-007-v4 | corrección | 2026-11-11 | Corrección detectada por la PO en la explicación del humor: si el diccionario tenía el singular y el plural de una palabra ("award" y "awards") y la noticia traía ambos, se contaban como dos términos. Ahora cada lema cuenta una sola vez, como ya exigía el criterio de términos únicos. Pruebas agregadas en `test_lematizacion.py`; las noticias por diccionario se recalculan (migración `b7e2c4a9d1f3`). ADR-003 v1.6. Sin cambios en los criterios de aceptación. |
-| HU-SENT-001-v2 → HU-SENT-001-v3 | v1.15 | 2026-11-12 | Decisión de la PO: `GET /api/v1/dictionary` agrega los filtros opcionales `idioma`, `valor_min` y `valor_max` (400 `RANGO_VALOR_INVALIDO` si el rango está invertido), y la pestaña Diccionario separa "Agregar un término" de "Buscar y filtrar". Motivo: revisar los ~4.100 términos por idioma y valor; los campos del formulario de alta se confundían con filtros. HU-SENT-001-v2 queda Deprecada. Contrato sentimiento-diccionario v1.5.0. |
+| HU-SENT-001-v2 → HU-SENT-001-v3 | v1.15 | 2026-11-12 | Decisión de la PO: `GET /api/v1/dictionary` agrega los filtros opcionales `idioma`, `valor_min` y `valor_max` (400 `RANGO_VALOR_INVALIDO` si el rango está invertido), y la pestaña Diccionario muestra la barra de búsqueda con esos filtros y, a su derecha, el botón "+ Agregar término", que abre el formulario de alta. Motivo: revisar los ~4.100 términos por idioma y valor; los campos del formulario de alta se confundían con filtros. HU-SENT-001-v2 queda Deprecada. Contrato sentimiento-diccionario v1.5.0. |
