@@ -63,7 +63,70 @@ Escenario: Eliminación de un término inexistente
 - Prueba del criterio de unicidad compuesta (palabra + idioma), no solo palabra.
 ---
  
+## HU-SENT-001-v3 — Gestión CRUD del diccionario de términos (filtros de idioma y valor)
+
+**Reemplaza a:** HU-SENT-001-v2 (Deprecada). **Qué cambia:** el listado `GET /api/v1/dictionary` agrega filtros opcionales de **idioma** (`es` o `en`) y de **rango de valor** (`valor_min` y `valor_max`, ambos incluidos, dentro de -10..+10), combinables con la búsqueda y la paginación. En el panel (HU-ADMIN-004), la pestaña Diccionario separa "Agregar un término" de "Buscar y filtrar", con los selectores "Filtrar por idioma" (Todos, Español, Inglés) y "Filtrar por valor" (Todos, Negativos -10 a -1, Positivos +1 a +10, Muy negativos -10 a -6, Muy positivos +6 a +10). **Por qué:** con los ~4.100 términos del diccionario base y del léxico de noticias (`Dataset-lexico-noticias.md`), la PO no podía revisar los términos por idioma ni por valor. Además, los campos "Idioma" y "Valor" del formulario de alta se confundían con filtros del listado. Decisión de la PO del 2026-11-12.
+
+**Tipo:** Historia de Usuario
+**Como** administrador del sistema,
+**quiero** filtrar el listado del diccionario por idioma y por rango de valor, además de buscar por palabra,
+**para** revisar y ajustar los valores de los términos de un idioma o de una intensidad sin recorrer miles de filas.
+
+**Origen:** PDF §4.2.2 ("operaciones CRUD para cada término con endpoints API REST e interface de usuario") y HU-SENT-001-v2.
+**Prioridad:** Media
+**Estimación:** S *(punto de partida, el equipo debe revalidarlo en Planning Poker)*.
+**Depende de contrato de API:** Sí — `GET /api/v1/dictionary` según `contrato-sentimiento-diccionario.openapi.yaml` v1.5.0. Las otras 5 operaciones no cambian.
+**Variante del algoritmo:** no calcula humor.
+
+### Criterios de aceptación (Gherkin)
+
+Se mantienen los escenarios de HU-SENT-001-v2. Se agregan:
+
+```gherkin
+Escenario: Filtro por idioma
+  Dado los términos "guerra" (es, -8), "paz" (es, +6), "crisis" (es, -6), "war" (en, -8), "peace" (en, +6) y "good" (en, +2)
+  Cuando se envía GET a /api/v1/dictionary?idioma=en
+  Entonces el sistema responde con código HTTP 200
+  Y total = 3 y todos los items tienen idioma "en"
+
+Escenario: Filtro por rango de valor
+  Dado los mismos términos
+  Cuando se envía GET a /api/v1/dictionary?valor_max=-1
+  Entonces items contiene "crisis", "guerra" y "war"
+  Y con ?valor_min=6&valor_max=10 items contiene "paz" y "peace"
+
+Escenario: Filtros combinados
+  Dado los mismos términos
+  Cuando se envía GET a /api/v1/dictionary?idioma=es&valor_max=-1&busqueda=gue
+  Entonces items contiene solo "guerra"
+
+Escenario: Filtros inválidos
+  Cuando se envía GET a /api/v1/dictionary con idioma=fr, valor_min=-11, valor_max=11 o valor_min=abc
+  Entonces el sistema responde con código HTTP 400
+
+Escenario: Rango invertido
+  Cuando se envía GET a /api/v1/dictionary?valor_min=5&valor_max=-5
+  Entonces el sistema responde con código HTTP 400 y codigo "RANGO_VALOR_INVALIDO"
+
+Escenario: Filtros en el panel
+  Dado que el administrador está en la pestaña "Diccionario"
+  Cuando elige "Inglés" en "Filtrar por idioma" y "Negativos (-10 a -1)" en "Filtrar por valor"
+  Entonces el listado muestra solo términos en inglés con valor entre -10 y -1
+  Y vuelve a la página 1
+```
+
+### Definition of Done
+(Bloque general DoD, sección 14.) Adicionalmente:
+- Pruebas de los escenarios en `src/tests/test_dictionary.py`, del cliente en `frontend/src/api/cliente.test.js` y del panel en `frontend/src/pantallas/Administracion.test.jsx`.
+- Documentación de los parámetros nuevos en Swagger/OpenAPI (generada por FastAPI) y en el contrato v1.5.0.
+
+**Estado de implementación (2026-11-12):** implementada en la rama `feature/relevancia-noticias`, pendiente de revisión en el PR.
+
+---
+
 ## HU-SENT-001-v2 — Gestión CRUD del diccionario de términos (listado paginado)
+
+**Estado:** **Deprecada (2026-11-12)** — reemplazada por **HU-SENT-001-v3** (ver arriba), que agrega los filtros de idioma y de rango de valor. Se conserva este bloque íntegro como registro histórico, conforme a la sección 3 de las instrucciones del proyecto.
 
 **Tipo:** Historia de Usuario
 **Como** administrador del sistema,
@@ -845,7 +908,8 @@ Escenario: Las noticias sin humor no cuentan en la nube
 | ID | Tipo | Prioridad | Puntos (P3) | Endpoint / mecanismo | Referencia PDF |
 |---|---|---|---|---|---|
 | HU-SENT-001 | **Deprecada** (ver HU-SENT-001-v2) | Alta | 5 | `/api/v1/dictionary` (CRUD) — ver `contrato-sentimiento-diccionario.openapi.yaml` | §4.2.2, §10.2 |
-| HU-SENT-001-v2 | Historia de Usuario | Alta | 5 | `/api/v1/dictionary` (CRUD, listado paginado v1.2.0) — ver `contrato-sentimiento-diccionario.openapi.yaml` | §4.2.2, §10.2 |
+| HU-SENT-001-v2 | **Deprecada** (ver HU-SENT-001-v3) | Alta | 5 | `/api/v1/dictionary` (CRUD, listado paginado v1.2.0) — ver `contrato-sentimiento-diccionario.openapi.yaml` | §4.2.2, §10.2 |
+| HU-SENT-001-v3 | Historia de Usuario | Media | S (propuesta) | `/api/v1/dictionary` (CRUD; listado paginado con filtros de idioma y valor, v1.5.0) — ver `contrato-sentimiento-diccionario.openapi.yaml` | §4.2.2 |
 | HU-SENT-002-v3 | Enabler Story | Alta | 5 | Interno — síncrono + Timeout explícito (propuesto: 3s) + fallback a diccionario + job de barrido de respaldo (propuesto: cada 30 min) sobre `metodo_calculo IS NULL` + recálculo tras cambios del diccionario | §4.2.4, Objetivos específicos #2 |
 | HU-SENT-003 | Enabler Story | Alta | 3 | Extiende modelo `Noticia` | §4.2.4 |
 | HU-SENT-004 | Historia de Usuario | Alta | 1 | `GET /api/v1/sentiment` — ver `contrato-sentimiento-diccionario.openapi.yaml` | §4.1, §10.2 |
@@ -878,3 +942,4 @@ Escenario: Las noticias sin humor no cuentan en la nube
 | HU-SENT-007-v3 → HU-SENT-007-v4, HU-SENT-009 | v1.14 | 2026-11-11 | Decisión de la PO con los datos reales (466 noticias con un solo término; casos *outstanding* y lotería): mínimo de términos por noticia, configurable, con valor inicial 2 (HU-SENT-007-v4), y lista de exclusión por palabras del título con contador de cobertura (HU-SENT-009, nueva). HU-SENT-007-v3 queda Deprecada. ADR-003 v1.5; contratos canales-fuentes-rss v1.9.0, sentimiento-diccionario v1.4.0 y noticias v1.3.0. |
 | HU-SENT-002-v3 | corrección | 2026-11-11 | Corrección de rendimiento detectada al recalcular 2.200 noticias: cada commit por noticia daba por vencidos los términos del diccionario y SQLAlchemy los recargaba uno por uno (unas 950 consultas por noticia con 1.000 términos; la API llegó al 142 % de CPU y dejó de responder). Los términos se separan de la sesión al cargarlos: 4 consultas por noticia. Prueba de regresión agregada. Sin cambios en los criterios de aceptación. |
 | HU-SENT-007-v4 | corrección | 2026-11-11 | Corrección detectada por la PO en la explicación del humor: si el diccionario tenía el singular y el plural de una palabra ("award" y "awards") y la noticia traía ambos, se contaban como dos términos. Ahora cada lema cuenta una sola vez, como ya exigía el criterio de términos únicos. Pruebas agregadas en `test_lematizacion.py`; las noticias por diccionario se recalculan (migración `b7e2c4a9d1f3`). ADR-003 v1.6. Sin cambios en los criterios de aceptación. |
+| HU-SENT-001-v2 → HU-SENT-001-v3 | v1.15 | 2026-11-12 | Decisión de la PO: `GET /api/v1/dictionary` agrega los filtros opcionales `idioma`, `valor_min` y `valor_max` (400 `RANGO_VALOR_INVALIDO` si el rango está invertido), y la pestaña Diccionario separa "Agregar un término" de "Buscar y filtrar". Motivo: revisar los ~4.100 términos por idioma y valor; los campos del formulario de alta se confundían con filtros. HU-SENT-001-v2 queda Deprecada. Contrato sentimiento-diccionario v1.5.0. |

@@ -303,3 +303,10 @@
 .admin-ver-lista {
   margin-bottom: 12px;
 }
+
+/* HU-SENT-001-v3: separa "Agregar un término" de "Buscar y filtrar". */
+.admin-subtitulo {
+  margin: 4px 0 6px;
+  font-weight: 700;
+  color: var(--texto);
+}

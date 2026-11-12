@@ -173,6 +173,13 @@ describe('panel de administración (HU-ADMIN-004)', () => {
     expect(borrado).toBeNull()
   })
 
+  it('filtra el diccionario por idioma y rango de valor (HU-SENT-001-v3)', async () => {
+    await obtenerTerminos({ idioma: 'en', valorMax: -1 })
+    await obtenerTerminos({ valorMin: 6, valorMax: 10, pagina: 2 })
+    expect(rutaLlamada(0)).toBe('/dictionary?pagina=1&tamanio_pagina=25&idioma=en&valor_max=-1')
+    expect(rutaLlamada(1)).toBe('/dictionary?pagina=2&tamanio_pagina=25&valor_min=6&valor_max=10')
+  })
+
   it('lee y guarda la configuración, purga y entrena', async () => {
     await obtenerConfiguracion()
     await guardarConfiguracion({ periodicidad: 30, caducidad: 90, minimoTerminos: 2 })

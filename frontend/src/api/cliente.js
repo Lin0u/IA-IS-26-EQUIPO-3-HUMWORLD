@@ -194,11 +194,24 @@ export function capturarFuentes(ids) {
   return solicitar('/captures', { metodo: 'POST', cuerpo: { fuente_ids: ids }, timeoutMs: TIMEOUT_LARGO_MS })
 }
 
-// GET /dictionary (HU-SENT-001-v2), paginado y con búsqueda.
-export function obtenerTerminos({ busqueda = '', pagina = 1, tamanioPagina = 25 } = {}) {
+// GET /dictionary (HU-SENT-001-v3), paginado, con búsqueda y filtros de idioma y
+// rango de valor (ambos extremos incluidos).
+export function obtenerTerminos({
+  busqueda = '',
+  idioma = '',
+  valorMin = null,
+  valorMax = null,
+  pagina = 1,
+  tamanioPagina = 25,
+} = {}) {
   const consulta = agregarFiltros(
     new URLSearchParams({ pagina: String(pagina), tamanio_pagina: String(tamanioPagina) }),
-    { busqueda },
+    {
+      busqueda,
+      idioma,
+      valor_min: valorMin === null ? '' : String(valorMin),
+      valor_max: valorMax === null ? '' : String(valorMax),
+    },
   )
   return obtenerJson(`/dictionary?${consulta}`)
 }

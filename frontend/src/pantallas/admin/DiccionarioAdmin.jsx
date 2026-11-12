@@ -1,7 +1,7 @@
 // HumWorld - pestaña "Diccionario" del panel de administración.
 // Origen: HU-SENT-001-v2 (CRUD del diccionario; PDF §4.2.2: "operaciones CRUD para
 // cada término con endpoints API REST e interface de usuario"). El listado se pagina
-// en el backend, de 25 en 25.
+// en el backend, de 25 en 25. HU-SENT-001-v3: se filtra por idioma y por rango de valor.
 import { useEffect, useState } from 'react'
 import { actualizarTermino, crearTermino, eliminarTermino, obtenerTerminos } from '../../api/cliente.js'
 import Aviso from './Aviso.jsx'
@@ -14,10 +14,21 @@ function valorValido(texto) {
   return /^-?\d+$/.test(texto) && Number(texto) >= -10 && Number(texto) <= 10
 }
 
+// Rangos de valor para filtrar el listado (escala de -10 a +10).
+const RANGOS = {
+  todos: { nombre: 'Todos', valorMin: null, valorMax: null },
+  negativos: { nombre: 'Negativos (-10 a -1)', valorMin: null, valorMax: -1 },
+  positivos: { nombre: 'Positivos (+1 a +10)', valorMin: 1, valorMax: null },
+  muyNegativos: { nombre: 'Muy negativos (-10 a -6)', valorMin: null, valorMax: -6 },
+  muyPositivos: { nombre: 'Muy positivos (+6 a +10)', valorMin: 6, valorMax: null },
+}
+
 const AVISO_RECALCULO = 'El humor de las noticias se recalculará en el próximo barrido.'
 
 export default function DiccionarioAdmin() {
   const [busqueda, setBusqueda] = useState('')
+  const [idioma, setIdioma] = useState('')
+  const [rango, setRango] = useState('todos')
   const [pagina, setPagina] = useState(1)
   const [version, setVersion] = useState(0)
   const [resultado, setResultado] = useState(null)
@@ -27,16 +38,18 @@ export default function DiccionarioAdmin() {
 
   useEffect(() => {
     let vigente = true
-    obtenerTerminos({ busqueda, pagina, tamanioPagina: POR_PAGINA })
+    const { valorMin, valorMax } = RANGOS[rango]
+    obtenerTerminos({ busqueda, idioma, valorMin, valorMax, pagina, tamanioPagina: POR_PAGINA })
       .then((datos) => vigente && setResultado(datos))
       .catch((causa) => vigente && setAviso({ tipo: 'error', texto: causa.message }))
     return () => {
       vigente = false
     }
-  }, [busqueda, pagina, version])
+  }, [busqueda, idioma, rango, pagina, version])
 
-  function buscar(texto) {
-    setBusqueda(texto)
+  // Cada filtro nuevo vuelve a la primera página.
+  function filtrar(cambiar, valor) {
+    cambiar(valor)
     setPagina(1)
   }
 
@@ -83,6 +96,7 @@ export default function DiccionarioAdmin() {
 
   return (
     <div>
+      <p className="admin-subtitulo">Agregar un término</p>
       <form className="admin-fila-formulario" onSubmit={crear} aria-label="Nuevo término">
         <label className="campo">
           Palabra
@@ -118,10 +132,34 @@ export default function DiccionarioAdmin() {
 
       <Aviso aviso={aviso} />
 
-      <label className="campo admin-buscador">
-        Buscar
-        <input type="search" value={busqueda} onChange={(e) => buscar(e.target.value)} />
-      </label>
+      <p className="admin-subtitulo">Buscar y filtrar</p>
+      <div className="admin-fila-formulario" role="search" aria-label="Filtros del diccionario">
+        <label className="campo admin-buscador">
+          Buscar
+          <input type="search" value={busqueda} onChange={(e) => filtrar(setBusqueda, e.target.value)} />
+        </label>
+        <label className="campo">
+          Filtrar por idioma
+          <select value={idioma} onChange={(e) => filtrar(setIdioma, e.target.value)}>
+            <option value="">Todos</option>
+            {Object.entries(IDIOMAS).map(([codigo, nombre]) => (
+              <option key={codigo} value={codigo}>
+                {nombre}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="campo">
+          Filtrar por valor
+          <select value={rango} onChange={(e) => filtrar(setRango, e.target.value)}>
+            {Object.entries(RANGOS).map(([clave, { nombre }]) => (
+              <option key={clave} value={clave}>
+                {nombre}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
       {!resultado ? (
         <p>Cargando términos…</p>

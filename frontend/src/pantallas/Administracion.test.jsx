@@ -345,7 +345,33 @@ describe('Diccionario', () => {
     await screen.findByText('guerra')
     await usuario.type(screen.getByLabelText('Buscar'), 'g')
     await waitFor(() =>
-      expect(api.obtenerTerminos).toHaveBeenLastCalledWith({ busqueda: 'g', pagina: 1, tamanioPagina: 25 }),
+      expect(api.obtenerTerminos).toHaveBeenLastCalledWith({
+        busqueda: 'g',
+        idioma: '',
+        valorMin: null,
+        valorMax: null,
+        pagina: 1,
+        tamanioPagina: 25,
+      }),
+    )
+  })
+
+  it('filtra por idioma y por rango de valor (HU-SENT-001-v3)', async () => {
+    const usuario = await abrir('Diccionario')
+    await screen.findByText('guerra')
+    await usuario.selectOptions(screen.getByLabelText('Filtrar por idioma'), 'en')
+    await waitFor(() =>
+      expect(api.obtenerTerminos).toHaveBeenLastCalledWith(expect.objectContaining({ idioma: 'en', pagina: 1 })),
+    )
+    await usuario.selectOptions(screen.getByLabelText('Filtrar por valor'), 'negativos')
+    await waitFor(() =>
+      expect(api.obtenerTerminos).toHaveBeenLastCalledWith(
+        expect.objectContaining({ idioma: 'en', valorMin: null, valorMax: -1 }),
+      ),
+    )
+    await usuario.selectOptions(screen.getByLabelText('Filtrar por valor'), 'muyPositivos')
+    await waitFor(() =>
+      expect(api.obtenerTerminos).toHaveBeenLastCalledWith(expect.objectContaining({ valorMin: 6, valorMax: null })),
     )
   })
 

@@ -222,7 +222,7 @@ Escenario: Idempotencia
 | Pestaña | Endpoints | Contrato |
 |---|---|---|
 | Fuentes RSS | `GET`/`POST /channels`, `GET`/`POST /sources`, `PUT`/`PATCH`/`DELETE /sources/{id}`, `POST /sources/{id}/captures`, `POST /captures` | `contrato-canales-fuentes-rss.openapi.yaml` v1.8.0 |
-| Diccionario | `GET`/`POST /dictionary` (paginado, HU-SENT-001-v2), `PUT`/`PATCH`/`DELETE /dictionary/{id}` | `contrato-sentimiento-diccionario.openapi.yaml` v1.2.0 |
+| Diccionario | `GET`/`POST /dictionary` (paginado y con filtros de idioma y valor, HU-SENT-001-v3), `PUT`/`PATCH`/`DELETE /dictionary/{id}` | `contrato-sentimiento-diccionario.openapi.yaml` v1.2.0 |
 | Parámetros | `GET`/`PUT /config`, `GET`/`POST`/`DELETE /exclusions`, `GET /news/statistics` | `contrato-canales-fuentes-rss.openapi.yaml` v1.9.0, `contrato-sentimiento-diccionario.openapi.yaml` v1.4.0, `contrato-noticias.openapi.yaml` v1.3.0 |
 | Purgado | `DELETE /news` | `contrato-noticias.openapi.yaml` v1.1.0 |
 | Modelo ML *(opcional)* | `POST /trainings` | `contrato-sentimiento-diccionario.openapi.yaml` v1.1.0 |
@@ -387,3 +387,4 @@ Escenario: API no disponible
 | HU-ADMIN-001 a 004 | v1.4 | 2026-11-11 | Actualización de estado: las 4 historias están en `main`; HU-ADMIN-001 deja de figurar como parcial porque su interfaz quedó en el panel de HU-ADMIN-004. Sin cambios en los criterios de aceptación. |
 | HU-ADMIN-001 → HU-ADMIN-001-v2 | v1.5 | 2026-11-11 | Se agrega el parámetro `minimo_terminos_humor` (HU-SENT-007-v4) y la pestaña Parámetros pasa a 3 bloques (parámetros, lista de exclusión de HU-SENT-009 y cobertura). HU-ADMIN-001 queda Deprecada. Contrato canales-fuentes-rss v1.9.0. |
 | HU-ADMIN-001-v2 | v1.6 | 2026-11-12 | Ajuste de presentación pedido por la PO: en el bloque 2 de Parámetros, las palabras de exclusión dejan de mostrarse todas juntas y se despliegan con el botón "Ver palabras (N)" / "Ocultar palabras", igual que "Ver canales registrados (N)" en Fuentes RSS. El formulario para agregar sigue visible. Sin cambios en los criterios de aceptación ni en la API. |
+| HU-ADMIN-004 | v1.7 | 2026-11-12 | La pestaña Diccionario usa los filtros de idioma y valor de HU-SENT-001-v3 ("Filtrar por idioma", "Filtrar por valor") y separa "Agregar un término" de "Buscar y filtrar". |

@@ -53,10 +53,21 @@ def listar_terminos_paginado(
     tamanio_pagina: int,
     busqueda: str | None = None,
     repository: TerminoDiccionarioRepository | None = None,
+    idioma: str | None = None,
+    valor_min: int | None = None,
+    valor_max: int | None = None,
 ) -> dict:
-    """HU-SENT-001-v2: listado paginado con el mismo filtro de búsqueda."""
+    """HU-SENT-001-v3: listado paginado con búsqueda y filtros de idioma y valor."""
+    if valor_min is not None and valor_max is not None and valor_min > valor_max:
+        raise ValueError("El valor mínimo no puede ser mayor que el máximo.")
     items, total = (repository or TerminoDiccionarioRepository()).listar_paginado(
-        db, pagina, tamanio_pagina, busqueda=busqueda
+        db,
+        pagina,
+        tamanio_pagina,
+        busqueda=busqueda,
+        idioma=idioma,
+        valor_min=valor_min,
+        valor_max=valor_max,
     )
     return {"items": items, "pagina": pagina, "tamanio_pagina": tamanio_pagina, "total": total}
 

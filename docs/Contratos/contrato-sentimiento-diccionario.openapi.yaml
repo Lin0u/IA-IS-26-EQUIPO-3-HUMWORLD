@@ -15,7 +15,7 @@ info:
     servicios internos invocados tras la captura de cada noticia o desde los
     endpoints de este contrato) y por lo tanto no aparecen aquí — ver
     `HU-SENT-motor-sentimiento.md` para su detalle.
-  version: "1.4.0"
+  version: "1.5.0"
 servers:
   - url: /api/v1
     description: Base URL versionada (PDF, sección 10.3), misma convención que contrato-canales-fuentes-rss.openapi.yaml.
@@ -24,7 +24,7 @@ tags:
   - name: dictionary
     description: >
       Gestión CRUD del diccionario de términos de sentimiento. Origina en
-      HU-SENT-001-v2. Desde v1.2.0 el listado está paginado con la misma
+      HU-SENT-001-v3. Desde v1.2.0 el listado está paginado con la misma
       convención que /channels y /sources (pagina, tamanio_pagina 10 por
       defecto y 50 como máximo), porque la carga inicial deja ~3.800 términos
       y el panel de administración (HU-ADMIN-004) los recorre por páginas.
@@ -56,10 +56,12 @@ paths:
       tags: [dictionary]
       summary: Listar términos del diccionario de sentimiento
       description: >
-        Origina en HU-SENT-001-v2. Filtro opcional de búsqueda por coincidencia
+        Origina en HU-SENT-001-v3. Filtro opcional de búsqueda por coincidencia
         parcial en la palabra (Gherkin: "GET /api/v1/dictionary?busqueda=guerr"
-        devuelve únicamente términos cuya palabra contiene "guerr"). Listado
-        paginado y ordenado alfabéticamente por palabra, luego idioma e id.
+        devuelve únicamente términos cuya palabra contiene "guerr") y, desde
+        v1.5.0, filtros opcionales de idioma y de rango de valor. Los filtros se
+        combinan entre sí. Listado paginado y ordenado alfabéticamente por
+        palabra, luego idioma e id.
       parameters:
         - name: busqueda
           in: query
@@ -67,6 +69,29 @@ paths:
           schema:
             type: string
           description: Filtra términos cuya palabra contiene este texto (coincidencia parcial, no sensible a mayúsculas/minúsculas).
+        - name: idioma
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [es, en]
+          description: Solo términos de ese idioma (HU-SENT-001-v3).
+        - name: valor_min
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: -10
+            maximum: 10
+          description: Solo términos con valor mayor o igual a este (incluido). HU-SENT-001-v3.
+        - name: valor_max
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: -10
+            maximum: 10
+          description: Solo términos con valor menor o igual a este (incluido). HU-SENT-001-v3.
         - name: pagina
           in: query
           required: false
@@ -90,7 +115,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/TerminoDiccionarioListado"
         "400":
-          description: pagina o tamanio_pagina fuera de rango.
+          description: >
+            pagina o tamanio_pagina fuera de rango, idioma distinto de es/en,
+            valor_min o valor_max fuera de -10..10, o valor_min mayor que
+            valor_max (codigo RANGO_VALOR_INVALIDO).
           content:
             application/json:
               schema:
@@ -734,3 +762,7 @@ components:
 #   /exclusions/{id} (HU-SENT-009; ADR-003 punto 7), con los esquemas
 #   PalabraExclusion y PalabraExclusionCrear. POST /sentiment no cambia: no
 #   aplica el mínimo de términos ni la lista de exclusión.
+# v1.5.0 (2026-11-12): GET /dictionary agrega los filtros opcionales idioma,
+#   valor_min y valor_max (HU-SENT-001-v3), combinables con busqueda. Un rango
+#   invertido responde 400 RANGO_VALOR_INVALIDO. Cambio compatible: sin los
+#   parámetros nuevos, la respuesta es la misma de v1.4.0.
