@@ -298,3 +298,8 @@
   font-size: 19px;
   font-weight: 600;
 }
+
+/* HU-ADMIN-001-v2, ajuste del 2026-11-12: botón que muestra u oculta la lista de exclusión. */
+.admin-ver-lista {
+  margin-bottom: 12px;
+}

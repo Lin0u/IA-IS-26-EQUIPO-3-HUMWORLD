@@ -452,7 +452,12 @@ describe('Parámetros', () => {
     api.crearExclusion.mockResolvedValue({ id: 3, palabra: 'baloto' })
     api.eliminarExclusion.mockResolvedValue(null)
     const usuario = await abrir('Parámetros')
-    const lista = await screen.findByRole('list', { name: 'Palabras de exclusión' })
+    // HU-ADMIN-001-v2, ajuste del 2026-11-12: la lista empieza oculta y se abre con "Ver palabras (N)".
+    const ver = await screen.findByRole('button', { name: 'Ver palabras (2)' })
+    expect(ver).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('list', { name: 'Palabras de exclusión' })).not.toBeInTheDocument()
+    await usuario.click(ver)
+    const lista = screen.getByRole('list', { name: 'Palabras de exclusión' })
     expect(
       within(lista)
         .getAllByRole('listitem')
@@ -477,6 +482,10 @@ describe('Parámetros', () => {
     expect(api.eliminarExclusion).toHaveBeenCalledWith(2)
     expect(await screen.findByText(/"lotería" quitada/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Quitar lotería' })).not.toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('button', { name: 'Ocultar palabras' }))
+    expect(screen.queryByRole('list', { name: 'Palabras de exclusión' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ver palabras (2)' })).toBeInTheDocument()
   })
 
   it('muestra los errores de la lista de exclusión', async () => {
@@ -486,6 +495,7 @@ describe('Parámetros', () => {
     await usuario.type(await screen.findByLabelText('Palabra o frase'), 'lotería')
     await usuario.click(screen.getByRole('button', { name: 'Agregar' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Esa palabra ya está en la lista de exclusión.')
+    await usuario.click(screen.getByRole('button', { name: 'Ver palabras (2)' }))
     await usuario.click(screen.getByRole('button', { name: 'Quitar horóscopo' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('La palabra no existe en la lista de exclusión.')
   })

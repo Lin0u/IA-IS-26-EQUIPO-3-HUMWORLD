@@ -39,6 +39,8 @@ export default function ParametrosAdmin() {
   const [exclusiones, setExclusiones] = useState([])
   const [nuevaPalabra, setNuevaPalabra] = useState('')
   const [avisoLista, setAvisoLista] = useState(null)
+  // HU-ADMIN-001-v2, ajuste del 2026-11-12: la lista se muestra al presionar "Ver palabras (N)".
+  const [verLista, setVerLista] = useState(false)
   const [estadisticas, setEstadisticas] = useState(null)
   const [version, setVersion] = useState(0)
 
@@ -202,7 +204,18 @@ export default function ParametrosAdmin() {
         {exclusiones.length === 0 ? (
           <p className="admin-ayuda">La lista está vacía: no se excluye ninguna noticia.</p>
         ) : (
-          <ul className="admin-exclusiones" aria-label="Palabras de exclusión">
+          <button
+            type="button"
+            className="filtro admin-ver-lista"
+            aria-expanded={verLista}
+            aria-controls="lista-exclusion"
+            onClick={() => setVerLista(!verLista)}
+          >
+            {verLista ? 'Ocultar palabras' : `Ver palabras (${exclusiones.length})`}
+          </button>
+        )}
+        {verLista && exclusiones.length > 0 && (
+          <ul className="admin-exclusiones" id="lista-exclusion" aria-label="Palabras de exclusión">
             {exclusiones.map((exclusion) => (
               <li key={exclusion.id}>
                 {exclusion.palabra}
