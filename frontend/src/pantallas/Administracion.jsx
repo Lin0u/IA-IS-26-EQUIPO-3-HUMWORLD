@@ -1,7 +1,8 @@
 // HumWorld - pantalla "Administración" (panel de administración unificado).
 // Origen: HU-ADMIN-004 (PDF §4.3, vista 1; §4.1 punto 4; §4.2.2; §4.2.3; §4.2.5).
 // Cada pestaña usa endpoints que ya existen en la API; ninguno es nuevo.
-// HU-DASH-004: cada pestaña abre con una guía de lo que hace.
+// HU-DASH-004-v2: cada pestaña explica lo que hace con ayudas "?" junto a cada
+// parte (en Fuentes RSS y Parámetros, en el título de cada bloque).
 import { useState } from 'react'
 import DiccionarioAdmin from './admin/DiccionarioAdmin.jsx'
 import FuentesAdmin from './admin/FuentesAdmin.jsx'
@@ -9,25 +10,14 @@ import ModeloAdmin from './admin/ModeloAdmin.jsx'
 import ParametrosAdmin from './admin/ParametrosAdmin.jsx'
 import PurgadoAdmin from './admin/PurgadoAdmin.jsx'
 import EscalaHumor from '../componentes/EscalaHumor.jsx'
-import GuiaPantalla from '../componentes/GuiaPantalla.jsx'
+import Ayuda from '../componentes/Ayuda.jsx'
+import AyudaPasos from '../componentes/AyudaPasos.jsx'
 import '../componentes/GuiaVisual.css'
 import './Administracion.css'
 
-const GUIAS = {
-  fuentes: [
-    {
-      titulo: 'Bloque 1: el canal',
-      texto: 'Es el medio (por ejemplo, RNZ) con su continente y país. De ahí sale dónde aparece en el mapa.',
-    },
-    {
-      titulo: 'Bloque 2: sus fuentes RSS',
-      texto: 'Son los feeds del medio (business.xml, sport.xml…), cada uno con su categoría. Un canal tiene varias.',
-    },
-    {
-      titulo: 'Bloque 3: captura',
-      texto: 'El sistema lee las fuentes activas cada cierto tiempo. "Capturar ahora" lo hace en el momento.',
-    },
-  ],
+// Ayudas de las pestañas sin bloques numerados. Fuentes RSS y Parámetros las
+// tienen en el título de cada bloque.
+const AYUDAS = {
   diccionario: [
     {
       titulo: 'Cada palabra tiene un valor',
@@ -41,13 +31,6 @@ const GUIAS = {
       titulo: 'Los cambios se aplican solos',
       texto: 'Al crear, editar o borrar una palabra, el humor de las noticias se recalcula en el próximo barrido.',
     },
-  ],
-  parametros: [
-    {
-      titulo: 'Periodicidad',
-      texto: 'Cada cuántos minutos el sistema captura noticias nuevas de las fuentes activas.',
-    },
-    { titulo: 'Caducidad', texto: 'Cuántos días se guarda una noticia antes de que el purgado automático la borre.' },
   ],
   purgado: [
     { titulo: 'Por fecha', texto: 'Borra las noticias registradas antes del día que elijas.' },
@@ -69,15 +52,15 @@ const GUIAS = {
 
 const PESTANAS = [
   { id: 'fuentes', nombre: 'Fuentes RSS', Componente: FuentesAdmin },
-  { id: 'diccionario', nombre: 'Diccionario', Componente: DiccionarioAdmin },
+  { id: 'diccionario', nombre: 'Diccionario', titulo: 'Diccionario de términos', Componente: DiccionarioAdmin },
   { id: 'parametros', nombre: 'Parámetros', Componente: ParametrosAdmin },
-  { id: 'purgado', nombre: 'Purgado', Componente: PurgadoAdmin },
-  { id: 'modelo', nombre: 'Modelo ML', Componente: ModeloAdmin },
+  { id: 'purgado', nombre: 'Purgado', titulo: 'Purgado de noticias', Componente: PurgadoAdmin },
+  { id: 'modelo', nombre: 'Modelo ML', titulo: 'Modelo de humor (ML)', Componente: ModeloAdmin },
 ]
 
 export default function Administracion() {
   const [activa, setActiva] = useState('fuentes')
-  const { Componente } = PESTANAS.find((pestana) => pestana.id === activa)
+  const { Componente, titulo } = PESTANAS.find((pestana) => pestana.id === activa)
 
   return (
     <section className="pantalla">
@@ -100,9 +83,15 @@ export default function Administracion() {
         ))}
       </div>
       <div role="tabpanel" className="admin-panel">
-        <GuiaPantalla key={activa} pasos={GUIAS[activa]}>
-          {activa === 'diccionario' && <EscalaHumor />}
-        </GuiaPantalla>
+        {AYUDAS[activa] && (
+          <div className="titulo-con-ayuda">
+            <h3 className="admin-panel-titulo">{titulo}</h3>
+            <Ayuda titulo={titulo}>
+              <AyudaPasos pasos={AYUDAS[activa]} />
+              {activa === 'diccionario' && <EscalaHumor />}
+            </Ayuda>
+          </div>
+        )}
         <Componente />
       </div>
     </section>

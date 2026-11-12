@@ -93,7 +93,8 @@
   border-radius: var(--radio);
   box-shadow: var(--sombra);
   padding: 24px;
-  animation: entrar 0.35s ease-out both;
+  /* backwards: al terminar no deja un transform, que rompería las ayudas fijas del celular. */
+  animation: entrar 0.35s ease-out backwards;
 }
 
 .pantalla h2 {

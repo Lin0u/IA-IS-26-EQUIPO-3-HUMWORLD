@@ -14,6 +14,11 @@ que el original. Ver scripts/data/AFINN-LICENSE.txt.
 Uso (desde src/, o dentro del contenedor):
     python -m scripts.seed_diccionario
     docker compose exec api python -m scripts.seed_diccionario
+
+Con una ruta, carga otro CSV con las mismas columnas. Por ejemplo, el léxico
+de noticias (docs/Backlog/Dataset-lexico-noticias.md), una vez revisado:
+    docker compose exec api python -m scripts.seed_diccionario scripts/data/lexico_noticias_propuesto.csv
+Los términos que ya existen se omiten, así que la carga se puede repetir.
 """
 import sys
 from pathlib import Path
@@ -44,4 +49,4 @@ def main(ruta: Path = RUTA_DATASET, session_factory=SessionLocal) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(Path(sys.argv[1]) if len(sys.argv) > 1 else RUTA_DATASET))

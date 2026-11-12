@@ -62,7 +62,7 @@ El profesor sugirió revisar la lematización, y la PO decidió incorporarla el 
 
 1. **Lematizador: spaCy** con los modelos chicos `es_core_news_sm` y `en_core_web_sm` (versión 3.8), cargados sin `parser` ni `ner`. Se conservan solo el etiquetado morfológico y el lematizador, que elige el lema según el contexto de la oración ("fue" → "ser" o "ir" según la frase).
 2. **Se lematiza el texto de la noticia, no el diccionario.** Cada palabra del texto se compara con los términos primero por su forma y, si ningún término tiene esa forma, por su lema. Los términos del diccionario no se lematizan, porque fuera de contexto el lema es poco fiable: aislada, "best" se lematiza como "well" y "peña" como "peño". En consecuencia, los términos nuevos deben cargarse en su forma base (infinitivo, singular masculino). Las formas flexionadas ya cargadas siguen funcionando y tienen prioridad cuando coinciden literalmente.
-3. **Cada palabra del texto aporta como máximo un término.** Si existen "abandon" y "abandoned", la palabra "abandoned" activa solo "abandoned" (forma exacta) y no suma además "abandon". El divisor `n` sigue contando términos únicos (punto 1).
+3. **Cada palabra del texto aporta como máximo un término.** Si existen "abandon" y "abandoned", la palabra "abandoned" activa solo "abandoned" (forma exacta) y no suma además "abandon". El divisor `n` sigue contando términos únicos (punto 1). **Corrección del 2026-11-11:** tampoco varias palabras del texto con el mismo lema suman varios términos. Si el diccionario tiene "award" y "awards" y la noticia trae las dos formas, el concepto "award" cuenta una sola vez, con el término en forma base (el que coincide con el lema) o, si no existe, el primero encontrado. Caso real detectado por la PO: *"Drone photo award winners"* sumaba +6 dos veces.
 4. **Frases de varias palabras:** coinciden si aparecen en el texto o en la secuencia de lemas del texto ("acuerdos de paz" → "acuerdo de paz").
 5. **Detección de idioma** (PDF §4.4; punto 1 de esta Decisión, que exigía comparar contra el idioma detectado): se cuentan las palabras vacías (stop words de spaCy) exclusivas de cada idioma. Si un idioma tiene al menos 2 y al menos el doble que el otro, ese es el idioma de la noticia; si no, queda desconocido y se evalúan ambos diccionarios, como antes. El resultado se guarda en `noticias.idioma_detectado`. Los umbrales (2 palabras y proporción 2) son valores propuestos, pendientes de ratificación.
 6. **Degradación:** si un modelo de spaCy no está instalado, ese idioma vuelve a compararse por forma exacta (HU-SENT-007-v2) y se registra una advertencia. El cálculo de humor nunca falla por esta dependencia.
@@ -87,6 +87,42 @@ El profesor sugirió revisar la lematización, y la PO decidió incorporarla el 
 - (−) El lematizador también se equivoca, y la detección por palabras vacías falla en textos muy cortos (un titular de tres palabras suele quedar "desconocido"). Ambos casos degradan al comportamiento anterior y no a un error.
 - (−) No resuelve la falta de contexto semántico (caso "fraude"/Santander en `Dataset-diccionario-inicial.md`).
 - (−) Cambia la regla de comparación: la migración `e1f4a8c2b6d9` marca para recálculo las noticias calculadas por diccionario.
+
+### 7. Reglas de relevancia: mínimo de términos y lista de exclusión (v1.5)
+
+**Contexto del cambio.** Con 2.171 noticias reales (2026-11-11), la distribución de términos coincidentes mostró que **466 noticias (27 % de las que tenían humor) se calculaban con un solo término**. Casos revisados con la explicación del humor (HU-DASH-002-v3): "What's next for Democrats… outstanding races" obtuvo +10 solo por *outstanding*, que AFINN puntúa como "excelente" y en ese titular significa "pendientes"; y una noticia de resultados de lotería obtuvo +8 por *ganador* y *ganó*, pese a no informar nada sobre el ánimo del mundo. El promedio simple (punto 1) no distingue cuántos términos lo sostienen: un solo término decide el valor completo. Decisión de la PO del 2026-11-11, a ratificar por el equipo.
+
+**Decisión:**
+
+1. **Mínimo de términos (HU-SENT-007-v4).** Con el método de diccionario, una noticia con entre 1 y N−1 términos únicos coincidentes queda sin humor (`valor_humor` NULL) y con `motivo_exclusion = "minimo_terminos"`. N es un parámetro de `/config` (`minimo_terminos_humor`), con **valor inicial 2**. Sus coincidencias se guardan igual, para explicar por qué quedó fuera, pero no cuentan en la nube. Con 0 términos el comportamiento no cambia (NULL, sin motivo).
+2. **Lista de exclusión (HU-SENT-009).** Si el título contiene una palabra o frase de la lista (`/exclusions`), la noticia no se evalúa: `valor_humor` NULL, sin coincidencias y `motivo_exclusion = "palabra_exclusion"`. La comparación es de palabra completa, sin mayúsculas ni tildes y sin lematizar. La lista inicial propuesta cubre sorteos y pasatiempos en español e inglés (lotería, sorteo, baloto, horóscopo, crucigrama, sudoku, lottery, powerball, mega millions, horoscope, crossword, wordle).
+3. **Alcance.** La lista aplica también cuando el humor lo calcula el modelo de ML (la noticia no es relevante, la calcule quien la calcule). El mínimo aplica solo al método de diccionario: el modelo de ML no depende del conteo de términos. `POST /sentiment` (análisis de un texto libre, HU-SENT-005-v2) no aplica ninguna de las dos reglas, porque su propósito es mostrar el cálculo del diccionario tal cual.
+4. **Recálculo.** Cambiar N o la lista marca para recálculo las noticias calculadas por diccionario (mismo mecanismo que un cambio del diccionario, HU-SENT-002-v3). La migración `a9d3f1c7e5b2` aplica las reglas a las noticias existentes.
+5. **Observabilidad.** `GET /news/statistics` informa cuántas noticias tienen humor, cuántas no tienen términos, cuántas quedaron bajo el mínimo y cuántas fueron excluidas por la lista. El panel de Parámetros lo muestra para ajustar N con datos.
+
+**Efecto medido con los datos del 2026-11-11** (noticias calculadas por diccionario):
+
+| N | Noticias con humor | Respecto de N = 1 |
+|---|---|---|
+| 1 (antes) | 1.722 | 100 % |
+| **2 (elegido)** | **1.256** | **73 %** |
+| 3 | 914 | 53 % |
+| 5 | 495 | 29 % |
+
+**Alternativas evaluadas para este punto:**
+
+- **J. N = 3 o más.** Cada noticia sería más confiable, pero con N = 3 quedarían 914 noticias, bajo el umbral de 1.000 que exige el entrenamiento del modelo (ADR-004, punto 4). Con N = 5 quedarían unas 23 noticias por día, unas 5 por continente: el promedio diario de un continente sería más ruidoso, y casi ninguna noticia en español llegaría a 5 términos, porque el diccionario en español es mucho más chico. **Descartada por ahora**; N queda configurable para subirlo cuando el diccionario crezca.
+- **K. Ponderar por cantidad de términos** (por ejemplo, contraer hacia 0 los promedios con pocos términos). Conserva todas las noticias, pero el valor deja de ser el promedio simple, es más difícil de explicar en la vista "¿Por qué este valor?" y requiere fijar un parámetro de contracción sin respaldo. **Descartada.**
+- **L. Excluir por categoría IPTC.** No resuelve el caso observado: la noticia de lotería venía en el feed de Economía. **Descartada.**
+- **M. Clasificador de relevancia con un modelo.** Más general, pero añade otro componente entrenado sin datos etiquetados para entrenarlo. **Descartada** por proporcionalidad.
+
+**Consecuencias:**
+
+- (+) Ningún término aislado decide el humor de una noticia; se eliminan casos como *outstanding* o la lotería.
+- (+) Las reglas son explicables y ajustables desde el panel, sin tocar el código.
+- (−) Menos noticias con humor (73 % con N = 2) y, por lo tanto, promedios diarios con menos datos.
+- (−) La lista de exclusión es manual: requiere mantenimiento y puede excluir de más (por ejemplo, "sorteo" también aparece en "sorteo del Mundial").
+- (−) No resuelve la polisemia en noticias con varios términos: se mitiga revisando el diccionario con la explicación del humor (pendiente del equipo).
 
 ## Alternativas consideradas
  
@@ -146,7 +182,7 @@ El algoritmo decidido en este ADR está implementado en el código, sin cambios 
 
 ## Historias de usuario relacionadas
  
-HU-SENT-007-v3 *(punto 5, lematización)*, HU-SENT-008, HU-SENT-001, HU-SENT-002-v3, HU-SENT-003, HU-SENT-004, HU-SENT-005, HU-SENT-006 *(solo en la parte de fallback a diccionario; su propia arquitectura de ML está documentada en `ADR-004-arquitectura-modelo-ml-sentimiento.md`, fuera del alcance de este ADR)*.
+HU-SENT-007-v4 *(puntos 5 y 7)*, HU-SENT-009 *(punto 7)*, HU-SENT-008, HU-SENT-001, HU-SENT-002-v3, HU-SENT-003, HU-SENT-004, HU-SENT-005, HU-SENT-006 *(solo en la parte de fallback a diccionario; su propia arquitectura de ML está documentada en `ADR-004-arquitectura-modelo-ml-sentimiento.md`, fuera del alcance de este ADR)*.
  
 ---
  
@@ -159,3 +195,5 @@ HU-SENT-007-v3 *(punto 5, lematización)*, HU-SENT-008, HU-SENT-001, HU-SENT-002
 | v1.2 (editorial) | 2026-09-29 | Limpieza editorial: se retiran las etiquetas "CONFIRMADO (decisión del equipo, sesión...)" y las marcas de fecha inline dentro del cuerpo del documento, integrando ese contenido como prosa técnica normal. La trazabilidad de cuándo se tomó cada decisión queda exclusivamente en esta tabla de Historial de revisión. Sin cambios de fondo en el algoritmo, las alternativas evaluadas ni las Consecuencias. |
 | v1.3 | 2026-10-19 | Se agrega el punto 5 de la Decisión: comparación de términos por lema con spaCy (`es_core_news_sm`, `en_core_web_sm`) sobre el texto de la noticia, sin lematizar el diccionario, y detección de idioma por palabras vacías. Incluye 5 alternativas evaluadas (E a I), sus consecuencias y el rendimiento medido. Origina HU-SENT-007-v3. Decisión de la PO, por sugerencia del profesor. |
 | v1.4 | 2026-10-29 | Se agrega el punto 6 "Implementación (2026-10)" (rol Documentación), que registra cómo quedó implementado el algoritmo y confirma el nombre de campo `polarizacion_terminos`. Se actualiza la referencia a HU-SENT-002-v3 (versión vigente) en "Historias relacionadas". Sin cambios en la Decisión, las Alternativas ni el Estado. |
+| v1.5 | 2026-11-11 | Se agrega el punto 7 de la Decisión: mínimo de términos por noticia (configurable, valor inicial 2) y lista de exclusión de noticias no relevantes por palabras del título, con su efecto medido sobre los datos reales, 4 alternativas evaluadas (J a M) y consecuencias. Origina HU-SENT-007-v4 y HU-SENT-009. Decisión de la PO, pendiente de ratificación del equipo. Sin cambios en los puntos 1 a 6. |
+| v1.6 | 2026-11-11 | Corrección en el punto 6, sub-punto 3: un mismo lema cuenta una sola vez aunque el diccionario tenga varias de sus formas (singular y plural). Cumple lo que ya exigía el punto 1 (términos únicos por concepto). Las noticias calculadas por diccionario se marcan para recálculo (migración `b7e2c4a9d1f3`). Sin cambios en la Decisión principal ni en el Estado. |

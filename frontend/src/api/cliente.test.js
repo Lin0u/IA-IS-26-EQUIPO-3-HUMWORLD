@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   ErrorApi,
+  TIMEOUT_ENTRENAMIENTO_MS,
   TIMEOUT_LARGO_MS,
   actualizarTermino,
   cambiarEstadoFuente,
@@ -18,6 +19,10 @@ import {
   obtenerTerminos,
   purgarNoticias,
   obtenerMapa,
+  crearExclusion,
+  eliminarExclusion,
+  obtenerEstadisticasNoticias,
+  obtenerExclusiones,
   obtenerNoticia,
   obtenerNoticias,
   obtenerNubePalabras,
@@ -168,15 +173,22 @@ describe('panel de administración (HU-ADMIN-004)', () => {
     expect(borrado).toBeNull()
   })
 
+  it('filtra el diccionario por idioma y rango de valor (HU-SENT-001-v3)', async () => {
+    await obtenerTerminos({ idioma: 'en', valorMax: -1 })
+    await obtenerTerminos({ valorMin: 6, valorMax: 10, pagina: 2 })
+    expect(rutaLlamada(0)).toBe('/dictionary?pagina=1&tamanio_pagina=25&idioma=en&valor_max=-1')
+    expect(rutaLlamada(1)).toBe('/dictionary?pagina=2&tamanio_pagina=25&valor_min=6&valor_max=10')
+  })
+
   it('lee y guarda la configuración, purga y entrena', async () => {
     await obtenerConfiguracion()
-    await guardarConfiguracion({ periodicidad: 30, caducidad: 90 })
+    await guardarConfiguracion({ periodicidad: 30, caducidad: 90, minimoTerminos: 2 })
     await purgarNoticias('2026-01-01')
     await purgarNoticias()
     await entrenarModelo()
     expect(rutaLlamada(0)).toBe('/config')
     expect(llamada(1).method).toBe('PUT')
-    expect(cuerpo(1)).toEqual({ periodicidad_cron_minutos: 30, caducidad_noticias_dias: 90 })
+    expect(cuerpo(1)).toEqual({ periodicidad_cron_minutos: 30, caducidad_noticias_dias: 90, minimo_terminos_humor: 2 })
     expect(rutaLlamada(2)).toBe('/news?fecha_anterior_a=2026-01-01')
     expect(rutaLlamada(3)).toBe('/news')
     expect(rutaLlamada(4)).toBe('/trainings')
@@ -187,8 +199,20 @@ describe('panel de administración (HU-ADMIN-004)', () => {
     await obtenerConfiguracion()
     await capturarFuente(1)
     await entrenarModelo()
-    expect(espera.mock.calls.map((llamada) => llamada[1])).toEqual([10000, TIMEOUT_LARGO_MS, TIMEOUT_LARGO_MS])
+    expect(espera.mock.calls.map((llamada) => llamada[1])).toEqual([10000, TIMEOUT_LARGO_MS, TIMEOUT_ENTRENAMIENTO_MS])
     espera.mockRestore()
+  })
+
+  it('opera sobre la lista de exclusión y la cobertura', async () => {
+    await obtenerExclusiones()
+    await crearExclusion('lotería')
+    await eliminarExclusion(3)
+    await obtenerEstadisticasNoticias()
+    expect(rutaLlamada(0)).toBe('/exclusions')
+    expect(cuerpo(1)).toEqual({ palabra: 'lotería' })
+    expect(llamada(2).method).toBe('DELETE')
+    expect(rutaLlamada(2)).toBe('/exclusions/3')
+    expect(rutaLlamada(3)).toBe('/news/statistics')
   })
 
   it('usa el mensaje y el código de negocio que devuelve la API', async () => {

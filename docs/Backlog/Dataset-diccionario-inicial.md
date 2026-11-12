@@ -215,6 +215,7 @@ La tabla muestra cada término fuente, su valor en AFINN, el valor en HumWorld y
 1. El equipo revisa la sección 5 y aprueba el dataset en el PR.
 2. Con la API levantada: `docker compose exec api python -m scripts.seed_diccionario`.
 3. El barrido de humor recalcula las noticias en su próxima ejecución (hasta 30 min; o reiniciar la API).
+4. Para ampliar la cobertura con términos de evento (desastres, conflicto, economía, salud, logros), ver `Dataset-lexico-noticias.md`: léxico complementario de 236 términos, pendiente de revisión.
 
 ## Tabla de control de versiones
 
@@ -224,3 +225,4 @@ La tabla muestra cada término fuente, su valor en AFINN, el valor en HumWorld y
 | Dataset diccionario inicial | v1.1 | 2026-10-19 | Se agrega a las limitaciones un caso real de falta de contexto ("fraude" en una noticia positiva sobre IA), detectado al probar el listado de noticias. |
 | Dataset diccionario inicial | v1.2 | 2026-10-19 | Con la lematización de HU-SENT-007-v3, las formas flexionadas dejan de ser necesarias; se recomienda cargar términos nuevos en su forma base. Sin cambios en el CSV. |
 | Dataset diccionario inicial | v1.2 (editorial) | 2026-10-29 | Actualización de consistencia (rol Documentación): se corrige el encabezado (decía v1.0 pese a que el historial ya registraba v1.1 y v1.2) y se precisa el estado para reflejar que el CSV ya está incorporado al seed (`diccionario_seed.csv`), dejando como pendiente real la aprobación del equipo y la revisión humana del español. Sin cambios en el CSV. |
+| Dataset diccionario inicial | v1.3 | 2026-11-12 | Se agrega en "Uso recomendado" la referencia al léxico complementario de noticias (`Dataset-lexico-noticias.md`). Sin cambios en el CSV de este dataset. |

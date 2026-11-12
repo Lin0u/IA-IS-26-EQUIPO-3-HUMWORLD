@@ -217,10 +217,11 @@ def test_openapi_documenta_las_seis_operaciones_del_diccionario(client):
         "patch",
         "delete",
     }
-    assert "idioma" not in [
+    # HU-SENT-001-v3: el listado documenta sus filtros de idioma y rango de valor.
+    assert {"busqueda", "pagina", "tamanio_pagina", "idioma", "valor_min", "valor_max"} == {
         parameter["name"]
         for parameter in paths["/api/v1/dictionary"]["get"].get("parameters", [])
-    ]
+    }
 
 
 def test_api_actualizacion_y_consulta_de_ids_inexistentes(client):
@@ -270,3 +271,53 @@ def test_listado_paginado_respeta_la_busqueda(client):
 )
 def test_listado_rechaza_parametros_invalidos(client, consulta):
     assert client.get(f"/api/v1/dictionary?{consulta}").status_code == 400
+
+
+# HU-SENT-001-v3: filtros de idioma y rango de valor en el listado.
+def _palabras(cuerpo):
+    return [(t["palabra"], t["idioma"], t["valor"]) for t in cuerpo["items"]]
+
+
+@pytest.fixture
+def diccionario_variado(client):
+    for palabra, idioma, valor in [
+        ("guerra", "es", -8),
+        ("paz", "es", 6),
+        ("crisis", "es", -6),
+        ("war", "en", -8),
+        ("peace", "en", 6),
+        ("good", "en", 2),
+    ]:
+        termino_crear(client, palabra, idioma=idioma, valor=valor)
+
+
+def test_listado_filtra_por_idioma(client, diccionario_variado):
+    cuerpo = client.get("/api/v1/dictionary?idioma=en").json()
+    assert cuerpo["total"] == 3
+    assert {t["idioma"] for t in cuerpo["items"]} == {"en"}
+
+
+def test_listado_filtra_por_rango_de_valor(client, diccionario_variado):
+    negativos = client.get("/api/v1/dictionary?valor_max=-1").json()
+    assert sorted(_palabras(negativos)) == [("crisis", "es", -6), ("guerra", "es", -8), ("war", "en", -8)]
+    muy_positivos = client.get("/api/v1/dictionary?valor_min=6&valor_max=10").json()
+    assert sorted(t["palabra"] for t in muy_positivos["items"]) == ["paz", "peace"]
+
+
+def test_listado_combina_busqueda_idioma_y_valor(client, diccionario_variado):
+    cuerpo = client.get("/api/v1/dictionary?idioma=es&valor_max=-1&busqueda=gue").json()
+    assert _palabras(cuerpo) == [("guerra", "es", -8)]
+
+
+@pytest.mark.parametrize(
+    "consulta",
+    ["idioma=fr", "valor_min=-11", "valor_max=11", "valor_min=abc"],
+)
+def test_listado_rechaza_filtros_invalidos(client, consulta):
+    assert client.get(f"/api/v1/dictionary?{consulta}").status_code == 400
+
+
+def test_listado_rechaza_rango_invertido(client):
+    respuesta = client.get("/api/v1/dictionary?valor_min=5&valor_max=-5")
+    assert respuesta.status_code == 400
+    assert respuesta.json()["codigo"] == "RANGO_VALOR_INVALIDO"

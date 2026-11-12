@@ -53,9 +53,9 @@ def entrenar(db: Session = Depends(get_db)):
         )
     except MLNoConfiguradoError:
         return _error(503, "ML_NO_CONFIGURADO", "El servicio de embeddings no está configurado (GEMINI_API_KEY).")
-    except ErrorServicioEmbeddings:
+    except ErrorServicioEmbeddings as exc:
         return _error(
             502,
             "SERVICIO_EMBEDDINGS_NO_DISPONIBLE",
-            "El servicio de embeddings falló tras agotar los reintentos; el modelo activo no cambió.",
+            f"El servicio de embeddings falló tras agotar los reintentos ({exc}); el modelo activo no cambió.",
         )

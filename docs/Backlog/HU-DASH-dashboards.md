@@ -623,7 +623,74 @@ Escenario: Filtro sin palabras
 
 ---
 
+## HU-DASH-004-v2 — Ayudas "?" junto a cada parte de las vistas
+
+**Reemplaza a:** HU-DASH-004 (Deprecada). **Qué cambia:** el recuadro ancho "Cómo leer esta pantalla" al inicio de cada vista se reemplaza por un ícono **"?"** junto a la parte que explica. Al pasar el mouse, enfocarlo con el teclado o tocarlo en el celular, muestra qué es y qué hace esa parte. La escala de -10 a +10, la explicación del humor de cada noticia, el detalle de la nube y los bloques de Fuentes RSS no cambian. **Por qué:** el recuadro ocupaba mucho espacio y se separaba de lo que explicaba. Con la ayuda junto a cada parte, la pantalla queda más limpia y la explicación aparece donde se necesita. Decisión de la PO del 2026-11-12.
+
+**Tipo:** Historia de Usuario
+**Como** analista de medios, usuario del sistema o administrador,
+**quiero** un ícono de ayuda junto a cada parte de la vista que, al pasarle encima, explique qué es y qué hace,
+**para** entender cada elemento en el momento en que lo miro, sin que la pantalla se llene de texto.
+
+**Origen:** HU-DASH-004 (observación del profesor de frontend del 2026-11-11) y la decisión de la PO del 2026-11-12. PDF §4.3 ("Se priorizará un diseño limpio, con gráficos interactivos") y §2, objetivo específico 3. No agrega vistas, datos ni endpoints: solo presentación.
+**Prioridad:** Alta
+**Estimación:** sin estimar. Punto de partida a validar por el equipo en Planning Poker, no un valor definitivo.
+**Depende de contrato de API:** No.
+**Variante del algoritmo:** no calcula humor. Muestra el promedio simple de ADR-003 tal como lo calcula el backend.
+
+**Decisiones de diseño (propuestas por el agente PO/Arquitecto, a ratificar):**
+1. **Componente `Ayuda`:** botón redondo amarillo con "?" y un globo con título y texto. Se abre al pasar el mouse o al enfocarlo con el teclado. En pantallas táctiles se abre y se cierra tocándolo, y también se cierra al tocar fuera o con Escape. En el celular (≤ 600 px) el globo aparece como tarjeta fija abajo, para que el borde de la pantalla nunca lo corte.
+2. **Accesibilidad:** el botón se llama "Ayuda: <título>" y el globo es su descripción (`aria-describedby`, `role="tooltip"`). La ayuda va al lado del título y no dentro, para que el lector de pantalla no lea la ayuda como parte del encabezado.
+3. **Ubicación:**
+   - **Mapa:** junto a "Fecha", a "Humor global", a la leyenda de las caritas y al título del gráfico de evolución.
+   - **Noticias y Nube:** junto al título de la vista, con sus puntos. En Noticias incluye la escala.
+   - **Administración:** junto al título de cada bloque numerado de Fuentes RSS y de Parámetros. Diccionario, Purgado y Modelo ML ganan un título con su ayuda; la de Diccionario incluye la escala.
+4. Los textos son los mismos de HU-DASH-004, repartidos por parte.
+
+### Criterios de aceptación (Gherkin)
+
+```gherkin
+Escenario: Las vistas no muestran el recuadro ancho
+  Cuando el usuario abre "Mapa de humor", "Nube de palabras", "Noticias" o una pestaña de "Administración"
+  Entonces la vista no muestra el recuadro "Cómo leer esta pantalla"
+  Y cada parte explicada tiene al lado un botón "?" llamado "Ayuda: <título>"
+
+Escenario: La ayuda se abre al pasar el mouse o al enfocarla
+  Dado el bloque "3 Cobertura de noticias" de la pestaña "Parámetros"
+  Cuando el usuario pasa el mouse sobre su "?" o lo enfoca con el teclado
+  Entonces se muestra el globo "Cobertura: Muestra cuántas noticias tienen humor y por qué quedaron fuera las demás."
+
+Escenario: La ayuda en pantallas táctiles
+  Dado que la ayuda está cerrada
+  Cuando el usuario toca el "?"
+  Entonces el globo queda abierto
+  Y se cierra al tocar fuera de la ayuda o al presionar Escape
+
+Escenario: La escala dentro de la ayuda
+  Cuando el usuario abre la ayuda de "Noticias" o la de la pestaña "Diccionario"
+  Entonces el globo incluye la escala de humor de -10 a +10
+
+Escenario: Humor global en la escala (sin cambios respecto de HU-DASH-004)
+  Dado que el humor global del día elegido es -1.8
+  Cuando el usuario abre "Mapa de humor"
+  Entonces la escala de -10 a +10 marca "Mundo -1.8" a la izquierda del 0
+```
+
+Los escenarios de HU-DASH-004 sobre la nube, la explicación de una noticia en 3 pasos y los bloques de Fuentes RSS siguen vigentes sin cambios.
+
+### Definition of Done
+(Bloque general DoD, sección 14.) Adicionalmente:
+- Pruebas con Vitest y Testing Library del componente `Ayuda` (abrir, cerrar con Escape y tocando fuera, descripción accesible) y de las ayudas de cada vista (`GuiaVisual.test.jsx`, `ListadoNoticias.test.jsx`, `NubePalabras.test.jsx`, `Administracion.test.jsx`).
+- Validado visualmente en una resolución de escritorio (1280 px) y una de celular (390 px), con capturas en el Pull Request.
+- Revisión del texto de las ayudas por al menos un miembro del equipo que no lo haya escrito.
+
+**Estado de implementación (2026-11-12):** implementada en la rama `feature/relevancia-noticias`, pendiente de revisión en el PR y de ratificación del equipo.
+
+---
+
 ## HU-DASH-004 — Guía visual de lectura de las vistas
+
+**Estado:** **Deprecada (2026-11-12)** — reemplazada por **HU-DASH-004-v2** (ver arriba), que cambia el recuadro "Cómo leer esta pantalla" por ayudas "?" junto a cada parte. Se conserva este bloque íntegro como registro histórico, conforme a la sección 3 de las instrucciones del proyecto.
 
 **Tipo:** Historia de Usuario
 **Como** analista de medios, usuario del sistema o administrador que abre una vista por primera vez,
@@ -642,7 +709,7 @@ Escenario: Filtro sin palabras
 3. **Mapa:** la escala marca el humor global ("Mundo"); cada continente dice "promedio de N noticias".
 4. **Nube:** cada palabra se puede tocar para ver su valor, idioma y cantidad de noticias, con su posición en la escala.
 5. **Noticias:** cada tarjeta indica si es positiva, negativa o neutra, y el botón "¿Por qué X?" muestra la explicación en 3 pasos: palabras encontradas, suma y promedio, y resultado en la escala.
-6. **Administración:** cada pestaña explica qué hace. La pestaña Fuentes RSS se divide en 3 bloques numerados, cada uno con título y explicación: (1) canal, el medio, con la lista de canales registrados; (2) fuente RSS, un feed de ese medio, que solo se puede agregar si existe un canal; (3) fuentes registradas, con filtros y captura. Así se distingue canal de fuente RSS, según PDF §4.2.1. El resultado de cada acción aparece en su propio bloque.
+6. **Administración:** cada pestaña explica qué hace. La pestaña Fuentes RSS se divide en 3 bloques numerados, cada uno con título y explicación: (1) canal, el medio, con un botón "Ver canales registrados (N)" que despliega la tabla de canales (continente y país) y, por canal, "Ver sus fuentes", que filtra el bloque 3; (2) fuente RSS, un feed de ese medio, que solo se puede agregar si existe un canal; (3) fuentes registradas, con filtros y captura. Así se distingue canal de fuente RSS, según PDF §4.2.1. El resultado de cada acción aparece en su propio bloque.
 
 ### Criterios de aceptación (Gherkin)
 
@@ -678,7 +745,8 @@ Escenario: Explicación de una noticia en 3 pasos
 Escenario: Diferencia entre canal y fuente RSS
   Cuando el administrador abre la pestaña "Fuentes RSS"
   Entonces ve 3 bloques numerados: "1 Canal: el medio de noticias", "2 Fuente RSS: un feed de ese medio" y "3 Fuentes registradas y captura"
-  Y el bloque 1 lista los canales registrados con su país y continente
+  Y al presionar "Ver canales registrados (N)" se despliega la tabla de canales con su continente y país
+  Y "Ver sus fuentes" en un canal filtra la tabla del bloque 3 por ese canal
 
 Escenario: Fuente sin canal
   Dado que no existe ningún canal registrado
@@ -708,7 +776,8 @@ Escenario: Fuente sin canal
 | HU-DASH-002-v3 | Historia de Usuario | Alta | sin estimar | `GET /api/v1/news` y `GET /api/v1/news/{id}` — ver `contrato-noticias.openapi.yaml` (v1.2.0) | §4.3, §4.3.2, §10.2 |
 | HU-DASH-003 | Historia de Usuario — **Deprecada**, reemplazada por HU-DASH-003-v2 | — | — | — | — |
 | HU-DASH-003-v2 | Historia de Usuario | Media | 5 | `GET /api/v1/dashboards/word-cloud` — ver `contrato-dashboards.openapi.yaml` | §4.3, §4.3.1, §10.2 |
-| HU-DASH-004 | Historia de Usuario | Alta | sin estimar | Sin endpoint propio; usa los existentes | §4.3, §2 (objetivo específico 3) |
+| HU-DASH-004 | Historia de Usuario — **Deprecada**, reemplazada por HU-DASH-004-v2 | — | — | — | — |
+| HU-DASH-004-v2 | Historia de Usuario | Alta | sin estimar | Sin endpoint propio; usa los existentes | §4.3, §2 (objetivo específico 3) |
 
 Las estimaciones en puntos provienen del Planning Poker de P3 y son un punto de partida, no un valor definitivo: deben revalidarse con el equipo ahora que el alcance está detallado.
 
@@ -736,3 +805,6 @@ Las estimaciones en puntos provienen del Planning Poker de P3 y son un punto de 
 | HU-DASH-004 | v1.8 | 2026-11-11 | Creación de HU-DASH-004 (guía visual de lectura de las vistas) por la observación del profesor de frontend: no se entendía qué era cada cosa. Guía "Cómo leer esta pantalla" en todas las vistas, escala de -10 a +10, detalle de palabras en la nube y explicación en 3 pasos del humor de cada noticia. 6 escenarios Gherkin. Decisión de la PO. |
 | HU-DASH-004 | v1.9 | 2026-11-11 | A pedido de la PO, la pestaña Fuentes RSS se divide en 3 bloques numerados (canal, fuente RSS y fuentes registradas). Se ajusta la decisión 6 y el escenario de canal y fuente; se agrega el escenario "Fuente sin canal" (7 escenarios). |
 | HU-DASH-001-v3 a HU-DASH-004 | v1.10 | 2026-11-11 | Se actualiza la nota de estado de implementación, que seguía diciendo que faltaban las pruebas del frontend y el filtro por país. Sin cambios en los criterios de aceptación. |
+| HU-DASH-004 | v1.11 | 2026-11-11 | A pedido de la PO, los canales registrados del bloque 1 pasan de una lista de etiquetas a una tabla desplegable con "Ver sus fuentes" por canal. Se ajustan la decisión 6 y el escenario de canal y fuente. |
+| HU-DASH-001-v3, HU-DASH-004 | corrección | 2026-11-11 | Decisión de la PO tras ver Asia con "-0.0" y carita triste en el mapa: los valores entre -0,5 y +0,5 (sin incluir los extremos) se muestran como neutros (carita amarilla) y un valor que redondeado es cero se muestra "0.0". Solo cambia la presentación (`utilidades/humor.js`); el valor calculado por el backend y el filtro positivas/negativas de `/news` no cambian. La leyenda del mapa indica el rango. |
+| HU-DASH-004 → HU-DASH-004-v2 | v1.12 | 2026-11-12 | Decisión de la PO: el recuadro ancho "Cómo leer esta pantalla" se reemplaza por ayudas "?" junto a cada parte de la vista (componente `Ayuda`: se abre con el mouse, el teclado o un toque, y en el celular como tarjeta fija abajo). Los textos se mantienen, repartidos por parte. HU-DASH-004 queda Deprecada. Sin cambios en endpoints ni contratos. |

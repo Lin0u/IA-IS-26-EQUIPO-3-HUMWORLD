@@ -80,6 +80,9 @@ class NubePalabrasRepository:
             .join(Noticia, Noticia.id == CoincidenciaTermino.noticia_id)
             .join(FuenteRSS, Noticia.fuente_rss_id == FuenteRSS.id)
             .join(CanalNoticias, FuenteRSS.canal_id == CanalNoticias.id)
+            # HU-SENT-007-v4 / HU-SENT-009: las noticias excluidas (sin humor)
+            # conservan sus coincidencias para explicarlas, pero no cuentan.
+            .where(Noticia.valor_humor.is_not(None))
             .group_by(
                 TerminoDiccionario.id,
                 TerminoDiccionario.palabra,

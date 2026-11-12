@@ -4,3 +4,5 @@ from app.models.noticia import Noticia  # noqa: F401
 from app.models.termino_diccionario import TerminoDiccionario  # noqa: F401
 from app.models.coincidencia_termino import CoincidenciaTermino  # noqa: F401
 from app.models.modelo_sentimiento import ModeloSentimiento  # noqa: F401
+from app.models.palabra_exclusion import PalabraExclusion  # noqa: F401
+from app.models.configuracion import Configuracion  # noqa: F401

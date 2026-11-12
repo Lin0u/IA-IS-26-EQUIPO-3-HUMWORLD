@@ -11,19 +11,27 @@ export const COLORES_HUMOR = {
   sinDatos: '#d9d4ea',
 }
 
-// Clasifica el humor según su signo. El equipo todavía no define rangos
-// oficiales para "positivo", "neutro" o "negativo"; cuando existan, se cambia aquí.
+// Rango neutro: valores entre -0,5 y +0,5 (sin incluir los extremos) se muestran
+// como neutros, para que un -0.0 o un +0.1 no aparezcan con carita triste o feliz.
+// Decisión de la PO del 2026-11-11 (HU-DASH-004, corrección). Solo afecta a cómo
+// se muestra el humor, no al valor que calcula el backend.
+export const UMBRAL_NEUTRO = 0.5
+
+// Clasifica el humor: positivo desde +0,5, negativo desde -0,5 y neutro entre ambos.
 export function tipoHumor(valor) {
   if (valor === null || valor === undefined) return 'sinDatos'
-  if (valor > 0) return 'positivo'
-  if (valor < 0) return 'negativo'
+  if (valor >= UMBRAL_NEUTRO) return 'positivo'
+  if (valor <= -UMBRAL_NEUTRO) return 'negativo'
   return 'neutro'
 }
 
-// Muestra el valor con un decimal y con signo + cuando es positivo.
+// Muestra el valor con un decimal y con signo + cuando es positivo. Un valor
+// que redondeado es cero se muestra "0.0" (nunca "-0.0" ni "+0.0").
 export function formatoHumor(valor) {
   if (valor === null || valor === undefined) return 'Sin datos'
-  return valor > 0 ? `+${valor.toFixed(1)}` : valor.toFixed(1)
+  const texto = valor.toFixed(1)
+  if (Number(texto) === 0) return '0.0'
+  return valor > 0 ? `+${texto}` : texto
 }
 
 // Busca dentro de la serie temporal de un resultado el dato de una fecha.

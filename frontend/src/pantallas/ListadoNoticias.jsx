@@ -3,13 +3,14 @@
 // influido en el cálculo del humor") y ADR-005. Muestra GET /api/v1/news con
 // orden=influencia: el backend ordena por |valor_humor|, filtra y pagina.
 // HU-DASH-002-v3: cada noticia puede mostrar las palabras que explican su valor.
-// HU-DASH-004: guía de lectura y escala de humor.
+// HU-DASH-004-v2: ayuda "?" junto al título, con la escala de humor.
 import { useEffect, useState } from 'react'
 import { obtenerNoticias } from '../api/cliente.js'
 import Carita from '../componentes/Carita.jsx'
 import EscalaHumor from '../componentes/EscalaHumor.jsx'
 import ExplicacionHumor from '../componentes/ExplicacionHumor.jsx'
-import GuiaPantalla from '../componentes/GuiaPantalla.jsx'
+import Ayuda from '../componentes/Ayuda.jsx'
+import AyudaPasos from '../componentes/AyudaPasos.jsx'
 import SelectorPais from '../componentes/SelectorPais.jsx'
 import '../componentes/GuiaVisual.css'
 import { formatoHumor, tipoHumor } from '../utilidades/humor.js'
@@ -27,7 +28,7 @@ const TAMANIO_PAGINA = 10
 
 const NOMBRE_TIPO = { positivo: 'positiva', negativo: 'negativa', neutro: 'neutra', sinDatos: 'sin datos' }
 
-const PASOS_GUIA = [
+const PASOS_AYUDA = [
   {
     titulo: 'Cada tarjeta es una noticia',
     texto: 'El número de la izquierda es su humor, de -10 (muy negativa) a +10 (muy positiva).',
@@ -157,7 +158,13 @@ export default function ListadoNoticias() {
     <section className="pantalla">
       <div className="noticias-encabezado">
         <div>
-          <h2>Noticias</h2>
+          <div className="titulo-con-ayuda">
+            <h2>Noticias</h2>
+            <Ayuda titulo="Cómo leer las noticias">
+              <AyudaPasos pasos={PASOS_AYUDA} />
+              <EscalaHumor />
+            </Ayuda>
+          </div>
           <p>Las que más pesaron en el cálculo del humor: mientras más lejos de 0, más influyó.</p>
         </div>
         <div className="noticias-controles">
@@ -188,10 +195,6 @@ export default function ListadoNoticias() {
           </div>
         </div>
       </div>
-
-      <GuiaPantalla pasos={PASOS_GUIA}>
-        <EscalaHumor />
-      </GuiaPantalla>
 
       {contenido}
 

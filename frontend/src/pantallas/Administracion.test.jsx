@@ -21,6 +21,10 @@ vi.mock('../api/cliente.js', () => ({
   guardarConfiguracion: vi.fn(),
   purgarNoticias: vi.fn(),
   entrenarModelo: vi.fn(),
+  obtenerExclusiones: vi.fn(),
+  crearExclusion: vi.fn(),
+  eliminarExclusion: vi.fn(),
+  obtenerEstadisticasNoticias: vi.fn(),
 }))
 
 function fuente(id, extra = {}) {
@@ -53,7 +57,24 @@ beforeEach(() => {
     tamanio_pagina: 25,
     total: 1,
   })
-  api.obtenerConfiguracion.mockResolvedValue({ periodicidad_cron_minutos: 60, caducidad_noticias_dias: 90 })
+  api.obtenerConfiguracion.mockResolvedValue({
+    periodicidad_cron_minutos: 60,
+    caducidad_noticias_dias: 90,
+    minimo_terminos_humor: 2,
+  })
+  api.obtenerExclusiones.mockResolvedValue([
+    { id: 1, palabra: 'horóscopo' },
+    { id: 2, palabra: 'lotería' },
+  ])
+  api.obtenerEstadisticasNoticias.mockResolvedValue({
+    total: 2171,
+    con_humor: 1256,
+    sin_terminos: 449,
+    bajo_minimo_terminos: 440,
+    excluidas_por_lista: 26,
+    pendientes: 0,
+    minimo_terminos_humor: 2,
+  })
   confirmar = vi.spyOn(window, 'confirm').mockReturnValue(true)
 })
 
@@ -77,18 +98,24 @@ describe('pestañas', () => {
     expect(screen.getByRole('button', { name: 'Entrenar modelo' })).toBeInTheDocument()
   })
 
-  it('cada pestaña abre con su guía', async () => {
+  it('cada parte tiene su ayuda "?" (HU-DASH-004-v2)', async () => {
     const usuario = await abrir()
-    expect(screen.getByRole('complementary', { name: 'Cómo leer esta pantalla' })).toHaveTextContent(
-      'Bloque 1: el canal',
+    expect(screen.queryByRole('complementary', { name: 'Cómo leer esta pantalla' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ayuda: El canal' })).toHaveAccessibleDescription(
+      expect.stringContaining('Es el medio'),
     )
+    expect(screen.getByRole('button', { name: 'Ayuda: Sus fuentes RSS' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ayuda: Captura' })).toBeInTheDocument()
+
     await usuario.click(screen.getByRole('tab', { name: 'Diccionario' }))
-    const guia = screen.getByRole('complementary', { name: 'Cómo leer esta pantalla' })
-    expect(guia).toHaveTextContent('Así se calcula el humor')
-    expect(within(guia).getByRole('img', { name: 'Escala de humor de -10 a +10' })).toBeInTheDocument()
+    const boton = screen.getByRole('button', { name: 'Ayuda: Diccionario de términos' })
+    expect(boton).toHaveAccessibleDescription(expect.stringContaining('Así se calcula el humor'))
+    const globo = document.getElementById(boton.getAttribute('aria-describedby'))
+    expect(within(globo).getByRole('img', { name: 'Escala de humor de -10 a +10' })).toBeInTheDocument()
+
     await usuario.click(screen.getByRole('tab', { name: 'Purgado' }))
-    expect(screen.getByRole('complementary', { name: 'Cómo leer esta pantalla' })).toHaveTextContent(
-      'No se puede deshacer',
+    expect(screen.getByRole('button', { name: 'Ayuda: Purgado de noticias' })).toHaveAccessibleDescription(
+      expect.stringContaining('No se puede deshacer'),
     )
   })
 })
@@ -168,8 +195,38 @@ describe('Fuentes RSS', () => {
     expect(screen.getByRole('region', { name: '1 Canal: el medio de noticias' })).toBeInTheDocument()
     expect(screen.getByRole('region', { name: '2 Fuente RSS: un feed de ese medio' })).toBeInTheDocument()
     expect(screen.getByRole('region', { name: '3 Fuentes registradas y captura' })).toBeInTheDocument()
-    const canales = await screen.findByRole('list', { name: 'Canales registrados' })
-    expect(canales).toHaveTextContent('BBC Mundo · Reino Unido, Europa')
+    expect(screen.queryByRole('table', { name: 'Canales registrados' })).not.toBeInTheDocument()
+  })
+
+  it('muestra los canales registrados al pedirlo y filtra sus fuentes', async () => {
+    const usuario = await abrir()
+    const boton = await screen.findByRole('button', { name: 'Ver canales registrados (1)' })
+    expect(boton).toHaveAttribute('aria-expanded', 'false')
+    await usuario.click(boton)
+
+    const tabla = screen.getByRole('table', { name: 'Canales registrados' })
+    const fila = within(tabla).getByText('BBC Mundo').closest('tr')
+    expect(within(fila).getByText('Europa')).toBeInTheDocument()
+    expect(within(fila).getByText('Reino Unido')).toBeInTheDocument()
+
+    await usuario.click(within(fila).getByRole('button', { name: 'Ver sus fuentes' }))
+    await waitFor(() =>
+      expect(api.obtenerFuentes).toHaveBeenLastCalledWith(expect.objectContaining({ canalId: '1', pagina: 1 })),
+    )
+    expect(screen.getByLabelText('Filtrar por canal')).toHaveValue('1')
+
+    await usuario.click(screen.getByRole('button', { name: 'Ocultar canales registrados' }))
+    expect(screen.queryByRole('table', { name: 'Canales registrados' })).not.toBeInTheDocument()
+  })
+
+  it('muestra un guion si el canal no tiene país', async () => {
+    api.obtenerCanales.mockResolvedValue([{ id: 2, nombre: 'AllAfrica', continente: 'África', pais: null }])
+    const usuario = await abrir()
+    await usuario.click(await screen.findByRole('button', { name: 'Ver canales registrados (1)' }))
+    const fila = within(screen.getByRole('table', { name: 'Canales registrados' }))
+      .getByText('AllAfrica')
+      .closest('tr')
+    expect(within(fila).getByText('—')).toBeInTheDocument()
   })
 
   it('pide crear un canal antes de agregar fuentes', async () => {
@@ -258,6 +315,7 @@ describe('Diccionario', () => {
   it('crea un término validando la escala -10..+10', async () => {
     api.crearTermino.mockResolvedValue({ id: 6 })
     const usuario = await abrir('Diccionario')
+    await usuario.click(screen.getByRole('button', { name: '+ Agregar término' }))
     const formulario = screen.getByRole('form', { name: 'Nuevo término' })
     await usuario.type(within(formulario).getByLabelText('Palabra'), 'paz')
     await usuario.type(within(formulario).getByLabelText('Valor'), '11')
@@ -271,11 +329,28 @@ describe('Diccionario', () => {
     expect(await screen.findByRole('status')).toHaveTextContent(
       'Término "paz" creado. El humor de las noticias se recalculará en el próximo barrido.',
     )
+    // Al crear, el formulario se cierra.
+    expect(screen.queryByRole('form', { name: 'Nuevo término' })).not.toBeInTheDocument()
+  })
+
+  it('el formulario de alta empieza oculto y se cierra con Cancelar', async () => {
+    const usuario = await abrir('Diccionario')
+    const boton = screen.getByRole('button', { name: '+ Agregar término' })
+    expect(boton).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('form', { name: 'Nuevo término' })).not.toBeInTheDocument()
+    await usuario.click(boton)
+    expect(boton).toHaveAttribute('aria-expanded', 'true')
+    await usuario.type(screen.getByLabelText('Palabra'), 'paz')
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('form', { name: 'Nuevo término' })).not.toBeInTheDocument()
+    await usuario.click(boton)
+    expect(screen.getByLabelText('Palabra')).toHaveValue('')
   })
 
   it('muestra el error de término duplicado', async () => {
     api.crearTermino.mockRejectedValue(new Error('El término ya existe en ese idioma.'))
     const usuario = await abrir('Diccionario')
+    await usuario.click(screen.getByRole('button', { name: '+ Agregar término' }))
     const formulario = screen.getByRole('form', { name: 'Nuevo término' })
     await usuario.type(within(formulario).getByLabelText('Palabra'), 'guerra')
     await usuario.type(within(formulario).getByLabelText('Valor'), '-8')
@@ -288,7 +363,34 @@ describe('Diccionario', () => {
     await screen.findByText('guerra')
     await usuario.type(screen.getByLabelText('Buscar'), 'g')
     await waitFor(() =>
-      expect(api.obtenerTerminos).toHaveBeenLastCalledWith({ busqueda: 'g', pagina: 1, tamanioPagina: 25 }),
+      expect(api.obtenerTerminos).toHaveBeenLastCalledWith({
+        busqueda: 'g',
+        idioma: '',
+        valorMin: null,
+        valorMax: null,
+        pagina: 1,
+        tamanioPagina: 25,
+      }),
+    )
+  })
+
+  it('filtra por idioma y por rango de valor (HU-SENT-001-v3)', async () => {
+    const usuario = await abrir('Diccionario')
+    await screen.findByText('guerra')
+    const filtros = screen.getByRole('search', { name: 'Filtros del diccionario' })
+    await usuario.selectOptions(within(filtros).getByLabelText('Idioma'), 'en')
+    await waitFor(() =>
+      expect(api.obtenerTerminos).toHaveBeenLastCalledWith(expect.objectContaining({ idioma: 'en', pagina: 1 })),
+    )
+    await usuario.selectOptions(within(filtros).getByLabelText('Valor'), 'negativos')
+    await waitFor(() =>
+      expect(api.obtenerTerminos).toHaveBeenLastCalledWith(
+        expect.objectContaining({ idioma: 'en', valorMin: null, valorMax: -1 }),
+      ),
+    )
+    await usuario.selectOptions(within(filtros).getByLabelText('Valor'), 'muyPositivos')
+    await waitFor(() =>
+      expect(api.obtenerTerminos).toHaveBeenLastCalledWith(expect.objectContaining({ valorMin: 6, valorMax: null })),
     )
   })
 
@@ -335,21 +437,46 @@ describe('Diccionario', () => {
 })
 
 describe('Parámetros', () => {
-  it('carga, valida y guarda los parámetros', async () => {
-    api.guardarConfiguracion.mockResolvedValue({ periodicidad_cron_minutos: 30, caducidad_noticias_dias: 90 })
+  it('carga, valida y guarda los parámetros, incluido el mínimo de palabras', async () => {
+    api.guardarConfiguracion.mockResolvedValue({
+      periodicidad_cron_minutos: 30,
+      caducidad_noticias_dias: 90,
+      minimo_terminos_humor: 3,
+    })
     const usuario = await abrir('Parámetros')
     const periodicidad = await screen.findByLabelText('Periodicidad del cron (minutos)')
     expect(periodicidad).toHaveValue(60)
     expect(screen.getByLabelText('Caducidad de las noticias (días)')).toHaveValue(90)
-    await usuario.clear(periodicidad)
-    await usuario.type(periodicidad, '0')
-    expect(screen.getByText('Los dos valores deben ser enteros mayores o iguales a 1.')).toBeInTheDocument()
+    const minimo = screen.getByLabelText('Mínimo de palabras del diccionario por noticia')
+    expect(minimo).toHaveValue(2)
+    await usuario.clear(minimo)
+    await usuario.type(minimo, '0')
+    expect(screen.getByText('Los valores deben ser enteros mayores o iguales a 1.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Guardar' })).toBeDisabled()
+    await usuario.clear(minimo)
+    await usuario.type(minimo, '3')
     await usuario.clear(periodicidad)
     await usuario.type(periodicidad, '30')
     await usuario.click(screen.getByRole('button', { name: 'Guardar' }))
-    expect(api.guardarConfiguracion).toHaveBeenCalledWith({ periodicidad: 30, caducidad: 90 })
-    expect(await screen.findByRole('status')).toHaveTextContent('Parámetros guardados.')
+    expect(api.guardarConfiguracion).toHaveBeenCalledWith({ periodicidad: 30, caducidad: 90, minimoTerminos: 3 })
+    const bloque = screen.getByRole('form', { name: '1 Captura, caducidad y mínimo de palabras' })
+    expect(await within(bloque).findByRole('status')).toHaveTextContent(
+      'Parámetros guardados. El humor de las noticias se recalculará en el próximo barrido.',
+    )
+    expect(api.obtenerEstadisticasNoticias).toHaveBeenCalledTimes(2)
+  })
+
+  it('sin cambiar el mínimo no avisa del recálculo', async () => {
+    api.guardarConfiguracion.mockResolvedValue({
+      periodicidad_cron_minutos: 60,
+      caducidad_noticias_dias: 90,
+      minimo_terminos_humor: 2,
+    })
+    const usuario = await abrir('Parámetros')
+    await screen.findByLabelText('Periodicidad del cron (minutos)')
+    await usuario.click(screen.getByRole('button', { name: 'Guardar' }))
+    const bloque = screen.getByRole('form', { name: '1 Captura, caducidad y mínimo de palabras' })
+    expect(await within(bloque).findByRole('status')).toHaveTextContent(/^Parámetros guardados\.$/)
   })
 
   it('muestra el error al guardar', async () => {
@@ -362,6 +489,98 @@ describe('Parámetros', () => {
 
   it('muestra el error si no puede cargar', async () => {
     api.obtenerConfiguracion.mockRejectedValue(new Error('No se pudo conectar con el servidor.'))
+    await abrir('Parámetros')
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo conectar con el servidor.')
+  })
+
+  it('agrega y quita palabras de la lista de exclusión', async () => {
+    api.crearExclusion.mockResolvedValue({ id: 3, palabra: 'baloto' })
+    api.eliminarExclusion.mockResolvedValue(null)
+    const usuario = await abrir('Parámetros')
+    // HU-ADMIN-001-v2, ajuste del 2026-11-12: la lista empieza oculta y se abre con "Ver palabras (N)".
+    const ver = await screen.findByRole('button', { name: 'Ver palabras (2)' })
+    expect(ver).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('list', { name: 'Palabras de exclusión' })).not.toBeInTheDocument()
+    await usuario.click(ver)
+    const lista = screen.getByRole('list', { name: 'Palabras de exclusión' })
+    expect(
+      within(lista)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual(['horóscopo×', 'lotería×'])
+
+    const formulario = screen.getByRole('form', { name: 'Nueva palabra de exclusión' })
+    expect(within(formulario).getByRole('button', { name: 'Agregar' })).toBeDisabled()
+    await usuario.type(within(formulario).getByLabelText('Palabra o frase'), ' Baloto ')
+    await usuario.click(within(formulario).getByRole('button', { name: 'Agregar' }))
+    expect(api.crearExclusion).toHaveBeenCalledWith('Baloto')
+    expect(
+      await screen.findByText('"baloto" agregada. El humor de las noticias se recalculará en el próximo barrido.'),
+    ).toBeInTheDocument()
+    expect(
+      within(lista)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual(['baloto×', 'horóscopo×', 'lotería×'])
+
+    await usuario.click(screen.getByRole('button', { name: 'Quitar lotería' }))
+    expect(api.eliminarExclusion).toHaveBeenCalledWith(2)
+    expect(await screen.findByText(/"lotería" quitada/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Quitar lotería' })).not.toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('button', { name: 'Ocultar palabras' }))
+    expect(screen.queryByRole('list', { name: 'Palabras de exclusión' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ver palabras (2)' })).toBeInTheDocument()
+  })
+
+  it('muestra los errores de la lista de exclusión', async () => {
+    api.crearExclusion.mockRejectedValue(new Error('Esa palabra ya está en la lista de exclusión.'))
+    api.eliminarExclusion.mockRejectedValue(new Error('La palabra no existe en la lista de exclusión.'))
+    const usuario = await abrir('Parámetros')
+    await usuario.type(await screen.findByLabelText('Palabra o frase'), 'lotería')
+    await usuario.click(screen.getByRole('button', { name: 'Agregar' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Esa palabra ya está en la lista de exclusión.')
+    await usuario.click(screen.getByRole('button', { name: 'Ver palabras (2)' }))
+    await usuario.click(screen.getByRole('button', { name: 'Quitar horóscopo' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('La palabra no existe en la lista de exclusión.')
+  })
+
+  it('avisa si la lista está vacía o no se pudo cargar', async () => {
+    api.obtenerExclusiones.mockResolvedValueOnce([])
+    await abrir('Parámetros')
+    expect(await screen.findByText('La lista está vacía: no se excluye ninguna noticia.')).toBeInTheDocument()
+  })
+
+  it('muestra la cobertura de noticias y la actualiza', async () => {
+    const usuario = await abrir('Parámetros')
+    const bloque = await screen.findByRole('region', { name: '3 Cobertura de noticias' })
+    await within(bloque).findByText('1256')
+    expect(within(bloque).getByText('Con menos de 2 palabras').nextSibling).toHaveTextContent('440')
+    expect(within(bloque).getByText('Excluidas por la lista').nextSibling).toHaveTextContent('26')
+    expect(within(bloque).queryByText(/se procesan en el próximo barrido/)).not.toBeInTheDocument()
+
+    api.obtenerEstadisticasNoticias.mockResolvedValue({
+      total: 2171,
+      con_humor: 900,
+      sin_terminos: 449,
+      bajo_minimo_terminos: 0,
+      excluidas_por_lista: 0,
+      pendientes: 822,
+      minimo_terminos_humor: 2,
+    })
+    await usuario.click(within(bloque).getByRole('button', { name: 'Actualizar' }))
+    expect(await within(bloque).findByText('822')).toBeInTheDocument()
+    expect(within(bloque).getByText(/se procesan en el próximo barrido/)).toBeInTheDocument()
+  })
+
+  it('avisa si no puede cargar la cobertura', async () => {
+    api.obtenerEstadisticasNoticias.mockRejectedValue(new Error('x'))
+    await abrir('Parámetros')
+    expect(await screen.findByText('No se pudo cargar la cobertura.')).toBeInTheDocument()
+  })
+
+  it('avisa si no puede cargar la lista de exclusión', async () => {
+    api.obtenerExclusiones.mockRejectedValue(new Error('No se pudo conectar con el servidor.'))
     await abrir('Parámetros')
     expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo conectar con el servidor.')
   })

@@ -79,6 +79,23 @@ class NoticiaConsultaRepository:
         ).all()
         return [tuple(f) for f in filas], total
 
+    def contar_por_estado(self, db: Session) -> dict:
+        """Conteos de HU-SENT-009: con humor, sin términos, excluidas y pendientes."""
+        con_humor = Noticia.valor_humor.is_not(None)
+        evaluada = Noticia.metodo_calculo.is_not(None)
+
+        def contar(*condiciones) -> int:
+            return db.scalar(select(func.count()).select_from(Noticia).where(*condiciones)) or 0
+
+        return {
+            "total": contar(),
+            "con_humor": contar(con_humor),
+            "sin_terminos": contar(evaluada, Noticia.valor_humor.is_(None), Noticia.motivo_exclusion.is_(None)),
+            "bajo_minimo_terminos": contar(evaluada, Noticia.motivo_exclusion == "minimo_terminos"),
+            "excluidas_por_lista": contar(evaluada, Noticia.motivo_exclusion == "palabra_exclusion"),
+            "pendientes": contar(Noticia.metodo_calculo.is_(None)),
+        }
+
     def buscar(self, db: Session, noticia_id: int) -> tuple | None:
         fila = db.execute(self._base().where(Noticia.id == noticia_id)).first()
         return tuple(fila) if fila else None

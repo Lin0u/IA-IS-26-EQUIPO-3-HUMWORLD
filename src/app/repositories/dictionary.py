@@ -75,17 +75,27 @@ class TerminoDiccionarioRepository:
         pagina: int,
         tamanio_pagina: int,
         busqueda: str | None = None,
+        idioma: str | None = None,
+        valor_min: int | None = None,
+        valor_max: int | None = None,
     ) -> tuple[list[TerminoDiccionario], int]:
-        """Página de términos y total filtrado (HU-SENT-001-v2).
+        """Página de términos y total filtrado (HU-SENT-001-v3).
 
-        Orden alfabético por palabra, luego idioma e id, para que la
-        paginación sea estable.
+        Filtros opcionales y combinables: búsqueda parcial en la palabra,
+        idioma y rango de valor (ambos extremos incluidos). Orden alfabético
+        por palabra, luego idioma e id, para que la paginación sea estable.
         """
         filtros = []
         if busqueda:
             filtros.append(
                 func.lower(TerminoDiccionario.palabra).contains(busqueda.lower(), autoescape=True)
             )
+        if idioma:
+            filtros.append(TerminoDiccionario.idioma == idioma)
+        if valor_min is not None:
+            filtros.append(TerminoDiccionario.valor >= valor_min)
+        if valor_max is not None:
+            filtros.append(TerminoDiccionario.valor <= valor_max)
         total = db.execute(
             select(func.count()).select_from(TerminoDiccionario).where(*filtros)
         ).scalar_one()

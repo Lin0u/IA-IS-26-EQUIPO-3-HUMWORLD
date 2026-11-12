@@ -12,6 +12,9 @@ const TIMEOUT_MS = 10000
 // (src/app/core/config.py), más el cálculo del humor; varias fuentes se capturan en
 // serie. Con 10 s el navegador abandonaba la espera aunque el backend terminara bien.
 export const TIMEOUT_LARGO_MS = 180000
+// El entrenamiento manda todas las noticias a Gemini en lotes y espera su cuota por
+// minuto (HU-SENT-006): con la capa gratuita puede tardar varios minutos.
+export const TIMEOUT_ENTRENAMIENTO_MS = 30 * 60 * 1000
 
 // Error de la API con el código HTTP y el "codigo" de negocio que devuelve el
 // backend (por ejemplo, TERMINO_DUPLICADO). El mensaje es el que manda la API,
@@ -191,11 +194,24 @@ export function capturarFuentes(ids) {
   return solicitar('/captures', { metodo: 'POST', cuerpo: { fuente_ids: ids }, timeoutMs: TIMEOUT_LARGO_MS })
 }
 
-// GET /dictionary (HU-SENT-001-v2), paginado y con búsqueda.
-export function obtenerTerminos({ busqueda = '', pagina = 1, tamanioPagina = 25 } = {}) {
+// GET /dictionary (HU-SENT-001-v3), paginado, con búsqueda y filtros de idioma y
+// rango de valor (ambos extremos incluidos).
+export function obtenerTerminos({
+  busqueda = '',
+  idioma = '',
+  valorMin = null,
+  valorMax = null,
+  pagina = 1,
+  tamanioPagina = 25,
+} = {}) {
   const consulta = agregarFiltros(
     new URLSearchParams({ pagina: String(pagina), tamanio_pagina: String(tamanioPagina) }),
-    { busqueda },
+    {
+      busqueda,
+      idioma,
+      valor_min: valorMin === null ? '' : String(valorMin),
+      valor_max: valorMax === null ? '' : String(valorMax),
+    },
   )
   return obtenerJson(`/dictionary?${consulta}`)
 }
@@ -220,12 +236,36 @@ export function obtenerConfiguracion() {
   return obtenerJson('/config')
 }
 
-// PUT /config (HU-RSS-007, HU-ADMIN-001).
-export function guardarConfiguracion({ periodicidad, caducidad }) {
+// PUT /config (HU-RSS-007, HU-ADMIN-001-v2, HU-SENT-007-v4).
+export function guardarConfiguracion({ periodicidad, caducidad, minimoTerminos }) {
   return solicitar('/config', {
     metodo: 'PUT',
-    cuerpo: { periodicidad_cron_minutos: periodicidad, caducidad_noticias_dias: caducidad },
+    cuerpo: {
+      periodicidad_cron_minutos: periodicidad,
+      caducidad_noticias_dias: caducidad,
+      minimo_terminos_humor: minimoTerminos,
+    },
   })
+}
+
+// GET /exclusions (HU-SENT-009): palabras que excluyen una noticia del humor.
+export function obtenerExclusiones() {
+  return obtenerJson('/exclusions')
+}
+
+// POST /exclusions (HU-SENT-009).
+export function crearExclusion(palabra) {
+  return solicitar('/exclusions', { metodo: 'POST', cuerpo: { palabra } })
+}
+
+// DELETE /exclusions/{id} (HU-SENT-009).
+export function eliminarExclusion(id) {
+  return solicitar(`/exclusions/${id}`, { metodo: 'DELETE' })
+}
+
+// GET /news/statistics (HU-SENT-009): cuántas noticias tienen humor y por qué no las demás.
+export function obtenerEstadisticasNoticias() {
+  return obtenerJson('/news/statistics')
 }
 
 // DELETE /news (HU-ADMIN-003). Sin fecha, aplica la caducidad configurada.
@@ -236,5 +276,5 @@ export function purgarNoticias(fecha = '') {
 
 // POST /trainings (HU-SENT-006).
 export function entrenarModelo() {
-  return solicitar('/trainings', { metodo: 'POST', timeoutMs: TIMEOUT_LARGO_MS })
+  return solicitar('/trainings', { metodo: 'POST', timeoutMs: TIMEOUT_ENTRENAMIENTO_MS })
 }

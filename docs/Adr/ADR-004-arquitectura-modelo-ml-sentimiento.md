@@ -119,6 +119,17 @@ Sin `GEMINI_API_KEY` el camino de ML queda desactivado y todo el humor se calcul
 
 **Riesgo operativo observado al implementar:** el camino de predicción hace una llamada a Gemini por noticia. Con el volumen de captura actual (cientos de noticias por ejecución del cron), una cuota diaria del orden de la documentada en el punto 2 se agotaría en pocas horas; al agotarse, las respuestas 429 abren el Circuit Breaker y el cálculo vuelve al diccionario. Es el riesgo de cuota ya señalado en "Negativas / riesgos a mitigar", ahora con un mecanismo de degradación probado.
 
+**Ajuste del 2026-11-11 (primer entrenamiento real):** con más de 1.000 noticias, el primer `POST /trainings` falló con 502. Gemini respondió a `batchEmbedContents` con errores transitorios (HTTP 429 o 5xx) y los 3 reintentos con backoff de 0,5 s se agotaban en unos 4 segundos, mientras que la cuota gratuita es por minuto. Se ajusta **solo el entrenamiento**, sin cambiar la arquitectura:
+
+| Parámetro | Antes | Ahora | Nota |
+|---|---|---|---|
+| Textos por lote (`embeddings_lote`) | 100 | 20 | Lotes más chicos, menos tokens por solicitud. |
+| Timeout al entrenar | 3 s | 60 s | La predicción mantiene 3 s. |
+| Reintentos al entrenar | 3 | 6 | Siguen siendo acotados. |
+| Espera ante HTTP 429 al entrenar | 0,5 s · 2ⁿ | la que indica Gemini (`retryDelay`) + 1 s; sin indicación, 15 s · 2ⁿ; tope de 65 s | La predicción no espera: falla rápido y cae al diccionario. |
+
+Además, el error 502 incluye ahora el código y el mensaje de Gemini, y el log registra el avance por lote. Si la cuota **diaria** de la capa gratuita no alcanza para todas las noticias de entrenamiento, el 502 lo indicará en su mensaje; en ese caso el equipo debe decidir entre reintentar al día siguiente, entrenar con una muestra o usar una clave con facturación. Valores propuestos, pendientes de ratificación del equipo.
+
 ---
 
 ## Alternativas consideradas
@@ -204,3 +215,4 @@ Las condiciones de free tier de Google Gemini Embedding, y la comparación con O
 | v1.2 (editorial) | 2026-09-29 | Limpieza editorial: se retiran las marcas de sesión ("tercera/cuarta sesión del día") y las etiquetas "PO/Arquitecto" inline dentro del cuerpo del documento, integrando ese contenido como prosa técnica normal. La trazabilidad de cuándo se tomó cada decisión queda exclusivamente en esta tabla de Historial de revisión. Sin cambios de fondo en la arquitectura, la Decisión ni las Consecuencias. |
  
 | v1.3 | 2026-10-19 | Se agrega el punto 8 "Implementación" con los parámetros concretos de la implementación de HU-SENT-006 (modelo `gemini-embedding-001`, reintentos, Circuit Breaker, Ridge, partición de validación y códigos 409/502/503) y el riesgo de cuota observado. Sin cambios en la Decisión, las Alternativas ni el Estado. |
+| v1.4 | 2026-11-11 | Punto 8: ajuste del entrenamiento ante la cuota por minuto de la capa gratuita de Gemini (lotes de 20, timeout de 60 s, 6 reintentos y espera según `retryDelay` con tope de 65 s), tras fallar el primer entrenamiento real con 502. La predicción no cambia. Sin cambios en la Decisión ni en las Alternativas. |

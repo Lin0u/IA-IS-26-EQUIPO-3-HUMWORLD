@@ -133,12 +133,8 @@ def reprogramar_periodicidad(minutos: int) -> None:
         raise ValueError("La periodicidad debe ser un entero positivo.")
 
     if scheduler.running and not _event_loop_closed():
-        scheduler.modify_job(
-            CAPTURA_JOB_ID,
-            trigger="interval",
-            minutes=minutos,
-            next_run_time=datetime.now(timezone.utc) + timedelta(minutes=minutos),
-            max_instances=1,
-            coalesce=True,
-            misfire_grace_time=TOLERANCIA_ATRASO,
-        )
+        # modify_job no acepta un trigger como texto ("interval") y fallaba con
+        # TypeError: el cambio de trigger se hace con reschedule_job, que
+        # también calcula la próxima ejecución (ahora + la nueva periodicidad).
+        # max_instances, coalesce y misfire_grace_time se conservan del add_job.
+        scheduler.reschedule_job(CAPTURA_JOB_ID, trigger="interval", minutes=minutos)

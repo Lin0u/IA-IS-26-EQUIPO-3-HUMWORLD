@@ -15,7 +15,7 @@ info:
     servicios internos invocados tras la captura de cada noticia o desde los
     endpoints de este contrato) y por lo tanto no aparecen aquí — ver
     `HU-SENT-motor-sentimiento.md` para su detalle.
-  version: "1.3.0"
+  version: "1.5.0"
 servers:
   - url: /api/v1
     description: Base URL versionada (PDF, sección 10.3), misma convención que contrato-canales-fuentes-rss.openapi.yaml.
@@ -24,7 +24,7 @@ tags:
   - name: dictionary
     description: >
       Gestión CRUD del diccionario de términos de sentimiento. Origina en
-      HU-SENT-001-v2. Desde v1.2.0 el listado está paginado con la misma
+      HU-SENT-001-v3. Desde v1.2.0 el listado está paginado con la misma
       convención que /channels y /sources (pagina, tamanio_pagina 10 por
       defecto y 50 como máximo), porque la carga inicial deja ~3.800 términos
       y el panel de administración (HU-ADMIN-004) los recorre por páginas.
@@ -35,6 +35,11 @@ tags:
       método determinista de diccionario (HU-SENT-007), nunca el modelo de ML
       — esto es una propuesta del agente PO/Arquitecto documentada en
       HU-SENT-005, pendiente de confirmación por el equipo.
+  - name: exclusions
+    description: >
+      Lista de exclusión de noticias no relevantes para el humor (sorteos,
+      horóscopo, pasatiempos). Origina en HU-SENT-009; regla en ADR-003,
+      punto 7.
   - name: trainings
     description: >
       Disparo manual del entrenamiento de una nueva versión del modelo de ML.
@@ -51,10 +56,12 @@ paths:
       tags: [dictionary]
       summary: Listar términos del diccionario de sentimiento
       description: >
-        Origina en HU-SENT-001-v2. Filtro opcional de búsqueda por coincidencia
+        Origina en HU-SENT-001-v3. Filtro opcional de búsqueda por coincidencia
         parcial en la palabra (Gherkin: "GET /api/v1/dictionary?busqueda=guerr"
-        devuelve únicamente términos cuya palabra contiene "guerr"). Listado
-        paginado y ordenado alfabéticamente por palabra, luego idioma e id.
+        devuelve únicamente términos cuya palabra contiene "guerr") y, desde
+        v1.5.0, filtros opcionales de idioma y de rango de valor. Los filtros se
+        combinan entre sí. Listado paginado y ordenado alfabéticamente por
+        palabra, luego idioma e id.
       parameters:
         - name: busqueda
           in: query
@@ -62,6 +69,29 @@ paths:
           schema:
             type: string
           description: Filtra términos cuya palabra contiene este texto (coincidencia parcial, no sensible a mayúsculas/minúsculas).
+        - name: idioma
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [es, en]
+          description: Solo términos de ese idioma (HU-SENT-001-v3).
+        - name: valor_min
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: -10
+            maximum: 10
+          description: Solo términos con valor mayor o igual a este (incluido). HU-SENT-001-v3.
+        - name: valor_max
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: -10
+            maximum: 10
+          description: Solo términos con valor menor o igual a este (incluido). HU-SENT-001-v3.
         - name: pagina
           in: query
           required: false
@@ -85,7 +115,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/TerminoDiccionarioListado"
         "400":
-          description: pagina o tamanio_pagina fuera de rango.
+          description: >
+            pagina o tamanio_pagina fuera de rango, idioma distinto de es/en,
+            valor_min o valor_max fuera de -10..10, o valor_min mayor que
+            valor_max (codigo RANGO_VALOR_INVALIDO).
           content:
             application/json:
               schema:
@@ -343,6 +376,76 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /exclusions:
+    get:
+      tags: [exclusions]
+      summary: Listar la lista de exclusión de noticias
+      description: Origina en HU-SENT-009. Palabras y frases en orden alfabético, sin paginación (lista corta).
+      responses:
+        "200":
+          description: Lista de exclusión.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PalabraExclusion"
+    post:
+      tags: [exclusions]
+      summary: Agregar una palabra o frase a la lista de exclusión
+      description: >
+        Origina en HU-SENT-009. Se guarda en minúsculas y con espacios
+        simples. Dos entradas que solo difieren en mayúsculas, tildes o
+        espacios son la misma. Las noticias calculadas por diccionario se
+        recalculan en el próximo barrido.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PalabraExclusionCrear"
+      responses:
+        "201":
+          description: Palabra agregada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PalabraExclusion"
+        "400":
+          description: Palabra vacía, sin letras ni números o de más de 100 caracteres (codigo DATOS_INVALIDOS).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: La palabra ya está en la lista (codigo PALABRA_DUPLICADA).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /exclusions/{id}:
+    delete:
+      tags: [exclusions]
+      summary: Quitar una palabra de la lista de exclusión
+      description: Origina en HU-SENT-009. Las noticias calculadas por diccionario se recalculan en el próximo barrido.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "204":
+          description: Palabra quitada.
+        "404":
+          description: La palabra no existe (codigo PALABRA_NO_ENCONTRADA).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
 components:
   parameters:
     TerminoId:
@@ -354,6 +457,31 @@ components:
       description: Identificador único del término del diccionario.
 
   schemas:
+    PalabraExclusionCrear:
+      type: object
+      description: Origina en HU-SENT-009.
+      properties:
+        palabra:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Palabra o frase; debe contener al menos una letra o número.
+      required: [palabra]
+
+    PalabraExclusion:
+      type: object
+      description: >
+        Origina en HU-SENT-009 (ADR-003, punto 7). Si aparece completa en el
+        título de una noticia (sin mayúsculas ni tildes), la noticia no recibe
+        humor y queda con motivo_exclusion = "palabra_exclusion".
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        palabra:
+          type: string
+      required: [id, palabra]
+
     Idioma:
       type: string
       enum: [es, en]
@@ -630,3 +758,11 @@ components:
 # v1.3.0 (2026-11-04): AnalisisTextoResultado agrega "terminos"
 #   (TerminoCoincidente: palabra, idioma, valor) para explicar el valor de humor
 #   (HU-SENT-005-v2). Cambio compatible: solo agrega un campo a la respuesta.
+# v1.4.0 (2026-11-11): se agregan GET/POST /exclusions y DELETE
+#   /exclusions/{id} (HU-SENT-009; ADR-003 punto 7), con los esquemas
+#   PalabraExclusion y PalabraExclusionCrear. POST /sentiment no cambia: no
+#   aplica el mínimo de términos ni la lista de exclusión.
+# v1.5.0 (2026-11-12): GET /dictionary agrega los filtros opcionales idioma,
+#   valor_min y valor_max (HU-SENT-001-v3), combinables con busqueda. Un rango
+#   invertido responde 400 RANGO_VALOR_INVALIDO. Cambio compatible: sin los
+#   parámetros nuevos, la respuesta es la misma de v1.4.0.

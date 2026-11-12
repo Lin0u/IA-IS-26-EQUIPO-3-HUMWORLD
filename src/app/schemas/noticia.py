@@ -53,6 +53,21 @@ class NoticiaDetalle(NoticiaResumen):
     cantidad_terminos_evaluados: Optional[int] = None
     # HU-DASH-002-v3: términos que explican el humor (coincidencias de HU-SENT-008).
     terminos: List[TerminoCoincidente] = Field(default_factory=list)
+    # HU-SENT-007-v4 / HU-SENT-009: por qué quedó sin humor ("minimo_terminos" o
+    # "palabra_exclusion"); null si tiene humor o no tiene ningún término.
+    motivo_exclusion: Optional[str] = None
+
+
+class NoticiasEstadisticas(BaseModel):
+    """Cuántas noticias tienen humor y por qué quedaron fuera las demás (HU-SENT-009)."""
+
+    total: int
+    con_humor: int
+    sin_terminos: int
+    bajo_minimo_terminos: int
+    excluidas_por_lista: int
+    pendientes: int
+    minimo_terminos_humor: int
 
 
 class NoticiaListado(BaseModel):

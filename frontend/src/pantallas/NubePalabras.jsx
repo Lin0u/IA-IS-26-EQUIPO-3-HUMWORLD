@@ -4,12 +4,13 @@
 // que los contienen (HU-SENT-008). El peso lo calcula el backend; aquí solo
 // define el tamaño de la letra.
 // Filtros: continente o país (PDF §4.3.1). Los países salen de los canales registrados.
-// HU-DASH-004: guía de lectura y detalle de una palabra al elegirla.
+// HU-DASH-004-v2: ayuda "?" junto al título y detalle de una palabra al elegirla.
 import { useEffect, useState } from 'react'
 import { obtenerNubePalabras } from '../api/cliente.js'
 import Carita from '../componentes/Carita.jsx'
 import EscalaHumor from '../componentes/EscalaHumor.jsx'
-import GuiaPantalla from '../componentes/GuiaPantalla.jsx'
+import Ayuda from '../componentes/Ayuda.jsx'
+import AyudaPasos from '../componentes/AyudaPasos.jsx'
 import SelectorPais from '../componentes/SelectorPais.jsx'
 import { tipoHumor } from '../utilidades/humor.js'
 import '../componentes/GuiaVisual.css'
@@ -24,7 +25,7 @@ const CONTINENTES = ['América', 'Europa', 'Asia', 'África', 'Oceanía']
 
 const IDIOMAS = { es: 'español', en: 'inglés' }
 
-const PASOS_GUIA = [
+const PASOS_AYUDA = [
   {
     titulo: 'Cada palabra viene del diccionario',
     texto: 'Son términos con un valor de humor que el sistema encontró en las noticias capturadas.',
@@ -125,7 +126,12 @@ export default function NubePalabras() {
     <section className="pantalla">
       <div className="nube-encabezado">
         <div>
-          <h2>Nube de palabras</h2>
+          <div className="titulo-con-ayuda">
+            <h2>Nube de palabras</h2>
+            <Ayuda titulo="Cómo leer la nube">
+              <AyudaPasos pasos={PASOS_AYUDA} />
+            </Ayuda>
+          </div>
           <p>Mientras más grande la palabra, en más noticias apareció.</p>
         </div>
         <div className="filtros-lugar">
@@ -143,8 +149,6 @@ export default function NubePalabras() {
           <SelectorPais continente={continente} valor={pais} onCambio={cambiarPais} />
         </div>
       </div>
-
-      <GuiaPantalla pasos={PASOS_GUIA} />
 
       {contenido}
 

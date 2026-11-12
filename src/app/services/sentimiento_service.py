@@ -34,6 +34,17 @@ Comparación de términos (HU-SENT-007-v3; ADR-003, punto 6):
 - Se quitan las etiquetas HTML del resumen del feed antes de comparar.
 - Idioma: si la noticia no lo trae, se detecta (lematizacion.detectar_idioma)
   y se guarda en idioma_detectado; si no se puede decidir, se evalúan ambos.
+
+Relevancia (ADR-003, punto 7; decisiones de la PO del 2026-11-11):
+- HU-SENT-009: si el título contiene una palabra de la lista de exclusión
+  (lotería, horóscopo…), la noticia no se evalúa: queda sin humor y con
+  motivo_exclusion = "palabra_exclusion". Aplica también con el modelo de ML.
+- HU-SENT-007-v4: con diccionario, si hay menos términos que el mínimo
+  configurado (2 por defecto), la noticia queda sin humor y con
+  motivo_exclusion = "minimo_terminos". Sus coincidencias se guardan igual,
+  para poder explicar por qué quedó fuera. Con 0 términos no hay motivo.
+- POST /sentiment (análisis de un texto libre, HU-SENT-005-v2) no aplica estas
+  reglas: muestra siempre el promedio del diccionario.
 """
 import logging
 import re
@@ -59,6 +70,8 @@ logger = logging.getLogger(__name__)
 IDIOMAS_SOPORTADOS: tuple[str, ...] = ("es", "en")
 METODO_DICCIONARIO = "diccionario"
 METODO_ML = "ml"
+MOTIVO_MINIMO_TERMINOS = "minimo_terminos"
+MOTIVO_PALABRA_EXCLUSION = "palabra_exclusion"
 
 _ETIQUETA_HTML = re.compile(r"<[^>]+>")
 _PALABRA = re.compile(r"\w+")
@@ -78,6 +91,21 @@ class ResultadoHumor:
     polarizacion_terminos: float | None = None
     # HU-SENT-006: versión del modelo usada cuando metodo_calculo = "ml".
     modelo_sentimiento_id: int | None = None
+    # HU-SENT-007-v4 / HU-SENT-009: por qué quedó sin humor, si corresponde.
+    motivo_exclusion: str | None = None
+
+
+@dataclass(frozen=True)
+class ReglasRelevancia:
+    """Reglas para decidir si una noticia recibe humor (ADR-003, punto 7).
+
+    Los valores por defecto no excluyen nada: son los del análisis de texto
+    libre (HU-SENT-005-v2). Las noticias capturadas usan los de /config y
+    /exclusions (cargar_reglas).
+    """
+
+    minimo_terminos: int = 1
+    palabras_exclusion: tuple[str, ...] = ()
 
 
 class ProveedorModeloML(Protocol):
@@ -139,6 +167,25 @@ def _palabras_del_texto(texto_limpio: str, idioma: str) -> list[tuple[str, str |
     return palabras
 
 
+def frase_normalizada(texto: str) -> str:
+    """Palabras del texto normalizadas y separadas por un espacio (HU-SENT-009)."""
+    return " ".join(_PALABRA.findall(_normalizar(_sin_html(texto))))
+
+
+def palabra_excluyente(titulo: str, palabras_exclusion: tuple[str, ...]) -> str | None:
+    """La primera palabra o frase de la lista que aparece completa en el título.
+
+    Sin distinguir mayúsculas ni tildes: "LOTERIA" coincide con "lotería", pero
+    "sorteos" no coincide con "sorteo" (palabra completa, sin lematizar).
+    """
+    titulo_normalizado = f" {frase_normalizada(titulo)} "
+    for palabra in palabras_exclusion:
+        frase = frase_normalizada(palabra)
+        if frase and f" {frase} " in titulo_normalizado:
+            return palabra
+    return None
+
+
 def texto_de_noticia(noticia: Noticia) -> str:
     return f"{noticia.titulo or ''} {noticia.contenido or ''}"
 
@@ -146,10 +193,11 @@ def texto_de_noticia(noticia: Noticia) -> str:
 def terminos_coincidentes(
     texto: str, terminos: list[TerminoDiccionario]
 ) -> list[TerminoDiccionario]:
-    """Términos únicos del diccionario que aparecen en el texto (HU-SENT-007-v3).
+    """Términos únicos del diccionario que aparecen en el texto (HU-SENT-007-v4, corrección del 2026-11-11).
 
     Cada concepto (lema + idioma) cuenta una sola vez aunque aparezca varias
-    veces o en varias formas. También es la base de las coincidencias que
+    veces o en varias formas, también cuando el diccionario tiene varias de
+    esas formas como términos distintos ("award" y "awards"). También es la base de las coincidencias que
     persiste HU-SENT-008. Los términos se recorren en el orden recibido (por
     id), así que ante un empate gana el de menor id.
     """
@@ -170,10 +218,22 @@ def terminos_coincidentes(
             destino.setdefault(forma, termino)
 
         palabras = _palabras_del_texto(texto_limpio, idioma)
+        # Un concepto por lema: "award" y "awards" (lema "award") cuentan una
+        # sola vez aunque el diccionario tenga las dos formas (HU-SENT-007-v4, corrección del 2026-11-11).
+        # Dentro del concepto gana el término escrito en la forma base (la que
+        # coincide con el lema); si no existe, el primero encontrado.
+        por_concepto: dict[str, TerminoDiccionario] = {}
         for forma, lema in palabras:
             termino = palabras_por_forma.get(forma) or (lema and palabras_por_forma.get(lema))
-            if termino is not None:
-                elegidos.add(id(termino))
+            if termino is None:
+                continue
+            concepto = lema or forma
+            actual = por_concepto.get(concepto)
+            if actual is None or (
+                _normalizar(actual.palabra) != concepto and _normalizar(termino.palabra) == concepto
+            ):
+                por_concepto[concepto] = termino
+        elegidos.update(id(termino) for termino in por_concepto.values())
         if frases:
             superficie = " " + " ".join(f for f, _ in palabras) + " "
             lemas = " " + " ".join(l or f for f, l in palabras) + " "
@@ -233,8 +293,16 @@ def calcular_humor(
     noticia: Noticia,
     terminos_por_idioma: dict[str, list[TerminoDiccionario]],
     proveedor_ml: ProveedorModeloML | None = None,
+    reglas: ReglasRelevancia | None = None,
 ) -> ResultadoHumor:
-    """ML si hay modelo activo; diccionario si no lo hay, falla o excede el timeout."""
+    """ML si hay modelo activo; diccionario si no lo hay, falla o excede el timeout.
+
+    Antes se aplican las reglas de relevancia (ADR-003, punto 7).
+    """
+    reglas = reglas or ReglasRelevancia()
+    if palabra_excluyente(noticia.titulo or "", reglas.palabras_exclusion):
+        return ResultadoHumor(None, METODO_DICCIONARIO, 0, motivo_exclusion=MOTIVO_PALABRA_EXCLUSION)
+
     texto = texto_de_noticia(noticia)
     if noticia.idioma_detectado is None:
         # PDF §4.4 / ADR-003 punto 1: se detecta una vez y queda guardado.
@@ -263,16 +331,38 @@ def calcular_humor(
                 type(exc).__name__,
             )
 
+    if 0 < len(valores) < reglas.minimo_terminos:
+        return ResultadoHumor(
+            None, METODO_DICCIONARIO, len(valores), ids, polar, motivo_exclusion=MOTIVO_MINIMO_TERMINOS
+        )
     valor = sum(valores) / len(valores) if valores else None
     return ResultadoHumor(valor, METODO_DICCIONARIO, len(valores), ids, polar)
 
 
 def _cargar_terminos(db: Session) -> dict[str, list[TerminoDiccionario]]:
+    """Diccionario completo, separado de la sesión (solo lectura).
+
+    procesar_noticias hace un commit por noticia, y cada commit da por vencidos
+    todos los objetos de la sesión: sin separarlos, SQLAlchemy volvía a pedir a
+    la base de datos cada término, uno por uno, para la noticia siguiente
+    (~3.800 consultas por noticia con el diccionario real). Separados
+    (expunge), conservan sus valores ya cargados y no se recargan.
+    """
     terminos = TerminoDiccionarioRepository().listar_por_idiomas(db, IDIOMAS_SOPORTADOS)
     por_idioma: dict[str, list[TerminoDiccionario]] = {idioma: [] for idioma in IDIOMAS_SOPORTADOS}
     for termino in terminos:
+        db.expunge(termino)
         por_idioma.setdefault(termino.idioma, []).append(termino)
     return por_idioma
+
+
+def cargar_reglas(db: Session) -> ReglasRelevancia:
+    """Reglas vigentes: mínimo de /config y palabras de /exclusions."""
+    from app.services.configuracion_service import consultar_minimo_terminos
+    from app.repositories.palabras_exclusion import PalabraExclusionRepository
+
+    palabras = tuple(p.palabra for p in PalabraExclusionRepository().listar(db))
+    return ReglasRelevancia(consultar_minimo_terminos(db), palabras)
 
 
 def procesar_noticias(
@@ -290,11 +380,12 @@ def procesar_noticias(
         return 0
     proveedor = proveedor_ml if proveedor_ml is not None else obtener_proveedor_ml_activo(db)
     terminos_por_idioma = _cargar_terminos(db)
+    reglas = cargar_reglas(db)
     repositorio = NoticiaRepository()
     procesadas = 0
     for noticia in noticias:
         try:
-            resultado = calcular_humor(noticia, terminos_por_idioma, proveedor)
+            resultado = calcular_humor(noticia, terminos_por_idioma, proveedor, reglas)
             repositorio.guardar_resultado_humor(
                 db,
                 noticia,
@@ -304,6 +395,7 @@ def procesar_noticias(
                 resultado.terminos_ids,
                 resultado.polarizacion_terminos,
                 resultado.modelo_sentimiento_id,
+                resultado.motivo_exclusion,
             )
             procesadas += 1
         except Exception:  # noqa: BLE001 - el barrido la reintentará

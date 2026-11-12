@@ -18,6 +18,7 @@ from app.schemas.dashboard import Continente
 from app.schemas.noticia import (
     NoticiaDetalle,
     NoticiaListado,
+    NoticiasEstadisticas,
     NoticiaResumen,
     TerminoCoincidente,
     OrdenNoticias,
@@ -42,6 +43,7 @@ def _a_dict(fila: tuple) -> dict:
         "metodo_calculo": noticia.metodo_calculo,
         "contenido": noticia.contenido,
         "cantidad_terminos_evaluados": noticia.cantidad_terminos_evaluados,
+        "motivo_exclusion": noticia.motivo_exclusion,
     }
 
 
@@ -93,3 +95,13 @@ def obtener_noticia(
         for t in repositorio.terminos(db, noticia_id)
     ]
     return NoticiaDetalle(**_a_dict(fila), terminos=terminos)
+
+
+def estadisticas_noticias(
+    db: Session, repository: NoticiaConsultaRepository | None = None
+) -> NoticiasEstadisticas:
+    """Cobertura del cálculo de humor (HU-SENT-009, contador del panel de Parámetros)."""
+    from app.services.configuracion_service import consultar_minimo_terminos
+
+    conteos = (repository or NoticiaConsultaRepository()).contar_por_estado(db)
+    return NoticiasEstadisticas(**conteos, minimo_terminos_humor=consultar_minimo_terminos(db))

@@ -21,7 +21,7 @@ info:
 
     Implementado en el backend (FastAPI) el 2026-10-19. Estado: Propuesto,
     pendiente de ratificación del equipo.
-  version: "1.2.0"
+  version: "1.3.0"
 servers:
   - url: /api/v1
     description: Base URL versionada (PDF, sección 10.3), misma convención que los demás contratos del proyecto.
@@ -152,6 +152,25 @@ paths:
         "500":
           $ref: "#/components/responses/ErrorInterno"
 
+  /news/statistics:
+    get:
+      tags: [news]
+      summary: Cobertura del cálculo de humor
+      description: >
+        Origina en HU-SENT-009. Cuántas noticias tienen humor y por qué
+        quedaron fuera las demás (sin términos, bajo el mínimo de
+        HU-SENT-007-v4 o excluidas por la lista). Se declara antes de
+        /news/{id}.
+      responses:
+        "200":
+          description: Conteos de las noticias guardadas.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NoticiasEstadisticas"
+        "500":
+          $ref: "#/components/responses/ErrorInterno"
+
   /news/{id}:
     get:
       tags: [news]
@@ -247,6 +266,37 @@ components:
                 ninguno. Origina en HU-DASH-002-v3.
               items:
                 $ref: "#/components/schemas/TerminoCoincidente"
+            motivo_exclusion:
+              type: string
+              nullable: true
+              enum: [minimo_terminos, palabra_exclusion, null]
+              description: >
+                Por qué la noticia quedó sin humor aunque se evaluó
+                (HU-SENT-007-v4, HU-SENT-009). Null si tiene humor o si no
+                tiene ningún término del diccionario.
+
+    NoticiasEstadisticas:
+      type: object
+      description: Origina en HU-SENT-009.
+      properties:
+        total:
+          type: integer
+        con_humor:
+          type: integer
+        sin_terminos:
+          type: integer
+          description: Evaluadas, sin ningún término del diccionario.
+        bajo_minimo_terminos:
+          type: integer
+          description: Con términos, pero menos que el mínimo vigente.
+        excluidas_por_lista:
+          type: integer
+        pendientes:
+          type: integer
+          description: Por calcular en el próximo barrido.
+        minimo_terminos_humor:
+          type: integer
+      required: [total, con_humor, sin_terminos, bajo_minimo_terminos, excluidas_por_lista, pendientes, minimo_terminos_humor]
 
     TerminoCoincidente:
       type: object
@@ -328,3 +378,6 @@ components:
 # v1.2.0 (2026-11-04): NoticiaDetalle agrega "terminos" (TerminoCoincidente:
 #   palabra, idioma, valor) para explicar el valor de humor (HU-DASH-002-v3).
 #   Cambio compatible: solo agrega un campo a la respuesta de GET /news/{id}.
+# v1.3.0 (2026-11-11): se agrega GET /news/statistics (HU-SENT-009) y el
+#   campo motivo_exclusion en NoticiaDetalle (HU-SENT-007-v4, HU-SENT-009).
+#   Cambio compatible.

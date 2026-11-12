@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse, Response
@@ -38,10 +38,25 @@ def listar(
     busqueda: Optional[str] = Query(default=None, description="Coincidencia parcial en la palabra."),
     pagina: int = Query(default=1, ge=1, description="Número de página."),
     tamanio_pagina: int = Query(default=10, ge=1, le=50, description="Elementos por página."),
+    idioma: Optional[Literal["es", "en"]] = Query(default=None, description="Solo términos de ese idioma."),
+    valor_min: Optional[int] = Query(default=None, ge=-10, le=10, description="Valor mínimo (incluido)."),
+    valor_max: Optional[int] = Query(default=None, ge=-10, le=10, description="Valor máximo (incluido)."),
     db: Session = Depends(get_db),
 ):
-    """HU-SENT-001-v2: listado paginado (misma convención que /channels y /sources)."""
-    return listar_terminos_paginado(db, pagina, tamanio_pagina, busqueda=busqueda)
+    """HU-SENT-001-v3: listado paginado con filtros de idioma y rango de valor
+    (misma convención que /channels y /sources)."""
+    try:
+        return listar_terminos_paginado(
+            db,
+            pagina,
+            tamanio_pagina,
+            busqueda=busqueda,
+            idioma=idioma,
+            valor_min=valor_min,
+            valor_max=valor_max,
+        )
+    except ValueError as error:
+        return _error(400, "RANGO_VALOR_INVALIDO", str(error))
 
 
 @router.get(

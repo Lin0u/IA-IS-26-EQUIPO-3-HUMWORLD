@@ -53,6 +53,11 @@ class Noticia(Base):
     modelo_sentimiento_id = Column(
         Integer, ForeignKey("modelos_sentimiento.id", ondelete="SET NULL"), nullable=True
     )
+    # HU-SENT-007-v4 / HU-SENT-009: por qué la noticia quedó sin humor aunque se
+    # evaluó. "minimo_terminos": tiene entre 1 y N-1 términos del diccionario;
+    # "palabra_exclusion": su título contiene una palabra de la lista de
+    # exclusión. NULL en los demás casos (con humor, o sin ningún término).
+    motivo_exclusion = Column(String(30), nullable=True)
 
     fuente = relationship("FuenteRSS", back_populates="noticias")
     # HU-SENT-008: composición; las coincidencias se borran con la noticia.

@@ -16,6 +16,7 @@ import {
 } from '../../api/cliente.js'
 import { LISTA_CATEGORIAS_IPTC, nombreCategoria } from '../../utilidades/iptc.js'
 import Aviso from './Aviso.jsx'
+import Ayuda from '../../componentes/Ayuda.jsx'
 
 const POR_PAGINA = 10
 const CONTINENTES = ['América', 'Europa', 'Asia', 'África', 'Oceanía']
@@ -60,6 +61,7 @@ export default function FuentesAdmin() {
   const [enCurso, setEnCurso] = useState(false)
   const [nuevaFuente, setNuevaFuente] = useState({ canalId: '', url: '', categoriaIptc: '' })
   const [nuevoCanal, setNuevoCanal] = useState({ nombre: '', continente: '', pais: '' })
+  const [verCanales, setVerCanales] = useState(false)
 
   useEffect(() => {
     let vigente = true
@@ -82,6 +84,14 @@ export default function FuentesAdmin() {
   }, [filtros, pagina, version])
 
   const nombreCanal = (id) => canales.find((canal) => canal.id === id)?.nombre ?? `Canal ${id}`
+
+  // Desde la tabla de canales: muestra en el bloque 3 solo las fuentes de ese canal.
+  function verFuentesDe(canal) {
+    setFiltros({ ...FILTROS_VACIOS, canalId: String(canal.id) })
+    setPagina(1)
+    setSeleccion([])
+    document.getElementById('bloque-lista')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+  }
 
   function cambiarFiltro(clave, valor) {
     setFiltros({ ...filtros, [clave]: valor })
@@ -171,9 +181,14 @@ export default function FuentesAdmin() {
   return (
     <div className="admin-bloques">
       <section className="admin-bloque" aria-labelledby="bloque-canal">
-        <h3 id="bloque-canal" className="admin-bloque-titulo">
-          <span className="admin-bloque-numero">1</span> Canal: el medio de noticias
-        </h3>
+        <div className="titulo-con-ayuda">
+          <h3 id="bloque-canal" className="admin-bloque-titulo">
+            <span className="admin-bloque-numero">1</span> Canal: el medio de noticias
+          </h3>
+          <Ayuda titulo="El canal">
+            Es el medio (por ejemplo, RNZ) con su continente y país. De ahí sale dónde aparece en el mapa.
+          </Ayuda>
+        </div>
         <p className="admin-bloque-texto">
           Un canal es un medio, por ejemplo <strong>RNZ</strong> o <strong>El Tiempo</strong>. Su continente y país
           definen dónde aparecen sus noticias en el mapa.
@@ -216,15 +231,45 @@ export default function FuentesAdmin() {
         <Aviso aviso={aviso?.bloque === 'canal' ? aviso : null} />
         {canales.length > 0 && (
           <div className="admin-canales">
-            <span className="admin-ayuda">Canales registrados ({canales.length}):</span>
-            <ul aria-label="Canales registrados">
-              {canales.map((canal) => (
-                <li key={canal.id}>
-                  <strong>{canal.nombre}</strong> ·{' '}
-                  {canal.pais ? `${canal.pais}, ${canal.continente}` : canal.continente}
-                </li>
-              ))}
-            </ul>
+            <button
+              type="button"
+              className="filtro"
+              aria-expanded={verCanales}
+              aria-controls="tabla-canales"
+              onClick={() => setVerCanales(!verCanales)}
+            >
+              {verCanales ? 'Ocultar canales registrados' : `Ver canales registrados (${canales.length})`}
+            </button>
+            {verCanales && (
+              <div className="admin-tabla-contenedor" id="tabla-canales">
+                <table className="admin-tabla admin-tabla-canales" aria-label="Canales registrados">
+                  <thead>
+                    <tr>
+                      <th>Canal</th>
+                      <th>Continente</th>
+                      <th>País</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {canales.map((canal) => (
+                      <tr key={canal.id}>
+                        <td>
+                          <strong>{canal.nombre}</strong>
+                        </td>
+                        <td>{canal.continente}</td>
+                        <td>{canal.pais ?? '—'}</td>
+                        <td>
+                          <button type="button" className="filtro" onClick={() => verFuentesDe(canal)}>
+                            Ver sus fuentes
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </section>
@@ -234,9 +279,14 @@ export default function FuentesAdmin() {
       </p>
 
       <section className="admin-bloque" aria-labelledby="bloque-fuente">
-        <h3 id="bloque-fuente" className="admin-bloque-titulo">
-          <span className="admin-bloque-numero">2</span> Fuente RSS: un feed de ese medio
-        </h3>
+        <div className="titulo-con-ayuda">
+          <h3 id="bloque-fuente" className="admin-bloque-titulo">
+            <span className="admin-bloque-numero">2</span> Fuente RSS: un feed de ese medio
+          </h3>
+          <Ayuda titulo="Sus fuentes RSS">
+            Son los feeds del medio (business.xml, sport.xml…), cada uno con su categoría. Un canal tiene varias.
+          </Ayuda>
+        </div>
         <p className="admin-bloque-texto">
           Una fuente RSS es la dirección de una sección del medio, por ejemplo{' '}
           <code>https://www.rnz.co.nz/rss/sport.xml</code>. Cada una tiene su categoría. Elige primero a qué canal
@@ -295,9 +345,14 @@ export default function FuentesAdmin() {
       </section>
 
       <section className="admin-bloque" aria-labelledby="bloque-lista">
-        <h3 id="bloque-lista" className="admin-bloque-titulo">
-          <span className="admin-bloque-numero">3</span> Fuentes registradas y captura
-        </h3>
+        <div className="titulo-con-ayuda">
+          <h3 id="bloque-lista" className="admin-bloque-titulo">
+            <span className="admin-bloque-numero">3</span> Fuentes registradas y captura
+          </h3>
+          <Ayuda titulo="Captura">
+            El sistema lee las fuentes activas cada cierto tiempo. &quot;Capturar ahora&quot; lo hace en el momento.
+          </Ayuda>
+        </div>
         <p className="admin-bloque-texto">
           Las fuentes activas se capturan solas cada cierto tiempo (ver Parámetros). Aquí puedes filtrarlas, capturarlas
           en el momento o desactivarlas.

@@ -173,21 +173,13 @@
   overflow-wrap: anywhere;
 }
 
-.admin-canales ul {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 6px 0 0;
-  padding: 0;
+.admin-canales {
+  margin-top: 4px;
 }
 
-.admin-canales li {
-  font-size: 13px;
-  padding: 2px 10px;
-  border: 1px solid var(--texto-suave);
-  border-radius: 999px;
-  background: var(--papel);
+/* La tabla de canales es corta: no necesita el ancho mínimo de la de fuentes. */
+.admin-tabla.admin-tabla-canales {
+  min-width: 0;
 }
 
 .pantalla .admin-flecha {
@@ -229,4 +221,145 @@
 
 .admin-tabla .admin-url {
   min-width: 220px;
+}
+
+/* HU-SENT-009: lista de exclusión y cobertura en Parámetros. */
+.admin-exclusiones {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.admin-exclusiones li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  padding: 2px 4px 2px 10px;
+  border: var(--borde);
+  border-radius: 999px;
+  background: var(--papel);
+}
+
+.admin-quitar {
+  font: inherit;
+  font-weight: 700;
+  line-height: 1;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--texto-negativo);
+  cursor: pointer;
+}
+
+.admin-quitar:hover,
+.admin-quitar:focus-visible {
+  background: #ffe1e2;
+  outline: none;
+}
+
+.admin-cobertura {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.admin-cobertura div {
+  border: 1px solid var(--texto-suave);
+  border-radius: 12px;
+  padding: 8px 12px;
+  background: var(--papel);
+}
+
+.admin-cobertura dt {
+  font-size: 13px;
+  color: var(--texto-suave);
+}
+
+.admin-cobertura dd {
+  margin: 0;
+  font-family: var(--letra-titulos);
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* HU-DASH-004-v2: título de las pestañas sin bloques, con su ayuda "?". */
+.admin-panel-titulo {
+  display: flex;
+  align-items: center;
+  margin: 0 0 14px;
+  font-family: var(--letra-titulos);
+  font-size: 19px;
+  font-weight: 600;
+}
+
+/* HU-ADMIN-001-v2, ajuste del 2026-11-12: botón que muestra u oculta la lista de exclusión. */
+.admin-ver-lista {
+  margin-bottom: 12px;
+}
+
+/* HU-SENT-001-v3: filtros del diccionario a la izquierda y "+ Agregar término" a
+   la derecha; el formulario de alta se abre debajo, en su propio recuadro. */
+.admin-barra-diccionario {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Los filtros ocupan el espacio libre y, si no caben, bajan de línea entre
+   ellos; el botón de agregar queda siempre a la derecha. */
+.admin-barra-diccionario .admin-fila-formulario {
+  flex: 1;
+  min-width: 0;
+  gap: 10px 14px;
+  margin-bottom: 0;
+}
+
+.admin-barra-diccionario .admin-buscador {
+  margin: 0;
+}
+
+.admin-barra-diccionario .admin-buscador input {
+  width: 160px;
+}
+
+@media (max-width: 720px) {
+  .admin-barra-diccionario {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-barra-diccionario .admin-buscador input {
+    width: auto;
+  }
+}
+
+.admin-boton-agregar {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.admin-panel-nuevo {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  background: #fff8e0;
+  border: var(--borde);
+  border-radius: 12px;
+}
+
+.admin-panel-nuevo .admin-fila-formulario {
+  margin-bottom: 0;
+}
+
+.admin-subtitulo {
+  margin: 4px 0 6px;
+  font-weight: 700;
+  color: var(--texto);
 }

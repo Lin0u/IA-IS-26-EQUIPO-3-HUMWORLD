@@ -2,7 +2,7 @@
 // Origen: HU-DASH-001-v3 (PDF, sección 4.3.2) y ADR-005. Muestra los datos de
 // GET /api/v1/dashboards/map, que App.jsx pide al backend, y el gráfico de
 // evolución de GET /api/v1/sentiment (HU-SENT-004). Esta pantalla no calcula humor.
-// HU-DASH-004: guía de lectura y escala de humor.
+// HU-DASH-004-v2: ayudas "?" junto a cada parte y escala de humor.
 import L from 'leaflet'
 import { MapContainer, Marker, TileLayer, Tooltip } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -10,29 +10,11 @@ import Carita from '../componentes/Carita.jsx'
 import CerebroHumor from '../componentes/CerebroHumor.jsx'
 import EscalaHumor from '../componentes/EscalaHumor.jsx'
 import GraficoEvolucion from '../componentes/GraficoEvolucion.jsx'
-import GuiaPantalla from '../componentes/GuiaPantalla.jsx'
+import Ayuda from '../componentes/Ayuda.jsx'
 import '../componentes/GuiaVisual.css'
 import { buscarContinente } from '../datos/continentes.js'
 import { caritaComoTexto, formatoHumor, tipoHumor } from '../utilidades/humor.js'
 import './MapaHumor.css'
-
-const PASOS_GUIA = [
-  { titulo: 'Elige un día', texto: 'Con el selector de fecha, arriba a la derecha, eliges qué día mirar.' },
-  {
-    titulo: 'El cerebro es el mundo',
-    texto: 'Su número es el humor global: el promedio del humor de todas las noticias de ese día.',
-  },
-  {
-    titulo: 'Cada carita es un continente',
-    texto:
-      'Su número es el promedio de las noticias de ese continente. Rojo y triste: negativo; verde y feliz: positivo.',
-  },
-  {
-    titulo: 'La línea muestra la tendencia',
-    texto:
-      'Al final, el gráfico muestra cómo cambió el humor global día a día. Para ver qué noticias pesaron más, ve a "Noticias".',
-  },
-]
 
 // Esquinas del mapa al abrir: [abajo-izquierda, arriba-derecha] en [latitud, longitud].
 const VISTA_INICIAL = [
@@ -78,20 +60,23 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
           <h2>Mapa de humor</h2>
           <p>Humor promedio de cada continente en la fecha elegida.</p>
         </div>
-        <label className="campo">
-          Fecha
-          <input
-            type="date"
-            value={fecha}
-            min={primeraFecha}
-            max={ultimaFecha}
-            disabled={!ultimaFecha}
-            onChange={(evento) => evento.target.value && alCambiarFecha(evento.target.value)}
-          />
-        </label>
+        <div className="campo-con-ayuda">
+          <label className="campo">
+            Fecha
+            <input
+              type="date"
+              value={fecha}
+              min={primeraFecha}
+              max={ultimaFecha}
+              disabled={!ultimaFecha}
+              onChange={(evento) => evento.target.value && alCambiarFecha(evento.target.value)}
+            />
+          </label>
+          <Ayuda titulo="Elige un día" alinear="derecha">
+            El mapa, el cerebro y las caritas muestran el humor de las noticias de ese día.
+          </Ayuda>
+        </div>
       </div>
-
-      <GuiaPantalla pasos={PASOS_GUIA} />
 
       {error && (
         <p className="mapa-aviso mapa-error" role="alert">
@@ -105,7 +90,13 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
         {global && global.cantidad_noticias_evaluadas > 0 ? (
           <div className="mapa-global-datos">
             <p>
-              <span className="mapa-global-titulo">Humor global</span>
+              <span className="mapa-global-titulo">
+                Humor global
+                <Ayuda titulo="El cerebro es el mundo">
+                  Su número es el humor global: el promedio del humor de todas las noticias de ese día. La escala
+                  muestra dónde cae entre -10 y +10.
+                </Ayuda>
+              </span>
               <strong className={`mapa-global-valor texto-${tipoHumor(global.humor_promedio)}`}>
                 {formatoHumor(global.humor_promedio)}
               </strong>
@@ -159,7 +150,7 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
           <Carita tipo="negativo" tamano={20} /> Negativo
         </li>
         <li>
-          <Carita tipo="neutro" tamano={20} /> Neutro
+          <Carita tipo="neutro" tamano={20} /> Neutro (entre -0.5 y +0.5)
         </li>
         <li>
           <Carita tipo="positivo" tamano={20} /> Positivo
@@ -167,7 +158,13 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
         <li>
           <Carita tipo="sinDatos" tamano={20} /> Sin datos
         </li>
-        <li className="leyenda-nota">Escala de -10 a +10</li>
+        <li className="leyenda-nota">
+          Escala de -10 a +10
+          <Ayuda titulo="Cada carita es un continente">
+            Su número es el promedio de las noticias de ese continente. Rojo y triste: negativo; amarillo: neutro (entre
+            -0.5 y +0.5); verde y feliz: positivo.
+          </Ayuda>
+        </li>
       </ul>
 
       <ul className="continentes">

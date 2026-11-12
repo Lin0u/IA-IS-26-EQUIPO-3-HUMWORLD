@@ -58,7 +58,7 @@ def test_get_config_devuelve_periodicidad_actual(client, database_session):
     response = client.get("/api/v1/config")
 
     assert response.status_code == 200
-    assert response.json() == {"periodicidad_cron_minutos": 45, "caducidad_noticias_dias": 90}
+    assert response.json() == {"periodicidad_cron_minutos": 45, "caducidad_noticias_dias": 90, "minimo_terminos_humor": 1}
 
 
 def test_put_config_actualiza_periodicidad_y_reprograma_scheduler(client, database_session):
@@ -71,7 +71,7 @@ def test_put_config_actualiza_periodicidad_y_reprograma_scheduler(client, databa
         )
 
     assert response.status_code == 200
-    assert response.json() == {"periodicidad_cron_minutos": 60, "caducidad_noticias_dias": 90}
+    assert response.json() == {"periodicidad_cron_minutos": 60, "caducidad_noticias_dias": 90, "minimo_terminos_humor": 1}
     persisted = database_session.execute(
         select(Configuracion).where(
             Configuracion.clave == "periodicidad_cron_minutos"
@@ -113,7 +113,7 @@ def test_servicio_actualiza_conRepositorio_real_y_no_modifica_en_error(database_
         reprogramar=lambda minutos: None,
     )
 
-    assert result == {"periodicidad_cron_minutos": 45, "caducidad_noticias_dias": 90}
+    assert result == {"periodicidad_cron_minutos": 45, "caducidad_noticias_dias": 90, "minimo_terminos_humor": 1}
     assert consultar_configuracion(database_session, repository=repository) == 45
 
 
@@ -142,17 +142,42 @@ def test_reprogramar_periodicidad_modifica_job_existente(monkeypatch):
         {
             "running": True,
             "_eventloop": None,
-            "modify_job": Mock(),
+            "reschedule_job": Mock(),
         },
     )()
     monkeypatch.setattr("app.jobs.scheduler.scheduler", scheduler_instance)
 
     reprogramar_periodicidad(90)
 
-    scheduler_instance.modify_job.assert_called_once()
-    kwargs = scheduler_instance.modify_job.call_args.kwargs
-    assert kwargs["trigger"] == "interval"
-    assert kwargs["minutes"] == 90
-    assert kwargs["max_instances"] == 1
-    assert kwargs["coalesce"] is True
-    assert kwargs["misfire_grace_time"] is None
+    scheduler_instance.reschedule_job.assert_called_once_with(
+        "captura-rss-automatica", trigger="interval", minutes=90
+    )
+
+
+def test_reprogramar_periodicidad_con_un_scheduler_real(monkeypatch):
+    """Con APScheduler real: antes fallaba con TypeError (trigger como texto)."""
+    from datetime import timedelta
+
+    from apscheduler.schedulers.background import BackgroundScheduler
+
+    from app.jobs import scheduler as scheduler_module
+
+    real = BackgroundScheduler()
+    real.add_job(
+        lambda: None,
+        id=scheduler_module.CAPTURA_JOB_ID,
+        trigger="interval",
+        minutes=30,
+        max_instances=1,
+        coalesce=True,
+        misfire_grace_time=None,
+    )
+    real.start(paused=True)
+    monkeypatch.setattr(scheduler_module, "scheduler", real)
+    try:
+        reprogramar_periodicidad(90)
+        job = real.get_job(scheduler_module.CAPTURA_JOB_ID)
+        assert job.trigger.interval == timedelta(minutes=90)
+        assert (job.max_instances, job.coalesce, job.misfire_grace_time) == (1, True, None)
+    finally:
+        real.shutdown(wait=False)
