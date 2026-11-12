@@ -24,16 +24,22 @@ Qué hace:
 
 Uso (dentro del contenedor):
     docker compose exec api python -m scripts.candidatos_diccionario
-    docker compose exec api python -m scripts.candidatos_diccionario --top 100 --salida /tmp/candidatas.csv
+    docker compose exec api python -m scripts.candidatos_diccionario --top 100 --salida candidatas.csv
     docker compose cp api:/tmp/candidatas.csv .
+
+--salida recibe solo un nombre de archivo .csv (letras, números, "_" o "-"), que
+se escribe en el directorio temporal del sistema (/tmp en el contenedor). No
+acepta rutas, para que el argumento no pueda escribir fuera de ese directorio
+(SonarQube: Path Traversal, CWE-22).
 """
 import argparse
 import csv
+import os
 import re
+import tempfile
 import sys
 from collections import defaultdict
 from dataclasses import dataclass, field
-from pathlib import Path
 
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
@@ -53,6 +59,8 @@ from app.services.sentimiento_service import (
 )
 
 LARGO_MINIMO = 3
+DIRECTORIO_SALIDA = tempfile.gettempdir()
+_NOMBRE_CSV = re.compile(r"[A-Za-z0-9_-]{1,80}\.csv")
 _PALABRA = re.compile(r"\w+")
 EJEMPLOS_POR_PALABRA = 2
 
@@ -141,8 +149,21 @@ def noticias_sin_humor_por_terminos(db: Session) -> list[Noticia]:
     )
 
 
-def escribir_csv(candidatas: list[Candidata], ruta: Path) -> None:
-    with ruta.open("w", encoding="utf-8-sig", newline="") as archivo:
+def ruta_salida(nombre: str, directorio: str = DIRECTORIO_SALIDA) -> str:
+    """Ruta segura del CSV: solo un nombre de archivo dentro del directorio dado."""
+    if not _NOMBRE_CSV.fullmatch(nombre):
+        raise ValueError(
+            "--salida debe ser solo un nombre de archivo .csv (letras, números, '_' o '-'), sin rutas."
+        )
+    base = os.path.realpath(directorio)
+    ruta = os.path.realpath(os.path.join(base, nombre))
+    if os.path.dirname(ruta) != base:
+        raise ValueError("--salida debe quedar dentro del directorio de salida.")
+    return ruta
+
+
+def escribir_csv(candidatas: list[Candidata], ruta: str) -> None:
+    with open(ruta, "w", encoding="utf-8-sig", newline="") as archivo:
         escritor = csv.writer(archivo)
         escritor.writerow(
             ["palabra", "idioma", "noticias", "recupera", "formas", "ejemplo", "valor_propuesto"]
@@ -161,11 +182,23 @@ def escribir_csv(candidatas: list[Candidata], ruta: Path) -> None:
             )
 
 
-def main(argv: list[str] | None = None, session_factory=SessionLocal) -> int:
+def main(
+    argv: list[str] | None = None,
+    session_factory=SessionLocal,
+    directorio_salida: str = DIRECTORIO_SALIDA,
+) -> int:
     parser = argparse.ArgumentParser(description="Palabras candidatas para el diccionario")
     parser.add_argument("--top", type=int, default=40, help="filas a mostrar (40 por defecto)")
-    parser.add_argument("--salida", type=Path, help="ruta de un CSV con el ranking completo")
+    parser.add_argument(
+        "--salida",
+        help="nombre del CSV con el ranking completo, que se escribe en el directorio temporal",
+    )
     args = parser.parse_args(argv)
+    try:
+        destino = ruta_salida(args.salida, directorio_salida) if args.salida else None
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        return 2
 
     db = session_factory()
     try:
@@ -184,9 +217,9 @@ def main(argv: list[str] | None = None, session_factory=SessionLocal) -> int:
     for c in candidatas[: args.top]:
         ejemplo = (c.ejemplos[0] if c.ejemplos else "")[:70]
         print(f"{c.palabra:<22} {c.idioma:<6} {len(c.noticias):>8} {len(c.recupera):>8}  {ejemplo}")
-    if args.salida:
-        escribir_csv(candidatas, args.salida)
-        print(f"Ranking completo ({len(candidatas)} palabras) en {args.salida}")
+    if destino:
+        escribir_csv(candidatas, destino)
+        print(f"Ranking completo ({len(candidatas)} palabras) en {destino}")
     return 0
 
 

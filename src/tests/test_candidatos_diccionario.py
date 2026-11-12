@@ -80,9 +80,31 @@ def test_main_lee_solo_las_sin_humor_por_falta_de_terminos(session_factory, tmp_
     db.close()
 
     salida = tmp_path / "candidatas.csv"
-    assert script.main(["--salida", str(salida)], session_factory) == 0
+    assert script.main(["--salida", "candidatas.csv"], session_factory, str(tmp_path)) == 0
     impreso = capsys.readouterr().out
     assert impreso.startswith("1 noticias sin humor")
     contenido = salida.read_text(encoding="utf-8-sig")
     assert contenido.splitlines()[0].startswith("palabra,idioma,noticias,recupera")
     assert "tariff,en,1," in contenido
+
+
+@pytest.mark.parametrize(
+    "nombre",
+    ["../candidatas.csv", "/etc/passwd", "sub/candidatas.csv", "candidatas.txt", "..csv.csv/..", ""],
+)
+def test_ruta_salida_rechaza_rutas_y_nombres_no_csv(tmp_path, nombre):
+    # SonarQube (Path Traversal, CWE-22): --salida es solo un nombre de archivo.
+    with pytest.raises(ValueError):
+        script.ruta_salida(nombre, str(tmp_path))
+
+
+def test_ruta_salida_queda_dentro_del_directorio(tmp_path):
+    assert script.ruta_salida("candidatas_2026-11.csv", str(tmp_path)) == str(
+        (tmp_path / "candidatas_2026-11.csv").resolve()
+    )
+
+
+def test_main_con_salida_invalida_termina_con_error(session_factory, tmp_path, capsys):
+    assert script.main(["--salida", "../fuera.csv"], session_factory, str(tmp_path)) == 2
+    assert "sin rutas" in capsys.readouterr().err
+    assert not (tmp_path.parent / "fuera.csv").exists()
