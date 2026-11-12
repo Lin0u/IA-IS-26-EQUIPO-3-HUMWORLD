@@ -13,6 +13,8 @@ import {
   obtenerExclusiones,
 } from '../../api/cliente.js'
 import Aviso from './Aviso.jsx'
+import Ayuda from '../../componentes/Ayuda.jsx'
+import AyudaPasos from '../../componentes/AyudaPasos.jsx'
 
 // Los parámetros son enteros mayores o iguales a 1 (contrato de /config).
 function esValido(texto) {
@@ -127,9 +129,23 @@ export default function ParametrosAdmin() {
   return (
     <div className="admin-bloques">
       <form className="admin-bloque" onSubmit={guardar} aria-labelledby="bloque-parametros">
-        <h3 id="bloque-parametros" className="admin-bloque-titulo">
-          <span className="admin-bloque-numero">1</span> Captura, caducidad y mínimo de palabras
-        </h3>
+        <div className="titulo-con-ayuda">
+          <h3 id="bloque-parametros" className="admin-bloque-titulo">
+            <span className="admin-bloque-numero">1</span> Captura, caducidad y mínimo de palabras
+          </h3>
+          <Ayuda titulo="Periodicidad, caducidad y mínimo">
+            <AyudaPasos
+              pasos={[
+                { titulo: 'Periodicidad', texto: 'Cada cuántos minutos se capturan noticias.' },
+                { titulo: 'Caducidad', texto: 'Cuántos días se guardan antes del purgado.' },
+                {
+                  titulo: 'Mínimo de palabras',
+                  texto: 'Una noticia necesita al menos esa cantidad de palabras del diccionario para tener humor.',
+                },
+              ]}
+            />
+          </Ayuda>
+        </div>
         <div className="admin-formulario">
           <label className="campo">
             Periodicidad del cron (minutos)
@@ -171,9 +187,14 @@ export default function ParametrosAdmin() {
       </form>
 
       <section className="admin-bloque" aria-labelledby="bloque-exclusion">
-        <h3 id="bloque-exclusion" className="admin-bloque-titulo">
-          <span className="admin-bloque-numero">2</span> Lista de exclusión
-        </h3>
+        <div className="titulo-con-ayuda">
+          <h3 id="bloque-exclusion" className="admin-bloque-titulo">
+            <span className="admin-bloque-numero">2</span> Lista de exclusión
+          </h3>
+          <Ayuda titulo="Lista de exclusión">
+            Las noticias con estas palabras en el título (lotería, horóscopo…) no se cuentan.
+          </Ayuda>
+        </div>
         <p className="admin-bloque-texto">
           Si una de estas palabras aparece en el título, la noticia no refleja el ánimo del mundo (sorteos, horóscopo,
           pasatiempos) y no se calcula su humor. No distingue mayúsculas ni tildes, y compara la palabra completa.
@@ -214,9 +235,12 @@ export default function ParametrosAdmin() {
       </section>
 
       <section className="admin-bloque" aria-labelledby="bloque-cobertura">
-        <h3 id="bloque-cobertura" className="admin-bloque-titulo">
-          <span className="admin-bloque-numero">3</span> Cobertura de noticias
-        </h3>
+        <div className="titulo-con-ayuda">
+          <h3 id="bloque-cobertura" className="admin-bloque-titulo">
+            <span className="admin-bloque-numero">3</span> Cobertura de noticias
+          </h3>
+          <Ayuda titulo="Cobertura">Muestra cuántas noticias tienen humor y por qué quedaron fuera las demás.</Ayuda>
+        </div>
         <p className="admin-bloque-texto">
           Cuántas noticias guardadas tienen humor y por qué quedaron fuera las demás. Úsalo para ajustar el mínimo y la
           lista.

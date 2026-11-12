@@ -98,18 +98,24 @@ describe('pestañas', () => {
     expect(screen.getByRole('button', { name: 'Entrenar modelo' })).toBeInTheDocument()
   })
 
-  it('cada pestaña abre con su guía', async () => {
+  it('cada parte tiene su ayuda "?" (HU-DASH-004-v2)', async () => {
     const usuario = await abrir()
-    expect(screen.getByRole('complementary', { name: 'Cómo leer esta pantalla' })).toHaveTextContent(
-      'Bloque 1: el canal',
+    expect(screen.queryByRole('complementary', { name: 'Cómo leer esta pantalla' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ayuda: El canal' })).toHaveAccessibleDescription(
+      expect.stringContaining('Es el medio'),
     )
+    expect(screen.getByRole('button', { name: 'Ayuda: Sus fuentes RSS' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ayuda: Captura' })).toBeInTheDocument()
+
     await usuario.click(screen.getByRole('tab', { name: 'Diccionario' }))
-    const guia = screen.getByRole('complementary', { name: 'Cómo leer esta pantalla' })
-    expect(guia).toHaveTextContent('Así se calcula el humor')
-    expect(within(guia).getByRole('img', { name: 'Escala de humor de -10 a +10' })).toBeInTheDocument()
+    const boton = screen.getByRole('button', { name: 'Ayuda: Diccionario de términos' })
+    expect(boton).toHaveAccessibleDescription(expect.stringContaining('Así se calcula el humor'))
+    const globo = document.getElementById(boton.getAttribute('aria-describedby'))
+    expect(within(globo).getByRole('img', { name: 'Escala de humor de -10 a +10' })).toBeInTheDocument()
+
     await usuario.click(screen.getByRole('tab', { name: 'Purgado' }))
-    expect(screen.getByRole('complementary', { name: 'Cómo leer esta pantalla' })).toHaveTextContent(
-      'No se puede deshacer',
+    expect(screen.getByRole('button', { name: 'Ayuda: Purgado de noticias' })).toHaveAccessibleDescription(
+      expect.stringContaining('No se puede deshacer'),
     )
   })
 })

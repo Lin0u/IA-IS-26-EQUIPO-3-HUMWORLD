@@ -91,9 +91,10 @@ describe('ListadoNoticias', () => {
   it('muestra la guía de lectura y la escala', async () => {
     render(<ListadoNoticias />)
     await screen.findByText('Noticia 1')
-    const guia = screen.getByRole('complementary', { name: 'Cómo leer esta pantalla' })
-    expect(within(guia).getByText('Cada tarjeta es una noticia')).toBeInTheDocument()
-    expect(within(guia).getByRole('img', { name: 'Escala de humor de -10 a +10' })).toBeInTheDocument()
+    const boton = screen.getByRole('button', { name: 'Ayuda: Cómo leer las noticias' })
+    expect(boton).toHaveAccessibleDescription(expect.stringContaining('Cada tarjeta es una noticia'))
+    const globo = document.getElementById(boton.getAttribute('aria-describedby'))
+    expect(within(globo).getByRole('img', { name: 'Escala de humor de -10 a +10' })).toBeInTheDocument()
     expect(screen.getAllByText('negativa')[0]).toBeInTheDocument()
   })
 

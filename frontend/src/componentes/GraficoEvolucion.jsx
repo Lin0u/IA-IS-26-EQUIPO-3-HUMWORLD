@@ -1,17 +1,11 @@
 // HumWorld - gráfico de evolución temporal del humor global.
 // Origen: HU-DASH-001-v3 (gráfico temporal) y ADR-005 (Chart.js). Consume
 // serie_temporal de GET /api/v1/sentiment (HU-SENT-004); no calcula humor.
-import {
-  CategoryScale,
-  Chart as ChartJS,
-  LinearScale,
-  LineElement,
-  PointElement,
-  Tooltip,
-} from 'chart.js'
+import { CategoryScale, Chart as ChartJS, LinearScale, LineElement, PointElement, Tooltip } from 'chart.js'
 import { useEffect, useState } from 'react'
 import { Line } from 'react-chartjs-2'
 import { obtenerSerieGlobal } from '../api/cliente.js'
+import Ayuda from './Ayuda.jsx'
 import { COLORES_HUMOR, formatoHumor, tipoHumor } from '../utilidades/humor.js'
 
 ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Tooltip)
@@ -100,10 +94,15 @@ export default function GraficoEvolucion({ primeraFecha, ultimaFecha, fechaElegi
 
   return (
     <div className="grafico-evolucion">
-      <h3>Evolución del humor global</h3>
+      <div className="titulo-con-ayuda">
+        <h3>Evolución del humor global</h3>
+        <Ayuda titulo="La línea muestra la tendencia">
+          Cómo cambió el humor global día a día. Para ver qué noticias pesaron más, ve a &quot;Noticias&quot;.
+        </Ayuda>
+      </div>
       <p>
-        {serie.length === 1 ? 'Último día' : `Últimos ${serie.length} días`} con su promedio
-        diario. Los días sin noticias evaluadas quedan sin punto.
+        {serie.length === 1 ? 'Último día' : `Últimos ${serie.length} días`} con su promedio diario. Los días sin
+        noticias evaluadas quedan sin punto.
       </p>
       <div className="grafico-lienzo">
         <Line data={datos} options={opciones} aria-label="Gráfico de evolución del humor global" />

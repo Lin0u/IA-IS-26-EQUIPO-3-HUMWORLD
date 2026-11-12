@@ -47,8 +47,8 @@ describe('NubePalabras', () => {
 
   it('muestra la guía y el detalle de la palabra elegida', async () => {
     render(<NubePalabras />)
-    expect(screen.getByRole('complementary', { name: 'Cómo leer esta pantalla' })).toHaveTextContent(
-      'Tamaño: cuántas noticias',
+    expect(screen.getByRole('button', { name: 'Ayuda: Cómo leer la nube' })).toHaveAccessibleDescription(
+      expect.stringContaining('Tamaño: cuántas noticias'),
     )
     await userEvent.click(await screen.findByRole('button', { name: 'guerra' }))
     const detalle = screen.getByRole('status')

@@ -17,7 +17,7 @@ flowchart TB
         FEnube["pantallas/NubePalabras.jsx (HU-DASH-003-v2)"]
         FEnoticias["pantallas/ListadoNoticias.jsx\n+ ExplicacionHumor.jsx (HU-DASH-002-v3)"]
         FEadmin["pantallas/Administracion.jsx\n+ admin/*Admin.jsx (HU-ADMIN-004)"]
-        FEguia["componentes/GuiaPantalla.jsx\n+ EscalaHumor.jsx (HU-DASH-004)"]
+        FEguia["componentes/Ayuda.jsx\n+ EscalaHumor.jsx (HU-DASH-004-v2)"]
         FEapi["api/cliente.js"]
     end
 
@@ -152,7 +152,7 @@ flowchart TB
 - El scheduler (`jobs/scheduler.py`) registra tres jobs (captura, barrido de humor, purgado) y reprograma el de captura cuando cambia la periodicidad en `/config`.
 - El frontend (ADR-005) accede al backend solo a través de `api/cliente.js`; no calcula humor ni accede a MySQL. Las vistas de dashboards solo leen (`GET`); el panel de administración (HU-ADMIN-004) además crea, modifica y elimina mediante los endpoints existentes (`POST`, `PUT`, `PATCH`, `DELETE`).
 - La explicación del humor de una noticia (`ExplicacionHumor.jsx`, HU-DASH-002-v3) muestra los términos que devuelve `GET /news/{id}`; no recalcula nada.
-- `GuiaPantalla.jsx` y `EscalaHumor.jsx` (HU-DASH-004) son componentes de presentación compartidos por todas las vistas: no llaman a la API.
+- `Ayuda.jsx` (ayudas "?"), `AyudaPasos.jsx` y `EscalaHumor.jsx` (HU-DASH-004-v2) son componentes de presentación compartidos por todas las vistas: no llaman a la API.
 
 ## Correspondencia con el código
 
@@ -164,3 +164,4 @@ Todos los nombres de fichero de este diagrama existen en el repositorio: routers
 |---|---|---|
 | v1.0 | 2026-10-29 | Creación. Diagrama de componentes del sistema completo (las cuatro épicas + frontend), construido a partir del código real. Cubre el hueco de §4.7.3.c (no existía diagrama de componentes de EPIC-RSS) y reemplaza a `diagrama-componentes-sentimiento.md`, cuyos nombres de fichero eran propuestos y no coincidían con el código. |
 | v1.1 | 2026-11-11 | El frontend se desglosa por vista: mapa, nube, noticias con su explicación del humor, panel de administración y componentes de la guía visual (HU-ADMIN-004, HU-DASH-002-v3, HU-DASH-004). Se corrige la regla que decía que el frontend solo hacía `GET`: el panel de administración también escribe. |
+| v1.2 | 2026-11-12 | `GuiaPantalla.jsx` se reemplaza por `Ayuda.jsx` y `AyudaPasos.jsx` (HU-DASH-004-v2). Sin cambios en la arquitectura. |

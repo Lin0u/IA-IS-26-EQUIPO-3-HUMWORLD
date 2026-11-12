@@ -288,3 +288,13 @@
   font-size: 24px;
   font-variant-numeric: tabular-nums;
 }
+
+/* HU-DASH-004-v2: título de las pestañas sin bloques, con su ayuda "?". */
+.admin-panel-titulo {
+  display: flex;
+  align-items: center;
+  margin: 0 0 14px;
+  font-family: var(--letra-titulos);
+  font-size: 19px;
+  font-weight: 600;
+}

@@ -173,3 +173,14 @@
   flex: 1;
   min-width: 0;
 }
+
+/* HU-DASH-004-v2: selector de fecha con su ayuda "?". */
+.campo-con-ayuda {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.campo-con-ayuda .ayuda {
+  margin-bottom: 8px;
+}

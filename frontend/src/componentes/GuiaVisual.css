@@ -1,79 +1,107 @@
-/* HumWorld - guía de lectura y escala de humor (HU-DASH-004). */
-.guia {
-  background: #fff8e0;
-  border: var(--borde);
-  border-radius: var(--radio);
-  padding: 12px 16px;
-  margin-bottom: 18px;
-}
-
-.guia-encabezado {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  font-family: var(--letra-titulos);
-  font-size: 17px;
-}
-
-.guia-boton {
-  font: inherit;
+/* HumWorld - ayudas "?" junto a cada parte de la pantalla (HU-DASH-004-v2) y
+   escala de humor (HU-DASH-004). */
+.ayuda {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 6px;
   font-family: 'Nunito', system-ui, sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--acento);
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-.guia-boton:focus-visible {
-  outline: 3px solid var(--acento);
-  outline-offset: 2px;
-}
-
-.guia-pasos {
-  list-style: none;
-  counter-reset: paso;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 10px 18px;
-  margin: 10px 0 0;
-  padding: 0;
-}
-
-.guia-pasos li {
-  counter-increment: paso;
-  display: grid;
-  grid-template-columns: 30px 1fr;
-  grid-template-rows: auto auto;
-  align-content: start;
-  column-gap: 8px;
   font-size: 14px;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: left;
 }
 
-.guia-pasos li::before {
-  content: counter(paso);
-  grid-row: 1 / span 2;
-  width: 26px;
-  height: 26px;
+/* Título con su ayuda al lado: la ayuda queda fuera del título para que el
+   lector de pantalla no lea el texto de ayuda como parte del encabezado. */
+.titulo-con-ayuda {
+  display: flex;
+  align-items: center;
+}
+
+.titulo-con-ayuda > :first-child {
+  min-width: 0;
+}
+
+.ayuda {
+  flex-shrink: 0;
+}
+
+.ayuda-boton {
+  width: 22px;
+  height: 22px;
   display: grid;
   place-items: center;
-  font-weight: 700;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
   color: var(--tinta);
   background: var(--amarillo);
   border: var(--borde);
   border-radius: 50%;
+  cursor: help;
 }
 
-.guia-titulo {
-  font-weight: 700;
+.ayuda-boton:focus-visible {
+  outline: 3px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.ayuda-globo {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: -8px;
+  z-index: 1100; /* sobre los controles del mapa (Leaflet usa hasta 1000) */
+  width: max-content;
+  max-width: min(300px, calc(100vw - 32px));
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  color: var(--texto);
+  background: #fff8e0;
+  border: var(--borde);
+  border-radius: 12px;
+  box-shadow: var(--sombra);
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.ayuda-derecha .ayuda-globo {
+  left: auto;
+  right: -8px;
+}
+
+.ayuda:hover .ayuda-globo,
+.ayuda:focus-within .ayuda-globo,
+.ayuda-abierta .ayuda-globo {
+  visibility: visible;
+  opacity: 1;
+}
+
+.ayuda-titulo {
+  font-family: var(--letra-titulos);
+  font-size: 15px;
+}
+
+.ayuda-lista {
+  display: grid;
+  gap: 4px;
+}
+
+.ayuda-punto {
+  display: block;
+  color: var(--texto-suave);
+}
+
+.ayuda-punto strong {
   color: var(--texto);
 }
 
-.guia-texto {
-  color: var(--texto-suave);
+.ayuda .escala {
+  min-width: 260px;
+  margin-top: 4px;
 }
 
 /* Escala de -10 a +10. */
@@ -140,4 +168,19 @@
 
 .escala-textos span:last-child {
   text-align: right;
+}
+
+/* En el celular la ayuda se abre como una tarjeta fija abajo, para que nunca
+   quede cortada por el borde de la pantalla. */
+@media (max-width: 600px) {
+  .ayuda-globo,
+  .ayuda-derecha .ayuda-globo {
+    position: fixed;
+    top: auto;
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    width: auto;
+    max-width: none;
+  }
 }
