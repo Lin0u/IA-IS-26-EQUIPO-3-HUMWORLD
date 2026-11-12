@@ -10,6 +10,7 @@ from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+import app.models  # noqa: F401 - registra todas las tablas (configuracion incluida)
 from app.database import Base
 from app.models.canal import CanalNoticias
 from app.models.fuente import FuenteRSS
@@ -148,3 +149,45 @@ def test_script_con_error_termina_con_1(session_factory, tmp_path, capsys):
     ruta.write_text("palabra,idioma,valor,origen\nwar,fr,-4,x\n", encoding="utf-8")
     assert seed_diccionario.main(ruta, session_factory) == 1
     assert "cancelada" in capsys.readouterr().err
+
+
+RUTA_LEXICO = seed_diccionario.RUTA_DATASET.parent / "lexico_noticias_propuesto.csv"
+
+
+def _clave(palabra, idioma):
+    from app.services.sentimiento_service import _normalizar
+
+    return (_normalizar(palabra), idioma)
+
+
+def test_lexico_de_noticias_es_valido_y_no_repite_el_diccionario_base():
+    # docs/Backlog/Dataset-lexico-noticias.md: léxico propuesto, pendiente de
+    # revisión del equipo. Solo agrega términos nuevos, con valores pares
+    # (misma escala que AFINN × 2) y distintos de cero.
+    lexico = leer_csv(RUTA_LEXICO)
+    base = {_clave(f["palabra"], f["idioma"]) for f in leer_csv(seed_diccionario.RUTA_DATASET)}
+    claves = [_clave(f["palabra"], f["idioma"]) for f in lexico]
+    assert 200 <= len(lexico) <= 300
+    assert len(claves) == len(set(claves))
+    assert not set(claves) & base
+    assert {f["idioma"] for f in lexico} == {"es", "en"}
+    assert all(-10 <= f["valor"] <= 10 and f["valor"] != 0 and f["valor"] % 2 == 0 for f in lexico)
+
+
+def test_lexico_de_noticias_sus_frases_no_repiten_palabras_del_diccionario():
+    # Una frase cuyas palabras ya son términos contaría dos veces lo mismo.
+    todos = leer_csv(seed_diccionario.RUTA_DATASET) + leer_csv(RUTA_LEXICO)
+    sueltas = {_clave(f["palabra"], f["idioma"]) for f in todos if " " not in f["palabra"].strip()}
+    for fila in leer_csv(RUTA_LEXICO):
+        if " " in fila["palabra"]:
+            palabras = _clave(fila["palabra"], fila["idioma"])[0].split()
+            assert not any((p, fila["idioma"]) in sueltas for p in palabras), fila["palabra"]
+
+
+def test_el_script_carga_un_csv_indicado_por_ruta(session_factory):
+    assert seed_diccionario.main(RUTA_LEXICO, session_factory) == 0
+    db = session_factory()
+    try:
+        assert _contar(db) == len(leer_csv(RUTA_LEXICO))
+    finally:
+        db.close()
