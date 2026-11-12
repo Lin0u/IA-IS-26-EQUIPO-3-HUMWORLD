@@ -30,7 +30,8 @@ Medición del 2026-11-11, con el mínimo de 3 términos (HU-SENT-007-v4) sobre 2
 ## 3. Cómo revisarlo (equipo)
 
 1. Revisen el valor de cada término en las tablas de la sección 5 (o en el CSV). Cambien el valor o borren la fila si no están de acuerdo. **Los valores son una propuesta, no un valor definitivo.**
-2. Verifiquen que inglés y español tengan valores coherentes entre sí (por ejemplo, *earthquake* y *terremoto*, los dos en -6).
+2. Verifiquen que inglés y español tengan valores coherentes entre sí (por ejemplo, *earthquake* y *terremoto*, los dos en -6). Cuando el inglés ya estaba en el diccionario base, el español propuesto usa su mismo valor: *medalla* +6 (*medal*), *campeón* +4 (*champion*), *tumor* -4, *brote* -4 (*outbreak*), *innovación* +2.
+   - **Punto a decidir:** AFINN tiene *cancer* en -2, un valor bajo para noticias. Se dejó *cáncer* también en -2 por coherencia; si el equipo lo sube, debe cambiar los dos desde Administración → Diccionario.
 3. Agreguen las palabras frecuentes de sus feeds que falten, con los mismos criterios.
 4. Validen después de cargar: revisen 30 a 40 noticias en "¿Por qué…?" y confirmen que el humor tiene sentido.
 
@@ -136,8 +137,8 @@ La carga omite los términos que ya existen, así que se puede repetir, y marca 
 
 | Inglés | Valor | Español | Valor |
 |---|---|---|---|
-| cholera | -6 | brote | -6 |
-| cure | +6 | cáncer | -6 |
+| cholera | -6 | brote | -4 |
+| cure | +6 | cáncer | -2 |
 | ebola | -8 | cólera | -6 |
 | epidemic | -6 | desnutrición | -6 |
 | eradication | +2 | epidemia | -6 |
@@ -150,7 +151,7 @@ La carga omite los términos que ya existen, así que se puede repetir, y marca 
 | remission | +6 | sarampión | -4 |
 | treatment | +2 | sobredosis | -8 |
 | vaccination | +4 | tratamiento | +2 |
-| vaccine | +4 | tumor | -6 |
+| vaccine | +4 | tumor | -4 |
 | virus | -4 | vacuna | +4 |
 |  |  | vacunación | +4 |
 |  |  | virus | -4 |
@@ -183,14 +184,14 @@ La carga omite los términos que ya existen, así que se puede repetir, y marca 
 |---|---|---|---|
 | aid | +4 | beca | +4 |
 | championship | +4 | campeonato | +4 |
-| conservation | +2 | campeón | +6 |
+| conservation | +2 | campeón | +4 |
 | discovery | +4 | conservación | +2 |
 | graduation | +4 | descubrimiento | +4 |
 | inauguration | +2 | donación | +4 |
 | inclusion | +2 | graduación | +4 |
 | milestone | +4 | inclusión | +2 |
-| rebuild | +4 | innovación | +4 |
-| reconstruction | +2 | medalla | +4 |
+| rebuild | +4 | innovación | +2 |
+| reconstruction | +2 | medalla | +6 |
 | reform | +2 | reconstrucción | +2 |
 | relief | +4 | reconstruir | +4 |
 | renewable | +2 | reencuentro | +6 |
