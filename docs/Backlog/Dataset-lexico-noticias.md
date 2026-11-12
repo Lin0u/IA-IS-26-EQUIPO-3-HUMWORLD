@@ -2,8 +2,8 @@
 
 **Estado:** Propuesto y cargado en la base de datos local de la PO el 2026-11-12. Los valores siguen pendientes de revisión del equipo.
 **Origina en:** PDF de especificaciones §4.2.2 (diccionario de términos indexados, escala de -10 a +10) y HU-SENT-001 (gestión y carga del diccionario). Complementa a `Dataset-diccionario-inicial.md`.
-**Archivo de datos:** `src/scripts/data/lexico_noticias_propuesto.csv` (236 términos: 119 en inglés y 117 en español).
-**Versión del documento:** v1.1.
+**Archivo de datos:** `src/scripts/data/lexico_noticias_propuesto.csv` (302 términos: 150 en inglés y 152 en español; 236 de la v1.0 y 66 de conducta política de la v1.2).
+**Versión del documento:** v1.2.
 
 ## 1. Por qué hace falta
 
@@ -26,6 +26,12 @@ Medición del 2026-11-11, con el mínimo de 3 términos (HU-SENT-007-v4) sobre 2
    - En inglés: *record*, *deal*, *strike*, *storm*, *crash*, *surge*, *soar*, *boom*, *default*, *execution*, *occupation*.
    - En español: *cura* (sanar o sacerdote), *temporal* (tormenta o pasajero), *tratado* (acuerdo o participio de tratar), *escalada*, *embargo*, *militante*.
 6. **Sesgo negativo esperado.** 163 términos negativos y 73 positivos. Refleja que las noticias de eventos son mayormente negativas, y el equipo debe tenerlo presente al interpretar el humor global.
+7. **Política: se evalúan las conductas, nunca a los actores ni las ideologías.** Decisión de la PO del 2026-11-12. Una noticia política tiene humor negativo cuando informa una conducta dañina, sin importar quién la cometa: corrupción, fraude, abuso de poder, autoritarismo, censura, represión o discurso de odio, venga de un gobierno o partido de izquierda, de derecha o de cualquier otro signo. Por eso:
+   - **Entran** las palabras que nombran la conducta: *nepotismo*, *cohecho*, *lavado de dinero*, *xenofobia*, *dictadura*, *impunidad*, *desinformación*. También algunas de buena gobernanza: *transparencia*, *probidad*, *rendición de cuentas*.
+   - **Nunca entran** las etiquetas de actores o ideologías, ni con valor positivo ni negativo: *izquierda*, *derecha*, *progresista*, *conservador*, *liberal*, *socialista*, *comunista*, *demócrata*, *republicano*, *populista*, *nacionalista*, nombres de partidos o de políticos. Darles valor haría que el mapa tome partido.
+   - **Punto a decidir:** el diccionario base (AFINN) trae *fascist* en -4. Se usa más como acusación que como descripción de un hecho. Se propone revisarlo con esta regla y, si el equipo lo confirma, borrarlo desde Administración → Diccionario.
+   - Las frases que repetirían un término existente se descartaron por la regla del punto 4. Por ejemplo, *discurso de odio* ya suma por *odio* y *fraude electoral* por *fraude*.
+   - Se descartaron por ambiguas *surveillance* (también vigilancia sanitaria) y *purge* / *purga* (también de datos).
 
 ## 3. Cómo revisarlo (equipo)
 
@@ -214,6 +220,45 @@ docker compose cp api:/tmp/candidatas.csv .
 | reunite | +6 | restauración | +2 |
 | scholarship | +4 | solidaridad | +4 |
 | volunteer | +2 | voluntario | +2 |
+### Conducta política y discurso de odio (31 en inglés, 35 en español)
+
+| Inglés | Valor | Español | Valor |
+|---|---|---|---|
+| accountability | +4 | amiguismo | -6 |
+| antisemitism | -8 | anticorrupción | +4 |
+| authoritarian | -6 | antisemitismo | -8 |
+| authoritarianism | -6 | autoritario | -6 |
+| bipartisan | +2 | autoritarismo | -6 |
+| consensus | +2 | chantaje | -6 |
+| cronyism | -6 | cleptocracia | -8 |
+| dictator | -6 | clientelismo | -6 |
+| dictatorship | -8 | cohecho | -6 |
+| disinformation | -6 | colusión | -6 |
+| embezzle | -6 | compra de votos | -6 |
+| extortion | -6 | consenso | +2 |
+| gerrymandering | -4 | desinformación | -6 |
+| homophobia | -8 | dictador | -6 |
+| impunity | -6 | dictadura | -8 |
+| incitement | -6 | encubrimiento | -6 |
+| indictment | -4 | extorsión | -6 |
+| influence peddling | -6 | homofobia | -8 |
+| islamophobia | -8 | impunidad | -6 |
+| kleptocracy | -8 | imputación | -4 |
+| lawbreaking | -4 | incitación | -6 |
+| misogyny | -8 | intimidación | -4 |
+| money laundering | -6 | islamofobia | -8 |
+| nepotism | -6 | lavado de dinero | -6 |
+| probity | +4 | misoginia | -8 |
+| transparency | +4 | nepotismo | -6 |
+| transphobia | -8 | peculado | -6 |
+| vote buying | -6 | prevaricación | -6 |
+| voter suppression | -6 | probidad | +4 |
+| whistleblower | +2 | propaganda | -4 |
+| xenophobia | -8 | rendición de cuentas | +4 |
+|  |  | transfobia | -8 |
+|  |  | transparencia | +4 |
+|  |  | tráfico de influencias | -6 |
+|  |  | xenofobia | -8 |
 
 ## Tabla de control de versiones
 
@@ -221,3 +266,4 @@ docker compose cp api:/tmp/candidatas.csv .
 |---|---|---|
 | v1.0 | 2026-11-12 | Creación a pedido de la PO tras medir la cobertura con mínimo 3 (61 % de noticias sin humor por falta de términos). 236 términos de evento en 6 categorías, con valores propuestos pendientes de revisión del equipo. Se agrega al script `seed_diccionario` la opción de cargar otro CSV y pruebas de validez del léxico en `test_seed_diccionario.py`. |
 | v1.1 | 2026-11-12 | Se registra el resultado de la carga (864 → 964 noticias con humor) y se agrega la sección 5 con el script de palabras candidatas (`scripts/candidatos_diccionario.py`, con pruebas en `test_candidatos_diccionario.py`). Las tablas de términos pasan a la sección 6. |
+| v1.2 | 2026-11-12 | Decisión de la PO: las noticias políticas se evalúan por las conductas (corrupción, autoritarismo, discurso de odio…) y nunca por el actor o la ideología. Se agrega el criterio 7 y la categoría "Conducta política y discurso de odio" con 66 términos nuevos (el CSV pasa a 302). Se marca para revisión *fascist* (-4) del diccionario base. Hallazgo del script de candidatas: las 60 palabras más frecuentes en las noticias sin humor son neutras (*say*, *election*, *gobierno*), así que gran parte de esas noticias no tiene humor porque su tono es informativo, no porque falten términos. |

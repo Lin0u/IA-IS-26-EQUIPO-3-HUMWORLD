@@ -167,7 +167,7 @@ def test_lexico_de_noticias_es_valido_y_no_repite_el_diccionario_base():
     lexico = leer_csv(RUTA_LEXICO)
     base = {_clave(f["palabra"], f["idioma"]) for f in leer_csv(seed_diccionario.RUTA_DATASET)}
     claves = [_clave(f["palabra"], f["idioma"]) for f in lexico]
-    assert 200 <= len(lexico) <= 300
+    assert 200 <= len(lexico) <= 350
     assert len(claves) == len(set(claves))
     assert not set(claves) & base
     assert {f["idioma"] for f in lexico} == {"es", "en"}
