@@ -1,9 +1,9 @@
 # Léxico de noticias: términos de evento propuestos para el diccionario
 
-**Estado:** Propuesto, pendiente de revisión del equipo. **No está cargado en la base de datos.**
+**Estado:** Propuesto y cargado en la base de datos local de la PO el 2026-11-12. Los valores siguen pendientes de revisión del equipo.
 **Origina en:** PDF de especificaciones §4.2.2 (diccionario de términos indexados, escala de -10 a +10) y HU-SENT-001 (gestión y carga del diccionario). Complementa a `Dataset-diccionario-inicial.md`.
 **Archivo de datos:** `src/scripts/data/lexico_noticias_propuesto.csv` (236 términos: 119 en inglés y 117 en español).
-**Versión del documento:** v1.0.
+**Versión del documento:** v1.1.
 
 ## 1. Por qué hace falta
 
@@ -29,7 +29,7 @@ Medición del 2026-11-11, con el mínimo de 3 términos (HU-SENT-007-v4) sobre 2
 
 ## 3. Cómo revisarlo (equipo)
 
-1. Revisen el valor de cada término en las tablas de la sección 5 (o en el CSV). Cambien el valor o borren la fila si no están de acuerdo. **Los valores son una propuesta, no un valor definitivo.**
+1. Revisen el valor de cada término en las tablas de la sección 6 (o en el CSV). Cambien el valor o borren la fila si no están de acuerdo. **Los valores son una propuesta, no un valor definitivo.**
 2. Verifiquen que inglés y español tengan valores coherentes entre sí (por ejemplo, *earthquake* y *terremoto*, los dos en -6). Cuando el inglés ya estaba en el diccionario base, el español propuesto usa su mismo valor: *medalla* +6 (*medal*), *campeón* +4 (*champion*), *tumor* -4, *brote* -4 (*outbreak*), *innovación* +2.
    - **Punto a decidir:** AFINN tiene *cancer* en -2, un valor bajo para noticias. Se dejó *cáncer* también en -2 por coherencia; si el equipo lo sube, debe cambiar los dos desde Administración → Diccionario.
 3. Agreguen las palabras frecuentes de sus feeds que falten, con los mismos criterios.
@@ -43,7 +43,21 @@ docker compose exec api python -m scripts.seed_diccionario scripts/data/lexico_n
 
 La carga omite los términos que ya existen, así que se puede repetir, y marca las noticias calculadas por diccionario para recálculo (HU-SENT-001). El barrido las recalcula en su próxima ejecución. Después, presionen **Actualizar** en Parámetros → Cobertura para medir el efecto. También se pueden agregar términos uno por uno desde Administración → Diccionario.
 
-## 5. Términos propuestos
+## 5. Ampliación guiada por los datos (`scripts/candidatos_diccionario.py`)
+
+Resultado de la carga del léxico (2026-11-12, mínimo 3): las noticias con humor pasaron de 864 a 964. Siguen 413 sin términos y 860 con menos de 3. Para la siguiente ampliación, el script lista las palabras que más aparecen en esas noticias y que no están en el diccionario. No modifica nada: solo informa.
+
+```powershell
+docker compose exec api python -m scripts.candidatos_diccionario --top 60 --salida /tmp/candidatas.csv
+docker compose cp api:/tmp/candidatas.csv .
+```
+
+- **noticias:** en cuántas noticias sin humor aparece la palabra.
+- **recupera:** cuántas de ellas tienen exactamente un término menos que el mínimo, es decir, cuántas tendrían humor si se agrega esa palabra. El ranking se ordena por esta columna.
+- Se descartan palabras vacías, números, palabras de menos de 3 letras, las que ya son términos y las que nunca aparecen en minúscula, que casi siempre son nombres propios.
+- El CSV trae la columna `valor_propuesto` vacía. El equipo la completa solo para las palabras con tono claro y descarta las neutras o ambiguas, con los criterios de la sección 2.
+
+## 6. Términos propuestos
 
 ### Desastres y clima (22 en inglés, 22 en español)
 
@@ -206,3 +220,4 @@ La carga omite los términos que ya existen, así que se puede repetir, y marca 
 | Versión | Fecha/Sesión | Motivo del cambio |
 |---|---|---|
 | v1.0 | 2026-11-12 | Creación a pedido de la PO tras medir la cobertura con mínimo 3 (61 % de noticias sin humor por falta de términos). 236 términos de evento en 6 categorías, con valores propuestos pendientes de revisión del equipo. Se agrega al script `seed_diccionario` la opción de cargar otro CSV y pruebas de validez del léxico en `test_seed_diccionario.py`. |
+| v1.1 | 2026-11-12 | Se registra el resultado de la carga (864 → 964 noticias con humor) y se agrega la sección 5 con el script de palabras candidatas (`scripts/candidatos_diccionario.py`, con pruebas en `test_candidatos_diccionario.py`). Las tablas de términos pasan a la sección 6. |
