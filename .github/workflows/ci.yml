@@ -32,11 +32,14 @@ jobs:
       - name: Ejecutar pruebas con cobertura
         run: |
           cd src
-          pytest --cov=app --cov-report=xml --cov-report=term-missing --cov-fail-under=80
+          pytest --cov=app --cov=scripts --cov-report=xml --cov-report=term-missing --cov-fail-under=80
         # Nota: el paso corre desde src/, por lo que recoge automáticamente
         # src/.coveragerc (excluye el scaffolding de HU-RSS-006/007/008/009 de
         # la cobertura) y src/pytest.ini. Con HU-RSS-001/002/003-v2/004/005/010
         # implementadas y probadas, la cobertura del módulo es >= 80%.
+        # --cov=scripts: los scripts de carga y análisis (seed_diccionario,
+        # candidatos_diccionario) tienen pruebas; sin medirlos, SonarQube los
+        # contaba como código nuevo sin cobertura.
       - name: Subir reporte de cobertura
         uses: actions/upload-artifact@v4
         with:

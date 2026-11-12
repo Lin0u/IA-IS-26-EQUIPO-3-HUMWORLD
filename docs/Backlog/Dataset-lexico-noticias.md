@@ -54,7 +54,7 @@ La carga omite los términos que ya existen, así que se puede repetir, y marca 
 Resultado de la carga del léxico (2026-11-12, mínimo 3): las noticias con humor pasaron de 864 a 964. Siguen 413 sin términos y 860 con menos de 3. Para la siguiente ampliación, el script lista las palabras que más aparecen en esas noticias y que no están en el diccionario. No modifica nada: solo informa.
 
 ```powershell
-docker compose exec api python -m scripts.candidatos_diccionario --top 60 --salida /tmp/candidatas.csv
+docker compose exec api python -m scripts.candidatos_diccionario --top 60 --salida candidatas.csv
 docker compose cp api:/tmp/candidatas.csv .
 ```
 

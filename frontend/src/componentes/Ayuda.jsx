@@ -22,11 +22,8 @@ export default function Ayuda({ titulo, children, alinear = 'izquierda' }) {
   }, [abierta])
 
   return (
-    <span
-      ref={contenedor}
-      className={`ayuda ayuda-${alinear}${abierta ? ' ayuda-abierta' : ''}`}
-      onKeyDown={(evento) => evento.key === 'Escape' && setAbierta(false)}
-    >
+    <span ref={contenedor} className={`ayuda ayuda-${alinear}${abierta ? ' ayuda-abierta' : ''}`}>
+      {/* Escape se atiende en el botón (elemento nativo con foco), no en el span. */}
       <button
         type="button"
         className="ayuda-boton"
@@ -34,6 +31,7 @@ export default function Ayuda({ titulo, children, alinear = 'izquierda' }) {
         aria-describedby={id}
         aria-expanded={abierta}
         onClick={() => setAbierta(!abierta)}
+        onKeyDown={(evento) => evento.key === 'Escape' && setAbierta(false)}
       >
         ?
       </button>
