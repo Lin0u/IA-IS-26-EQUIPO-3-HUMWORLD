@@ -5,7 +5,7 @@
   display: inline-flex;
   vertical-align: middle;
   margin-left: 6px;
-  font-family: 'Nunito', system-ui, sans-serif;
+  font-family: var(--letra-texto);
   font-size: 14px;
   font-weight: 400;
   line-height: 1.45;

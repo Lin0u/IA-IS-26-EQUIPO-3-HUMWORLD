@@ -2,7 +2,8 @@
    bordes gruesos, esquinas redondeadas y sombras duras, como una caricatura.
    Los colores se definen una sola vez aquí arriba: para cambiar el aspecto de
    toda la página basta con cambiar estos valores. */
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&display=swap');
+/* Tipografía: Open Sans en toda la interfaz (decisión de la PO del 2026-11-13). */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap');
 
 :root {
   --tinta: #2b2350;          /* violeta casi negro: textos, bordes y sombras */
@@ -28,9 +29,10 @@
   --borde: 2px solid var(--tinta);
   --sombra: 4px 4px 0 var(--tinta);
   --radio: 16px;
-  --letra-titulos: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif;
+  --letra-texto: 'Open Sans', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --letra-titulos: var(--letra-texto);
 
-  font-family: 'Nunito', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--letra-texto);
   line-height: 1.5;
   color: var(--texto);
   background: var(--papel);
