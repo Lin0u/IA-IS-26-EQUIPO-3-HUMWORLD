@@ -10,7 +10,7 @@ const DESCRIPCION = {
   sinDatos: 'Cerebro tranquilo: no hay datos de humor',
 }
 
-const TINTA = '#2b2350'
+const TINTA = '#173847'
 
 export default function CerebroHumor({ humor, tamano = 64, animado = true }) {
   const tipo = tipoHumor(humor)

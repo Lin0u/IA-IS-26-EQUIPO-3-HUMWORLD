@@ -66,12 +66,12 @@ export default function GraficoEvolucion({ primeraFecha, ultimaFecha, fechaElegi
       {
         label: 'Humor global',
         data: serie.map((dia) => dia.humor_promedio),
-        borderColor: '#2b2350',
+        borderColor: '#173847',
         borderWidth: 2,
         spanGaps: true,
         pointRadius: serie.map((dia) => (dia.fecha === fechaElegida ? 7 : 4)),
         pointBackgroundColor: serie.map((dia) => COLORES_HUMOR[tipoHumor(dia.humor_promedio)]),
-        pointBorderColor: '#2b2350',
+        pointBorderColor: '#173847',
       },
     ],
   }

@@ -8,7 +8,7 @@ export const COLORES_HUMOR = {
   positivo: '#2ec4a0',
   negativo: '#ff5a5f',
   neutro: '#ffc93c',
-  sinDatos: '#d9d4ea',
+  sinDatos: '#cfe2e8',
 }
 
 // Rango neutro: valores entre -0,5 y +0,5 (sin incluir los extremos) se muestran
@@ -51,7 +51,7 @@ export const BOCAS_CARITA = {
 // dibujo de sus marcadores como texto. El resto de la página usa el componente
 // Carita.jsx, que dibuja lo mismo.
 export function caritaComoTexto(tipo, tamano) {
-  const tinta = '#2b2350'
+  const tinta = '#173847'
   return (
     `<svg class="carita" viewBox="0 0 40 40" width="${tamano}" height="${tamano}" aria-hidden="true">` +
     `<circle cx="20" cy="20" r="17" fill="${COLORES_HUMOR[tipo]}" stroke="${tinta}" stroke-width="2.5"/>` +

@@ -52,7 +52,7 @@
 .mapa-contenedor .leaflet-container {
   height: 100%;
   font: inherit;
-  background: #aad3df;
+  background: var(--celeste);
 }
 
 /* Marcador de cada continente: carita arriba y valor debajo. */
