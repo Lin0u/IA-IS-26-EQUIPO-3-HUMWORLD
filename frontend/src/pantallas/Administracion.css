@@ -66,8 +66,8 @@
 }
 
 .admin-aviso-info {
-  background: #fff3cf;
-  color: var(--texto-neutro);
+  background: #e3f1f6;
+  color: var(--acento);
 }
 
 .admin-resultados {
@@ -157,7 +157,7 @@
   display: grid;
   place-items: center;
   font-size: 16px;
-  background: var(--amarillo);
+  background: var(--activo);
   border: var(--borde);
   border-radius: 50%;
   box-shadow: 2px 2px 0 var(--tinta);
@@ -349,7 +349,7 @@
 .admin-panel-nuevo {
   margin-bottom: 12px;
   padding: 12px 14px;
-  background: #fff8e0;
+  background: var(--globo);
   border: var(--borde);
   border-radius: 12px;
 }

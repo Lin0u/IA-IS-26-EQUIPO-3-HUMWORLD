@@ -68,13 +68,15 @@
 }
 
 .menu-boton:focus-visible {
-  outline: 3px solid var(--amarillo);
+  outline: 3px solid var(--celeste);
   outline-offset: 2px;
 }
 
 .menu-boton.activo {
+  /* Blanco: sobre la cabecera azul se distingue mejor que el celeste de los
+     botones inactivos (fondo blanco translúcido). */
   color: var(--tinta);
-  background: var(--amarillo);
+  background: var(--superficie);
   border-color: var(--tinta);
   box-shadow: 2px 2px 0 var(--tinta);
 }

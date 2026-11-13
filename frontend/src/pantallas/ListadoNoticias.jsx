@@ -39,7 +39,7 @@ const PASOS_AYUDA = [
   },
   {
     titulo: 'Mira por qué tiene ese número',
-    texto: 'El botón amarillo muestra qué palabras del diccionario encontró el sistema y cómo calculó el promedio.',
+    texto: 'El botón celeste muestra qué palabras del diccionario encontró el sistema y cómo calculó el promedio.',
   },
 ]
 
