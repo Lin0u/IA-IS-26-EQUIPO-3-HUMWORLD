@@ -639,7 +639,7 @@ Escenario: Filtro sin palabras
 **Decisiones de diseño:**
 1. **Cabecera:** logo (mascota, "HumWorld" y humor del mundo) a la izquierda, que lleva al mapa, y botón ☰ ("Abrir menú") a la derecha. La cabecera queda fija al desplazarse.
 2. **Menú lateral** desde la derecha: "Mapa de humor", "Nube de palabras" y "Noticias" arriba; "Administración" al pie con ícono de usuario. Se cierra al elegir una vista, con "×", con Escape o tocando fuera; al abrirse, el foco va a "Cerrar menú" y al cerrarse vuelve a ☰.
-3. **Mapa:** encabezado (título, descripción y fecha); mapa más alto (520 px) con el recuadro "Estado del humor" abajo a la izquierda (mascota, humor global, cantidad de noticias y leyenda de caritas en dos columnas); debajo, el gráfico de evolución y "Detalle del día" con la escala de -10 a +10 y la lista de continentes. En pantallas de 700 px o menos el recuadro pasa debajo del mapa para no taparlo.
+3. **Mapa:** vista abierta, sin tarjeta: franja de encabezado de borde a borde (título, descripción y fecha); mapa a todo el ancho de la ventana (hasta 620 px de alto) con el recuadro "Estado del humor" abajo a la izquierda (mascota, humor global, cantidad de noticias y leyenda de caritas en dos columnas); debajo, el gráfico de evolución y "Detalle del día" con la escala de -10 a +10 y la lista de continentes. En pantallas de 700 px o menos el recuadro pasa debajo del mapa para no taparlo.
 
 ### Criterios de aceptación (Gherkin)
 

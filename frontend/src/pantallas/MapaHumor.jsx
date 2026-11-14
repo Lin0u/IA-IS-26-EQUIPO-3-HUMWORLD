@@ -57,7 +57,7 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
   }))
 
   return (
-    <section className="pantalla">
+    <section className="pantalla-mapa">
       <div className="mapa-encabezado">
         <div>
           <h2>Mapa de humor</h2>
@@ -81,12 +81,14 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
         </div>
       </div>
 
-      {error && (
-        <p className="mapa-aviso mapa-error" role="alert">
-          No se pudieron cargar los datos del mapa. {error}
-        </p>
-      )}
-      {cargando && !error && <p className="mapa-aviso">Cargando datos…</p>}
+      <div className="mapa-avisos">
+        {error && (
+          <p className="mapa-aviso mapa-error" role="alert">
+            No se pudieron cargar los datos del mapa. {error}
+          </p>
+        )}
+        {cargando && !error && <p className="mapa-aviso">Cargando datos…</p>}
+      </div>
 
       <div className="mapa-marco">
         <div className="mapa-contenedor">
@@ -171,28 +173,30 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
         </aside>
       </div>
 
-      <GraficoEvolucion primeraFecha={primeraFecha} ultimaFecha={ultimaFecha} fechaElegida={fecha} />
+      <div className="mapa-debajo">
+        <GraficoEvolucion primeraFecha={primeraFecha} ultimaFecha={ultimaFecha} fechaElegida={fecha} />
 
-      <section className="mapa-detalle" aria-labelledby="titulo-detalle">
-        <h3 id="titulo-detalle">Detalle del día</h3>
-        {global && global.cantidad_noticias_evaluadas > 0 && (
-          <EscalaHumor valor={global.humor_promedio} etiqueta="Mundo" />
-        )}
-        <ul className="continentes">
-          {continentes.map((continente) => (
-            <li key={continente.nombre} className="continente">
-              <Carita tipo={tipoHumor(continente.humor)} tamano={40} />
-              <div>
-                <span className="continente-nombre">{continente.nombre}</span>
-                <strong className={`continente-humor texto-${tipoHumor(continente.humor)}`}>
-                  {formatoHumor(continente.humor)}
-                </strong>
-                <span className="continente-noticias">promedio de {continente.noticias} noticias</span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
+        <section className="mapa-detalle" aria-labelledby="titulo-detalle">
+          <h3 id="titulo-detalle">Detalle del día</h3>
+          {global && global.cantidad_noticias_evaluadas > 0 && (
+            <EscalaHumor valor={global.humor_promedio} etiqueta="Mundo" />
+          )}
+          <ul className="continentes">
+            {continentes.map((continente) => (
+              <li key={continente.nombre} className="continente">
+                <Carita tipo={tipoHumor(continente.humor)} tamano={40} />
+                <div>
+                  <span className="continente-nombre">{continente.nombre}</span>
+                  <strong className={`continente-humor texto-${tipoHumor(continente.humor)}`}>
+                    {formatoHumor(continente.humor)}
+                  </strong>
+                  <span className="continente-noticias">promedio de {continente.noticias} noticias</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
     </section>
   )
 }

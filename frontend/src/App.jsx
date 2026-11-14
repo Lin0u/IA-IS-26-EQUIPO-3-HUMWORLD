@@ -162,7 +162,8 @@ export default function App() {
         </>
       )}
 
-      <main className="contenido">
+      {/* El mapa ocupa todo el ancho (HU-DASH-005); las demás vistas van en tarjeta centrada. */}
+      <main className={pantallaActiva === 'mapa' ? 'contenido contenido-ancho' : 'contenido'}>
         {pantallaActiva === 'mapa' && (
           <MapaHumor mapa={mapa} cargando={cargando} error={error} alCambiarFecha={cambiarFecha} />
         )}

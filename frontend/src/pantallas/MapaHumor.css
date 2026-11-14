@@ -1,11 +1,45 @@
 /* HumWorld - estilos de la pantalla "Mapa de humor". */
+/* HU-DASH-005: vista abierta, sin tarjeta. Franja de encabezado de borde a
+   borde, mapa a todo el ancho con el estado del humor encima y, debajo, el
+   gráfico y el detalle del día en un ancho cómodo de lectura. */
+.pantalla-mapa {
+  animation: entrar 0.35s ease-out backwards;
+}
+
+.pantalla-mapa h2 {
+  font-family: var(--letra-titulos);
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.pantalla-mapa p {
+  color: var(--texto-suave);
+}
+
 .mapa-encabezado {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-end;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: 12px 16px;
+  padding: 16px 24px;
+  background: var(--superficie);
+  border-bottom: var(--borde);
+}
+
+.mapa-avisos:empty {
+  display: none;
+}
+
+.mapa-avisos {
+  padding: 12px 24px 0;
+}
+
+.mapa-debajo {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px 40px;
 }
 
 .mapa-global-titulo {
@@ -26,10 +60,9 @@
 }
 
 .mapa-contenedor {
-  height: 520px;
-  border: var(--borde);
-  border-radius: var(--radio);
-  overflow: hidden;
+  height: min(620px, calc(100vh - 170px));
+  min-height: 420px;
+  border-bottom: var(--borde);
 }
 
 /* Recuadro abajo a la izquierda, sobre el mapa (Leaflet usa z-index hasta 1000
@@ -37,8 +70,8 @@
    y los créditos abajo a la derecha). */
 .mapa-estados {
   position: absolute;
-  left: 14px;
-  bottom: 14px;
+  left: 24px;
+  bottom: 24px;
   z-index: 1000;
   width: 330px;
   padding: 10px 14px;
@@ -54,7 +87,7 @@
   gap: 10px;
 }
 
-.pantalla .mapa-estados p {
+.pantalla-mapa .mapa-estados p {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -120,15 +153,24 @@
 
 /* En pantallas angostas el recuadro va debajo del mapa para no taparlo. */
 @media (max-width: 700px) {
+  .mapa-encabezado {
+    padding: 14px 16px;
+  }
+
   .mapa-contenedor {
     height: 360px;
+    min-height: 0;
   }
 
   .mapa-estados {
     position: static;
     width: auto;
-    margin-top: 12px;
+    margin: 12px 16px 0;
     box-shadow: none;
+  }
+
+  .mapa-debajo {
+    padding: 0 16px 32px;
   }
 }
 
@@ -221,7 +263,7 @@
   padding: 8px 14px;
   border: var(--borde);
   border-radius: var(--radio);
-  background: var(--papel);
+  background: var(--superficie);
 }
 
 .mapa-error {
