@@ -1,7 +1,7 @@
-/* HumWorld - estilos de la pantalla "Mapa de humor". */
-/* HU-DASH-005: vista abierta, sin tarjeta. Franja de encabezado de borde a
-   borde, mapa a todo el ancho con el estado del humor encima y, debajo, el
-   gráfico y el detalle del día en un ancho cómodo de lectura. */
+/* HumWorld - estilos de la pantalla "Mapa de humor".
+   HU-DASH-005: vista abierta, sin tarjeta. Encabezado de borde a borde con el
+   humor global, la leyenda y la fecha; mapa a todo el ancho con los continentes
+   y la escala encima (fondo translúcido y difuminado); el gráfico, debajo. */
 .pantalla-mapa {
   animation: entrar 0.35s ease-out backwards;
 }
@@ -21,11 +21,59 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  align-items: flex-end;
-  gap: 12px 16px;
-  padding: 16px 24px;
+  align-items: center;
+  gap: 12px 24px;
+  padding: 14px 24px;
   background: var(--superficie);
   border-bottom: var(--borde);
+}
+
+/* Humor global, leyenda de caritas y fecha, en ese orden. */
+.mapa-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 22px;
+}
+
+.mapa-global {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.mapa-global-titulo {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--texto);
+}
+
+.mapa-global-valor {
+  font-family: var(--letra-titulos);
+  font-size: 30px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.mapa-global-noticias {
+  font-size: 12px;
+  color: var(--texto-suave);
+}
+
+.mapa-resumen .leyenda {
+  margin: 0;
+  gap: 4px 12px;
+  padding: 6px 12px;
+  border: 2px dashed var(--celeste);
+  border-radius: 999px;
+}
+
+.mapa-resumen .campo-con-ayuda .ayuda {
+  margin-bottom: 0;
+}
+
+.mapa-resumen .campo-con-ayuda {
+  align-items: center;
 }
 
 .mapa-avisos:empty {
@@ -42,116 +90,111 @@
   padding: 0 24px 40px;
 }
 
-.mapa-global-titulo {
-  font-family: var(--letra-titulos);
-  font-size: 18px;
-}
-
-.mapa-global-valor {
-  font-family: var(--letra-titulos);
-  font-size: 30px;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-/* HU-DASH-005: el mapa con el recuadro "estado del humor" encima. */
+/* Mapa a todo el ancho; lo que va encima se posiciona sobre él. */
 .mapa-marco {
   position: relative;
 }
 
 .mapa-contenedor {
-  height: min(620px, calc(100vh - 170px));
-  min-height: 420px;
+  height: min(640px, calc(100vh - 150px));
+  min-height: 460px;
   border-bottom: var(--borde);
 }
 
-/* Recuadro abajo a la izquierda, sobre el mapa (Leaflet usa z-index hasta 1000
-   en sus controles; el recuadro no los tapa: el zoom está arriba a la izquierda
-   y los créditos abajo a la derecha). */
-.mapa-estados {
+/* Paneles sobre el mapa: fondo blanco translúcido y difuminado, para que se vea
+   el mapa detrás. z-index 1000: sobre las capas de Leaflet (400) y a la altura
+   de sus controles, que no se tapan (zoom arriba a la derecha y créditos abajo
+   a la derecha). */
+.mapa-flotante {
   position: absolute;
-  left: 24px;
-  bottom: 24px;
   z-index: 1000;
-  width: 330px;
-  padding: 10px 14px;
-  background: var(--superficie);
-  border: var(--borde);
+  background: rgba(255, 255, 255, 0.55);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 2px solid rgba(23, 56, 71, 0.35);
   border-radius: var(--radio);
-  box-shadow: var(--sombra);
+  box-shadow: 0 6px 20px rgba(23, 56, 71, 0.18);
 }
 
-.mapa-estados-global {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+/* Continentes, en un costado (izquierda). */
+.mapa-continentes {
+  top: 16px;
+  left: 16px;
+  width: 250px;
+  max-height: calc(100% - 140px);
+  overflow-y: auto;
+  padding: 10px 12px;
 }
 
-.pantalla-mapa .mapa-estados p {
+.mapa-continentes h3 {
+  margin: 0 0 6px;
+  font-family: var(--letra-titulos);
+  font-size: 15px;
+}
+
+.mapa-continentes .continentes {
+  list-style: none;
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+}
+
+.mapa-continentes .continente {
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  grid-template-rows: auto auto;
   column-gap: 8px;
-  color: var(--texto);
+  align-items: center;
+  padding: 4px 6px;
+  border-radius: 10px;
 }
 
-.mapa-estados .mapa-global-titulo {
-  width: 100%;
+.mapa-continentes .continente:hover {
+  background: rgba(255, 255, 255, 0.6);
 }
 
-.mapa-global-noticias {
+.mapa-continentes .continente .carita {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.continente-nombre {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.continente-humor {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  font-family: var(--letra-titulos);
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.continente-noticias {
+  grid-column: 2;
+  grid-row: 2;
   font-size: 12px;
   color: var(--texto-suave);
 }
 
-/* Leyenda en dos columnas para que el recuadro sea bajo y no tape América. */
-.mapa-estados .leyenda {
-  display: grid;
-  grid-template-columns: auto auto;
-  justify-content: start;
-  gap: 4px 16px;
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 2px dashed var(--celeste);
+/* Escala del día, abajo sobre el mapa. Deja libres los créditos de la derecha. */
+.mapa-escala {
+  left: 16px;
+  right: 16px;
+  bottom: 28px;
+  padding: 4px 18px 8px;
 }
 
-.mapa-estados .leyenda .leyenda-nota {
-  grid-column: 1 / -1;
-  margin-left: 0;
+.mapa-escala .escala {
+  margin-top: 6px;
 }
 
-/* Dentro del recuadro las ayudas se abren hacia arriba para no quedar bajo el
-   borde del mapa. */
-@media (min-width: 601px) {
-  .mapa-estados .ayuda-globo {
-    top: auto;
-    bottom: calc(100% + 8px);
-  }
-}
-
-/* Debajo del gráfico: escala del día y detalle por continente. */
-.mapa-detalle {
-  margin-top: 20px;
-  padding: 14px 18px;
-  border: var(--borde);
-  border-radius: var(--radio);
-  background: var(--papel);
-}
-
-.mapa-detalle h3 {
-  margin: 0 0 4px;
-  font-family: var(--letra-titulos);
-}
-
-.mapa-detalle .continentes {
-  margin-top: 16px;
-}
-
-.mapa-detalle .continente {
-  background: var(--superficie);
-}
-
-/* En pantallas angostas el recuadro va debajo del mapa para no taparlo. */
+/* En pantallas angostas los paneles van debajo del mapa para no taparlo. */
 @media (max-width: 700px) {
   .mapa-encabezado {
     padding: 14px 16px;
@@ -162,10 +205,12 @@
     min-height: 0;
   }
 
-  .mapa-estados {
+  .mapa-flotante {
     position: static;
     width: auto;
+    max-height: none;
     margin: 12px 16px 0;
+    background: var(--superficie);
     box-shadow: none;
   }
 
@@ -209,52 +254,6 @@
   border-radius: 999px;
   padding: 0 8px;
   white-space: nowrap;
-}
-
-.continentes {
-  list-style: none;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 12px;
-  margin: 20px 0 0;
-  padding: 0;
-}
-
-.continente {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: var(--borde);
-  border-radius: var(--radio);
-  padding: 12px 14px;
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-
-.continente:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: var(--sombra);
-}
-
-.continente div {
-  display: flex;
-  flex-direction: column;
-}
-
-.continente-nombre {
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.continente-humor {
-  font-family: var(--letra-titulos);
-  font-size: 26px;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-
-.continente-noticias {
-  font-size: 13px;
-  color: var(--texto-suave);
 }
 
 /* Avisos de carga y de error (HU-DASH-001-v3, escenario de backend sin respuesta). */

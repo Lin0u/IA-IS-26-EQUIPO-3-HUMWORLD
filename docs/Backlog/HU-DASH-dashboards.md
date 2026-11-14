@@ -639,7 +639,7 @@ Escenario: Filtro sin palabras
 **Decisiones de diseño:**
 1. **Cabecera:** logo (mascota, "HumWorld" y humor del mundo) a la izquierda, que lleva al mapa, y botón ☰ ("Abrir menú") a la derecha. La cabecera queda fija al desplazarse.
 2. **Menú lateral** desde la derecha: "Mapa de humor", "Nube de palabras" y "Noticias" arriba; "Administración" al pie con ícono de usuario. Se cierra al elegir una vista, con "×", con Escape o tocando fuera; al abrirse, el foco va a "Cerrar menú" y al cerrarse vuelve a ☰.
-3. **Mapa:** vista abierta, sin tarjeta: franja de encabezado de borde a borde (título, descripción y fecha); mapa a todo el ancho de la ventana (hasta 620 px de alto) con el recuadro "Estado del humor" abajo a la izquierda (mascota, humor global, cantidad de noticias y leyenda de caritas en dos columnas); debajo, el gráfico de evolución y "Detalle del día" con la escala de -10 a +10 y la lista de continentes. En pantallas de 700 px o menos el recuadro pasa debajo del mapa para no taparlo.
+3. **Mapa (segundo ajuste de la PO, 2026-11-14):** vista abierta, sin tarjeta. El encabezado, de borde a borde, muestra el título y, en una fila, el humor global, la leyenda de caritas con su ayuda "?" y la fecha. El mapa ocupa todo el ancho (hasta 640 px de alto) y lleva encima, con fondo blanco translúcido y difuminado, el panel "Continentes" a la izquierda y la escala del día abajo; el zoom pasa arriba a la derecha. El gráfico de evolución queda debajo, fuera del mapa. En pantallas de 700 px o menos los paneles pasan debajo del mapa.
 
 ### Criterios de aceptación (Gherkin)
 
@@ -665,11 +665,12 @@ Escenario: El logo lleva al mapa
   Cuando presiona el logo
   Entonces se muestra el mapa de humor
 
-Escenario: Estado del humor sobre el mapa
+Escenario: Humor global, leyenda y paneles sobre el mapa
   Dado que el humor global del día elegido es -1.8 con 214 noticias
   Cuando el usuario abre el mapa
-  Entonces el recuadro "Estado del humor", abajo a la izquierda del mapa, muestra "-1.8", "promedio de 214 noticias evaluadas" y la leyenda de caritas
-  Y debajo del gráfico, "Detalle del día" muestra la escala con "Mundo -1.8" y la lista de continentes
+  Entonces el encabezado muestra, en este orden, "Humor global -1.8 · 214 noticias", la leyenda de caritas y la fecha
+  Y sobre el mapa, con fondo translúcido, se ven el panel "Continentes" (cada continente con su carita, valor y cantidad de noticias) y la escala con "Mundo -1.8"
+  Y el gráfico de evolución aparece debajo del mapa
 ```
 
 ### Definition of Done
