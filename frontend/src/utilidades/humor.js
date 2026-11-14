@@ -68,3 +68,28 @@ export function posicionEnEscala(valor) {
   const acotado = Math.min(10, Math.max(-10, valor))
   return ((acotado + 10) / 20) * 100
 }
+
+// Día que muestra el planeta junto al gráfico de evolución (HU-DASH-005): el que
+// está bajo el mouse; si no hay ninguno, el día elegido en el mapa y, si ese no
+// está en la serie, el último día con humor. null si la serie está vacía.
+export function diaDestacado(serie, indiceActivo, fechaElegida) {
+  if (!serie || serie.length === 0) return null
+  if (indiceActivo !== null && indiceActivo !== undefined && serie[indiceActivo]) {
+    return { ...serie[indiceActivo], bajoElMouse: true }
+  }
+  const elegido = serie.find((dia) => dia.fecha === fechaElegida)
+  const conHumor = [...serie].reverse().find((dia) => dia.humor_promedio !== null && dia.humor_promedio !== undefined)
+  const dia = elegido ?? conHumor ?? serie[serie.length - 1]
+  return { ...dia, bajoElMouse: false }
+}
+
+// "2026-10-27" → "27 oct 2026", sin pasar por la zona horaria local.
+export function fechaLegible(fecha) {
+  const [anio, mes, dia] = fecha.split('-').map(Number)
+  return new Date(Date.UTC(anio, mes - 1, dia)).toLocaleDateString('es-CL', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+}
