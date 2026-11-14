@@ -68,13 +68,7 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
 
         <div className="mapa-resumen">
           <div className="mapa-global">
-            <span className="mapa-global-titulo">
-              Humor global
-              <Ayuda titulo="Humor global">
-                El promedio del humor de todas las noticias del día elegido, en la escala de -10 a +10. La barra sobre
-                el mapa muestra dónde cae.
-              </Ayuda>
-            </span>
+            <span className="mapa-global-titulo">Humor global</span>
             {hayDatos ? (
               <>
                 <strong className={`mapa-global-valor texto-${tipoHumor(global.humor_promedio)}`}>
@@ -83,30 +77,13 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
                 <span className="mapa-global-noticias">{global.cantidad_noticias_evaluadas} noticias</span>
               </>
             ) : (
-              <strong className="mapa-global-valor">Sin datos</strong>
+              <strong className="mapa-global-valor texto-sinDatos">Sin datos</strong>
             )}
+            <Ayuda titulo="Humor global">
+              El promedio del humor de todas las noticias del día elegido, en la escala de -10 a +10. La barra sobre el
+              mapa muestra dónde cae.
+            </Ayuda>
           </div>
-
-          <ul className="leyenda" aria-label="Significado de las caritas">
-            <li>
-              <Carita tipo="negativo" tamano={22} /> Negativo
-            </li>
-            <li>
-              <Carita tipo="neutro" tamano={22} /> Neutro
-            </li>
-            <li>
-              <Carita tipo="positivo" tamano={22} /> Positivo
-            </li>
-            <li>
-              <Carita tipo="sinDatos" tamano={22} /> Sin datos
-            </li>
-            <li>
-              <Ayuda titulo="Cada carita es un continente">
-                Su número es el promedio de las noticias de ese continente. Rojo y triste: negativo; amarillo: neutro
-                (entre -0.5 y +0.5); verde y feliz: positivo; gris: sin noticias ese día.
-              </Ayuda>
-            </li>
-          </ul>
 
           <div className="campo-con-ayuda">
             <label className="campo">
@@ -160,7 +137,7 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
               noWrap
             />
-            {/* El zoom va arriba a la derecha: a la izquierda están los continentes. */}
+            {/* El zoom va a la derecha, bajo la leyenda: a la izquierda están los continentes. */}
             <ZoomControl position="topright" />
             {continentes
               .filter((continente) => continente.ubicacion)
@@ -177,6 +154,29 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
                 </Marker>
               ))}
           </MapContainer>
+        </div>
+
+        <div className="mapa-flotante mapa-leyenda">
+          <ul className="leyenda leyenda-mapa" aria-label="Significado de las caritas">
+            <li>
+              <Carita tipo="negativo" tamano={22} /> Negativo
+            </li>
+            <li>
+              <Carita tipo="neutro" tamano={22} /> Neutro
+            </li>
+            <li>
+              <Carita tipo="positivo" tamano={22} /> Positivo
+            </li>
+            <li>
+              <Carita tipo="sinDatos" tamano={22} /> Sin datos
+            </li>
+            <li>
+              <Ayuda titulo="Cada carita es un continente" alinear="derecha">
+                Su número es el promedio de las noticias de ese continente. Rojo y triste: negativo; amarillo: neutro
+                (entre -0.5 y +0.5); verde y feliz: positivo; gris: sin noticias ese día.
+              </Ayuda>
+            </li>
+          </ul>
         </div>
 
         {continentes.length > 0 && (
