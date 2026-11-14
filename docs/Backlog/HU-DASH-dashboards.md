@@ -623,6 +623,65 @@ Escenario: Filtro sin palabras
 
 ---
 
+## HU-DASH-005 — Menú lateral y disposición del mapa según el bosquejo de la PO
+
+**Tipo:** Historia de Usuario
+**Como** usuario del sistema,
+**quiero** una cabecera simple con el logo y un botón de menú, y ver el mapa grande con el estado del humor encima,
+**para** dedicar la pantalla al mapa y moverme entre las vistas sin una barra de botones que ocupe espacio.
+
+**Origen:** bosquejos de la PO del 2026-11-14 (cabecera con logo y ☰; menú lateral con Nube de palabras y Noticias arriba y Administración abajo con ícono de usuario; mapa con el recuadro "los estados" abajo a la izquierda y el gráfico debajo). Respuestas de la PO: el recuadro muestra el humor global y la leyenda de caritas; el menú incluye "Mapa de humor"; la escala y la lista de continentes se mantienen debajo del gráfico. PDF §4.3 (diseño limpio) y §4.3.2 (mapa y evolución temporal). Solo presentación: no cambia endpoints ni contratos.
+**Prioridad:** Media
+**Estimación:** sin estimar. Punto de partida a validar por el equipo en Planning Poker, no un valor definitivo.
+**Depende de contrato de API:** No. Usa `GET /dashboards/map` y `GET /sentiment` como HU-DASH-001-v3.
+**Variante del algoritmo:** no calcula humor. Muestra el promedio simple de ADR-003 tal como lo calcula el backend.
+
+**Decisiones de diseño:**
+1. **Cabecera:** logo (mascota, "HumWorld" y humor del mundo) a la izquierda, que lleva al mapa, y botón ☰ ("Abrir menú") a la derecha. La cabecera queda fija al desplazarse.
+2. **Menú lateral** desde la derecha: "Mapa de humor", "Nube de palabras" y "Noticias" arriba; "Administración" al pie con ícono de usuario. Se cierra al elegir una vista, con "×", con Escape o tocando fuera; al abrirse, el foco va a "Cerrar menú" y al cerrarse vuelve a ☰.
+3. **Mapa:** encabezado (título, descripción y fecha); mapa más alto (520 px) con el recuadro "Estado del humor" abajo a la izquierda (mascota, humor global, cantidad de noticias y leyenda de caritas en dos columnas); debajo, el gráfico de evolución y "Detalle del día" con la escala de -10 a +10 y la lista de continentes. En pantallas de 700 px o menos el recuadro pasa debajo del mapa para no taparlo.
+
+### Criterios de aceptación (Gherkin)
+
+```gherkin
+Escenario: Menú cerrado al entrar
+  Cuando el usuario abre la aplicación
+  Entonces la cabecera muestra el logo y el botón "Abrir menú" con aria-expanded = false
+  Y no se muestra el menú lateral
+
+Escenario: Cambiar de vista desde el menú
+  Dado que el usuario presiona "Abrir menú"
+  Entonces el menú muestra "Mapa de humor" (marcado como página actual), "Nube de palabras", "Noticias" y, al pie, "Administración"
+  Cuando presiona "Nube de palabras"
+  Entonces se muestra la nube y el menú se cierra
+
+Escenario: Cerrar el menú
+  Dado que el menú está abierto
+  Cuando el usuario presiona Escape, "×" o fuera del menú
+  Entonces el menú se cierra y el foco vuelve al botón "Abrir menú"
+
+Escenario: El logo lleva al mapa
+  Dado que el usuario está en "Noticias"
+  Cuando presiona el logo
+  Entonces se muestra el mapa de humor
+
+Escenario: Estado del humor sobre el mapa
+  Dado que el humor global del día elegido es -1.8 con 214 noticias
+  Cuando el usuario abre el mapa
+  Entonces el recuadro "Estado del humor", abajo a la izquierda del mapa, muestra "-1.8", "promedio de 214 noticias evaluadas" y la leyenda de caritas
+  Y debajo del gráfico, "Detalle del día" muestra la escala con "Mundo -1.8" y la lista de continentes
+```
+
+### Definition of Done
+(Bloque general DoD, sección 14.) Adicionalmente:
+- Pruebas del menú en `frontend/src/App.test.jsx` (abrir, cambiar de vista, cerrar con Escape y "×", logo).
+- Validado visualmente en escritorio (1280 px) y celular (390 px), con capturas en el Pull Request, comprobando que el recuadro no tapa ningún continente.
+- Las vistas Nube de palabras, Noticias y Administración se rediseñarán según los próximos bosquejos de la PO (pendiente).
+
+**Estado de implementación (2026-11-14):** implementada en la rama `feature/relevancia-noticias`, pendiente de revisión en el PR.
+
+---
+
 ## HU-DASH-004-v2 — Ayudas "?" junto a cada parte de las vistas
 
 **Reemplaza a:** HU-DASH-004 (Deprecada). **Qué cambia:** el recuadro ancho "Cómo leer esta pantalla" al inicio de cada vista se reemplaza por un ícono **"?"** junto a la parte que explica. Al pasar el mouse, enfocarlo con el teclado o tocarlo en el celular, muestra qué es y qué hace esa parte. La escala de -10 a +10, la explicación del humor de cada noticia, el detalle de la nube y los bloques de Fuentes RSS no cambian. **Por qué:** el recuadro ocupaba mucho espacio y se separaba de lo que explicaba. Con la ayuda junto a cada parte, la pantalla queda más limpia y la explicación aparece donde se necesita. Decisión de la PO del 2026-11-12.
@@ -778,6 +837,7 @@ Escenario: Fuente sin canal
 | HU-DASH-003-v2 | Historia de Usuario | Media | 5 | `GET /api/v1/dashboards/word-cloud` — ver `contrato-dashboards.openapi.yaml` | §4.3, §4.3.1, §10.2 |
 | HU-DASH-004 | Historia de Usuario — **Deprecada**, reemplazada por HU-DASH-004-v2 | — | — | — | — |
 | HU-DASH-004-v2 | Historia de Usuario | Alta | sin estimar | Sin endpoint propio; usa los existentes | §4.3, §2 (objetivo específico 3) |
+| HU-DASH-005 | Historia de Usuario | Media | sin estimar | Sin endpoint propio; usa los de HU-DASH-001-v3 | §4.3, §4.3.2 |
 
 Las estimaciones en puntos provienen del Planning Poker de P3 y son un punto de partida, no un valor definitivo: deben revalidarse con el equipo ahora que el alcance está detallado.
 
@@ -808,3 +868,4 @@ Las estimaciones en puntos provienen del Planning Poker de P3 y son un punto de 
 | HU-DASH-004 | v1.11 | 2026-11-11 | A pedido de la PO, los canales registrados del bloque 1 pasan de una lista de etiquetas a una tabla desplegable con "Ver sus fuentes" por canal. Se ajustan la decisión 6 y el escenario de canal y fuente. |
 | HU-DASH-001-v3, HU-DASH-004 | corrección | 2026-11-11 | Decisión de la PO tras ver Asia con "-0.0" y carita triste en el mapa: los valores entre -0,5 y +0,5 (sin incluir los extremos) se muestran como neutros (carita amarilla) y un valor que redondeado es cero se muestra "0.0". Solo cambia la presentación (`utilidades/humor.js`); el valor calculado por el backend y el filtro positivas/negativas de `/news` no cambian. La leyenda del mapa indica el rango. |
 | HU-DASH-004 → HU-DASH-004-v2 | v1.12 | 2026-11-12 | Decisión de la PO: el recuadro ancho "Cómo leer esta pantalla" se reemplaza por ayudas "?" junto a cada parte de la vista (componente `Ayuda`: se abre con el mouse, el teclado o un toque, y en el celular como tarjeta fija abajo). Los textos se mantienen, repartidos por parte. HU-DASH-004 queda Deprecada. Sin cambios en endpoints ni contratos. |
+| HU-DASH-005 | v1.13 | 2026-11-14 | Creación de HU-DASH-005 a partir de los bosquejos de la PO: cabecera con logo y botón ☰, menú lateral (vistas arriba, Administración abajo) y mapa con el recuadro "Estado del humor" encima, gráfico debajo y "Detalle del día" al final. Solo presentación. |

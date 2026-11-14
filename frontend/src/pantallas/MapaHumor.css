@@ -8,26 +8,6 @@
   margin-bottom: 16px;
 }
 
-/* Franja con la mascota grande y el humor global. */
-.mapa-global {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: var(--papel);
-  border: var(--borde);
-  border-radius: var(--radio);
-  padding: 10px 18px;
-  margin-bottom: 16px;
-}
-
-.pantalla .mapa-global p {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 10px;
-  color: var(--texto);
-}
-
 .mapa-global-titulo {
   font-family: var(--letra-titulos);
   font-size: 18px;
@@ -35,16 +15,121 @@
 
 .mapa-global-valor {
   font-family: var(--letra-titulos);
-  font-size: 34px;
+  font-size: 30px;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
+/* HU-DASH-005: el mapa con el recuadro "estado del humor" encima. */
+.mapa-marco {
+  position: relative;
+}
+
 .mapa-contenedor {
-  height: 420px;
+  height: 520px;
   border: var(--borde);
   border-radius: var(--radio);
   overflow: hidden;
+}
+
+/* Recuadro abajo a la izquierda, sobre el mapa (Leaflet usa z-index hasta 1000
+   en sus controles; el recuadro no los tapa: el zoom está arriba a la izquierda
+   y los créditos abajo a la derecha). */
+.mapa-estados {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 1000;
+  width: 330px;
+  padding: 10px 14px;
+  background: var(--superficie);
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.mapa-estados-global {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pantalla .mapa-estados p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 8px;
+  color: var(--texto);
+}
+
+.mapa-estados .mapa-global-titulo {
+  width: 100%;
+}
+
+.mapa-global-noticias {
+  font-size: 12px;
+  color: var(--texto-suave);
+}
+
+/* Leyenda en dos columnas para que el recuadro sea bajo y no tape América. */
+.mapa-estados .leyenda {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: start;
+  gap: 4px 16px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 2px dashed var(--celeste);
+}
+
+.mapa-estados .leyenda .leyenda-nota {
+  grid-column: 1 / -1;
+  margin-left: 0;
+}
+
+/* Dentro del recuadro las ayudas se abren hacia arriba para no quedar bajo el
+   borde del mapa. */
+@media (min-width: 601px) {
+  .mapa-estados .ayuda-globo {
+    top: auto;
+    bottom: calc(100% + 8px);
+  }
+}
+
+/* Debajo del gráfico: escala del día y detalle por continente. */
+.mapa-detalle {
+  margin-top: 20px;
+  padding: 14px 18px;
+  border: var(--borde);
+  border-radius: var(--radio);
+  background: var(--papel);
+}
+
+.mapa-detalle h3 {
+  margin: 0 0 4px;
+  font-family: var(--letra-titulos);
+}
+
+.mapa-detalle .continentes {
+  margin-top: 16px;
+}
+
+.mapa-detalle .continente {
+  background: var(--superficie);
+}
+
+/* En pantallas angostas el recuadro va debajo del mapa para no taparlo. */
+@media (max-width: 700px) {
+  .mapa-contenedor {
+    height: 360px;
+  }
+
+  .mapa-estados {
+    position: static;
+    width: auto;
+    margin-top: 12px;
+    box-shadow: none;
+  }
 }
 
 /* El mapa de Leaflet necesita una altura explícita para poder dibujarse.
@@ -168,11 +253,6 @@
   height: 260px;
 }
 
-/* HU-DASH-004: escala de humor junto al valor global. */
-.mapa-global-datos {
-  flex: 1;
-  min-width: 0;
-}
 
 /* HU-DASH-004-v2: selector de fecha con su ayuda "?". */
 .campo-con-ayuda {

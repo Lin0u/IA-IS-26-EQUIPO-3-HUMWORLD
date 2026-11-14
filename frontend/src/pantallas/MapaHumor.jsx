@@ -3,6 +3,9 @@
 // GET /api/v1/dashboards/map, que App.jsx pide al backend, y el gráfico de
 // evolución de GET /api/v1/sentiment (HU-SENT-004). Esta pantalla no calcula humor.
 // HU-DASH-004-v2: ayudas "?" junto a cada parte y escala de humor.
+// HU-DASH-005 (bosquejo de la PO del 2026-11-14): encabezado, mapa con el recuadro
+// "estado del humor" encima (abajo a la izquierda), gráfico de evolución y, al
+// final, la escala y el detalle por continente.
 import L from 'leaflet'
 import { MapContainer, Marker, TileLayer, Tooltip } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -85,104 +88,111 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
       )}
       {cargando && !error && <p className="mapa-aviso">Cargando datos…</p>}
 
-      <div className="mapa-global">
-        <CerebroHumor humor={global ? global.humor_promedio : null} tamano={84} />
-        {global && global.cantidad_noticias_evaluadas > 0 ? (
-          <div className="mapa-global-datos">
-            <p>
-              <span className="mapa-global-titulo">
-                Humor global
-                <Ayuda titulo="El cerebro es el mundo">
-                  Su número es el humor global: el promedio del humor de todas las noticias de ese día. La escala
-                  muestra dónde cae entre -10 y +10.
-                </Ayuda>
-              </span>
-              <strong className={`mapa-global-valor texto-${tipoHumor(global.humor_promedio)}`}>
-                {formatoHumor(global.humor_promedio)}
-              </strong>
-              <span>promedio de {global.cantidad_noticias_evaluadas} noticias evaluadas</span>
-            </p>
-            <EscalaHumor valor={global.humor_promedio} etiqueta="Mundo" />
+      <div className="mapa-marco">
+        <div className="mapa-contenedor">
+          <MapContainer
+            bounds={VISTA_INICIAL}
+            maxBounds={LIMITES_MUNDO}
+            maxBoundsViscosity={1}
+            zoomSnap={0.25}
+            minZoom={1}
+            maxZoom={5}
+            scrollWheelZoom={false}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              noWrap
+            />
+            {continentes
+              .filter((continente) => continente.ubicacion)
+              .map((continente) => (
+                <Marker
+                  key={continente.nombre}
+                  position={continente.ubicacion.centro}
+                  icon={marcadorContinente(continente.humor)}
+                  keyboard={false}
+                >
+                  <Tooltip direction="top" offset={[0, -26]}>
+                    {continente.nombre}: {formatoHumor(continente.humor)}, promedio de {continente.noticias} noticias
+                  </Tooltip>
+                </Marker>
+              ))}
+          </MapContainer>
+        </div>
+        <aside className="mapa-estados" aria-label="Estado del humor">
+          <div className="mapa-estados-global">
+            <CerebroHumor humor={global ? global.humor_promedio : null} tamano={56} />
+            {global && global.cantidad_noticias_evaluadas > 0 ? (
+              <p>
+                <span className="mapa-global-titulo">
+                  Humor global
+                  <Ayuda titulo="El cerebro es el mundo">
+                    Su número es el humor global: el promedio del humor de todas las noticias de ese día. Abajo, en
+                    &quot;Detalle del día&quot;, la escala muestra dónde cae entre -10 y +10.
+                  </Ayuda>
+                </span>
+                <strong className={`mapa-global-valor texto-${tipoHumor(global.humor_promedio)}`}>
+                  {formatoHumor(global.humor_promedio)}
+                </strong>
+                <span className="mapa-global-noticias">
+                  promedio de {global.cantidad_noticias_evaluadas} noticias evaluadas
+                </span>
+              </p>
+            ) : (
+              <p>
+                {ultimaFecha
+                  ? `No hay datos para esa fecha. Elige una entre ${primeraFecha} y ${ultimaFecha}.`
+                  : 'Todavía no hay noticias con humor calculado.'}
+              </p>
+            )}
           </div>
-        ) : (
-          <p>
-            {ultimaFecha
-              ? `No hay datos para esa fecha. Elige una entre ${primeraFecha} y ${ultimaFecha}.`
-              : 'Todavía no hay noticias con humor calculado.'}
-          </p>
-        )}
+          <ul className="leyenda" aria-label="Significado de las caritas">
+            <li>
+              <Carita tipo="negativo" tamano={20} /> Negativo
+            </li>
+            <li>
+              <Carita tipo="neutro" tamano={20} /> Neutro (entre -0.5 y +0.5)
+            </li>
+            <li>
+              <Carita tipo="positivo" tamano={20} /> Positivo
+            </li>
+            <li>
+              <Carita tipo="sinDatos" tamano={20} /> Sin datos
+            </li>
+            <li className="leyenda-nota">
+              Escala de -10 a +10
+              <Ayuda titulo="Cada carita es un continente">
+                Su número es el promedio de las noticias de ese continente. Rojo y triste: negativo; amarillo: neutro
+                (entre -0.5 y +0.5); verde y feliz: positivo.
+              </Ayuda>
+            </li>
+          </ul>
+        </aside>
       </div>
-
-      <div className="mapa-contenedor">
-        <MapContainer
-          bounds={VISTA_INICIAL}
-          maxBounds={LIMITES_MUNDO}
-          maxBoundsViscosity={1}
-          zoomSnap={0.25}
-          minZoom={1}
-          maxZoom={5}
-          scrollWheelZoom={false}
-        >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            noWrap
-          />
-          {continentes
-            .filter((continente) => continente.ubicacion)
-            .map((continente) => (
-              <Marker
-                key={continente.nombre}
-                position={continente.ubicacion.centro}
-                icon={marcadorContinente(continente.humor)}
-                keyboard={false}
-              >
-                <Tooltip direction="top" offset={[0, -26]}>
-                  {continente.nombre}: {formatoHumor(continente.humor)}, promedio de {continente.noticias} noticias
-                </Tooltip>
-              </Marker>
-            ))}
-        </MapContainer>
-      </div>
-
-      <ul className="leyenda" aria-label="Significado de las caritas">
-        <li>
-          <Carita tipo="negativo" tamano={20} /> Negativo
-        </li>
-        <li>
-          <Carita tipo="neutro" tamano={20} /> Neutro (entre -0.5 y +0.5)
-        </li>
-        <li>
-          <Carita tipo="positivo" tamano={20} /> Positivo
-        </li>
-        <li>
-          <Carita tipo="sinDatos" tamano={20} /> Sin datos
-        </li>
-        <li className="leyenda-nota">
-          Escala de -10 a +10
-          <Ayuda titulo="Cada carita es un continente">
-            Su número es el promedio de las noticias de ese continente. Rojo y triste: negativo; amarillo: neutro (entre
-            -0.5 y +0.5); verde y feliz: positivo.
-          </Ayuda>
-        </li>
-      </ul>
-
-      <ul className="continentes">
-        {continentes.map((continente) => (
-          <li key={continente.nombre} className="continente">
-            <Carita tipo={tipoHumor(continente.humor)} tamano={40} />
-            <div>
-              <span className="continente-nombre">{continente.nombre}</span>
-              <strong className={`continente-humor texto-${tipoHumor(continente.humor)}`}>
-                {formatoHumor(continente.humor)}
-              </strong>
-              <span className="continente-noticias">promedio de {continente.noticias} noticias</span>
-            </div>
-          </li>
-        ))}
-      </ul>
 
       <GraficoEvolucion primeraFecha={primeraFecha} ultimaFecha={ultimaFecha} fechaElegida={fecha} />
+
+      <section className="mapa-detalle" aria-labelledby="titulo-detalle">
+        <h3 id="titulo-detalle">Detalle del día</h3>
+        {global && global.cantidad_noticias_evaluadas > 0 && (
+          <EscalaHumor valor={global.humor_promedio} etiqueta="Mundo" />
+        )}
+        <ul className="continentes">
+          {continentes.map((continente) => (
+            <li key={continente.nombre} className="continente">
+              <Carita tipo={tipoHumor(continente.humor)} tamano={40} />
+              <div>
+                <span className="continente-nombre">{continente.nombre}</span>
+                <strong className={`continente-humor texto-${tipoHumor(continente.humor)}`}>
+                  {formatoHumor(continente.humor)}
+                </strong>
+                <span className="continente-noticias">promedio de {continente.noticias} noticias</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
     </section>
   )
 }
