@@ -41,8 +41,6 @@
   border: var(--borde);
   border-radius: 50%;
   cursor: help;
-  /* Brillo suave para que se vea fluorescente. */
-  box-shadow: 0 0 8px rgba(0, 229, 255, 0.85);
 }
 
 .ayuda-boton:focus-visible {

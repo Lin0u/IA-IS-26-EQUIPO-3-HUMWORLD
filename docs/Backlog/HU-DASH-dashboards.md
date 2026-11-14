@@ -641,7 +641,8 @@ Escenario: Filtro sin palabras
 2. **Menú lateral** desde la derecha: "Mapa de humor", "Nube de palabras" y "Noticias" arriba; "Administración" al pie con ícono de usuario. Se cierra al elegir una vista, con "×", con Escape o tocando fuera; al abrirse, el foco va a "Cerrar menú" y al cerrarse vuelve a ☰.
 3. **Mapa (tercer ajuste de la PO, 2026-11-14):** vista abierta, sin tarjeta. El encabezado, de borde a borde, muestra el título y, debajo, "Humor global" en letra grande con el valor, la cantidad de noticias en pequeño y su ayuda "?", y la fecha pegada a la orilla derecha. El mapa ocupa todo el ancho (hasta 640 px de alto) y lleva encima, con fondo blanco translúcido y difuminado, el panel "Continentes" a la izquierda, la leyenda de caritas arriba a la derecha (con el zoom debajo) y la escala del día abajo. El gráfico de evolución queda debajo, fuera del mapa. En pantallas de 700 px o menos los paneles pasan debajo del mapa.
 4. **Logo:** la mascota pasa de un cerebro a un **planeta con anillo** (`PlanetaHumor.jsx`, dibujo SVG original) que flota, se mece y cambia de cara según el humor del mundo (contento, tranquilo o triste con una lágrima). Respeta `prefers-reduced-motion`.
-5. **Ayudas "?":** celeste fluorescente (`#00E5FF`) con brillo suave y el signo en azul oscuro (contraste 8:1), en toda la interfaz.
+5. **Ayudas "?":** celeste medio (`#7CC6DC`) con el signo en azul oscuro (contraste 6,5:1), en toda la interfaz. La PO descartó el celeste fluorescente.
+6. **Encabezado del mapa:** fondo celeste translúcido; más espacio entre el título y la descripción, que sube a 17 px; el valor del humor global va a 20 px.
 
 ### Criterios de aceptación (Gherkin)
 

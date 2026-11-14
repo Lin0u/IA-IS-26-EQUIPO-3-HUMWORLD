@@ -10,11 +10,15 @@
   font-family: var(--letra-titulos);
   font-size: 24px;
   font-weight: 700;
-  margin-bottom: 2px;
+  margin-bottom: 8px;
 }
 
 .pantalla-mapa p {
   color: var(--texto-suave);
+}
+
+.mapa-titulo p {
+  font-size: 17px;
 }
 
 .mapa-encabezado {
@@ -23,8 +27,9 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px 24px;
-  padding: 14px 24px;
-  background: var(--superficie);
+  padding: 16px 24px;
+  /* Celeste del mapa, translúcido, sobre el fondo de la página. */
+  background: rgba(170, 211, 223, 0.35);
   border-bottom: var(--borde);
 }
 
@@ -55,7 +60,7 @@
 
 .mapa-global-valor {
   font-family: var(--letra-titulos);
-  font-size: 34px;
+  font-size: 20px;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }

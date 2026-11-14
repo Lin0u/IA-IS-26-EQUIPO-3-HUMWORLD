@@ -8,7 +8,7 @@
 :root {
   /* Paleta basada en el celeste del mar del mapa (#aad3df, el mismo de
      OpenStreetMap): azules del mismo tono para la estructura, el celeste base
-     para lo activo y un celeste fluorescente solo para las ayudas "?".
+     para lo activo y un celeste medio para las ayudas "?".
      Decisiones de la PO del 2026-11-13 y 2026-11-14. */
   --celeste: #aad3df;        /* celeste del mar del mapa: color base */
   --tinta: #173847;          /* azul petróleo muy oscuro: textos, bordes y sombras */
@@ -18,7 +18,7 @@
   --texto-suave: #4b6875;
   --acento: #2a7491;         /* azul profundo de la cabecera (contraste 5,2:1 con blanco) */
   --activo: var(--celeste);  /* botones y pestañas activos, números de bloque */
-  --ayuda: #00e5ff;          /* celeste fluorescente: ícono "?" (con el signo en --tinta, contraste 8:1) */
+  --ayuda: #7cc6dc;          /* celeste medio: ícono "?" (con el signo en --tinta) */
   --globo: #f3fafc;          /* fondo de los globos de ayuda y recuadros destacados */
   --rosa: #ff8fb1;
 
