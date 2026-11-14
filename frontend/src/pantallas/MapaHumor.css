@@ -303,12 +303,9 @@
 }
 
 /* Gráfico de evolución temporal (HU-DASH-001-v3). */
+/* Abierto, sin tarjeta, igual que el mapa (pedido de la PO del 2026-11-14). */
 .grafico-evolucion {
-  margin-top: 20px;
-  padding: 14px 18px;
-  border: var(--borde);
-  border-radius: var(--radio);
-  background: var(--superficie);
+  margin-top: 24px;
 }
 
 .grafico-evolucion h3 {
@@ -335,10 +332,7 @@
   align-items: center;
   gap: 2px;
   text-align: center;
-  padding: 14px 10px;
-  background: var(--papel);
-  border: var(--borde);
-  border-radius: var(--radio);
+  padding: 8px 4px;
 }
 
 .grafico-planeta .planeta {
