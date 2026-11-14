@@ -10,11 +10,15 @@
   font-family: var(--letra-titulos);
   font-size: 24px;
   font-weight: 700;
-  margin-bottom: 2px;
+  margin-bottom: 8px;
 }
 
 .pantalla-mapa p {
   color: var(--texto-suave);
+}
+
+.mapa-titulo p {
+  font-size: 17px;
 }
 
 .mapa-encabezado {
@@ -23,49 +27,51 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px 24px;
-  padding: 14px 24px;
-  background: var(--superficie);
+  padding: 16px 24px;
+  /* Celeste del mapa, translúcido, sobre el fondo de la página. */
+  background: rgba(170, 211, 223, 0.35);
   border-bottom: var(--borde);
 }
 
-/* Humor global, leyenda de caritas y fecha, en ese orden. */
+/* Fila bajo el título: humor global a la izquierda y fecha pegada a la orilla
+   derecha. */
 .mapa-resumen {
+  flex: 1 1 100%;
   display: flex;
   flex-wrap: wrap;
+  justify-content: space-between;
   align-items: center;
   gap: 12px 22px;
 }
 
 .mapa-global {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
+  gap: 4px 12px;
+  flex-wrap: wrap;
 }
 
 .mapa-global-titulo {
-  font-size: 14px;
+  font-family: var(--letra-titulos);
+  font-size: 22px;
   font-weight: 700;
   color: var(--texto);
 }
 
 .mapa-global-valor {
   font-family: var(--letra-titulos);
-  font-size: 30px;
+  font-size: 20px;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
 .mapa-global-noticias {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--texto-suave);
 }
 
-.mapa-resumen .leyenda {
-  margin: 0;
-  gap: 4px 12px;
-  padding: 6px 12px;
-  border: 2px dashed var(--celeste);
-  border-radius: 999px;
+.mapa-global .ayuda {
+  margin-left: 0;
 }
 
 .mapa-resumen .campo-con-ayuda .ayuda {
@@ -74,6 +80,7 @@
 
 .mapa-resumen .campo-con-ayuda {
   align-items: center;
+  margin-left: auto;
 }
 
 .mapa-avisos:empty {
@@ -182,6 +189,27 @@
   color: var(--texto-suave);
 }
 
+/* Leyenda de caritas, arriba a la derecha sobre el mapa. */
+.mapa-leyenda {
+  top: 16px;
+  right: 16px;
+  padding: 6px 14px;
+}
+
+.mapa-leyenda .leyenda {
+  margin: 0;
+  gap: 4px 14px;
+}
+
+.mapa-leyenda .leyenda li {
+  color: var(--texto);
+}
+
+/* El zoom de Leaflet queda a la derecha, bajo la leyenda. */
+.mapa-contenedor .leaflet-top.leaflet-right {
+  top: 62px;
+}
+
 /* Escala del día, abajo sobre el mapa. Deja libres los créditos de la derecha. */
 .mapa-escala {
   left: 16px;
@@ -216,6 +244,10 @@
 
   .mapa-debajo {
     padding: 0 16px 32px;
+  }
+
+  .mapa-contenedor .leaflet-top.leaflet-right {
+    top: 0;
   }
 }
 

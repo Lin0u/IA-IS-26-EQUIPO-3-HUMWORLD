@@ -36,7 +36,7 @@
   font: inherit;
   font-size: 13px;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--tinta);
   background: var(--ayuda);
   border: var(--borde);
   border-radius: 50%;

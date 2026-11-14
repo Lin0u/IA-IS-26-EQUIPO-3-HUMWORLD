@@ -1,4 +1,4 @@
-/* HumWorld - estilos generales. Estilo "cerebro con cara": colores vivos,
+/* HumWorld - estilos generales. Estilo "mascota con cara": colores vivos,
    bordes gruesos, esquinas redondeadas y sombras duras, como una caricatura.
    Los colores se definen una sola vez aquí arriba: para cambiar el aspecto de
    toda la página basta con cambiar estos valores. */
@@ -8,8 +8,8 @@
 :root {
   /* Paleta basada en el celeste del mar del mapa (#aad3df, el mismo de
      OpenStreetMap): azules del mismo tono para la estructura, el celeste base
-     para lo activo y un naranjo quemado oscuro, complementario del celeste,
-     solo para las ayudas "?". Decisión de la PO del 2026-11-13. */
+     para lo activo y un celeste medio para las ayudas "?".
+     Decisiones de la PO del 2026-11-13 y 2026-11-14. */
   --celeste: #aad3df;        /* celeste del mar del mapa: color base */
   --tinta: #173847;          /* azul petróleo muy oscuro: textos, bordes y sombras */
   --papel: #e8f3f6;          /* celeste muy claro: fondo de la página y recuadros */
@@ -18,7 +18,7 @@
   --texto-suave: #4b6875;
   --acento: #2a7491;         /* azul profundo de la cabecera (contraste 5,2:1 con blanco) */
   --activo: var(--celeste);  /* botones y pestañas activos, números de bloque */
-  --ayuda: #c2410c;          /* naranjo quemado: ícono "?" (contraste 5,2:1 con blanco) */
+  --ayuda: #7cc6dc;          /* celeste medio: ícono "?" (con el signo en --tinta) */
   --globo: #f3fafc;          /* fondo de los globos de ayuda y recuadros destacados */
   --rosa: #ff8fb1;
 
@@ -70,14 +70,21 @@ p {
 .texto-neutro { color: var(--texto-neutro); }
 .texto-sinDatos { color: var(--texto-suave); }
 
-/* La mascota flota suavemente. */
-.cerebro-animado {
-  animation: flotar 2.6s ease-in-out infinite;
+/* La mascota (el planeta del logo) flota y se mece suavemente. */
+.planeta-animado {
+  animation: flotar 3s ease-in-out infinite;
+  transform-origin: 50% 60%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .planeta-animado {
+    animation: none;
+  }
 }
 
 @keyframes flotar {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-5px) rotate(3deg); }
 }
 
 /* Cada pantalla aparece subiendo suavemente al entrar. */

@@ -639,7 +639,10 @@ Escenario: Filtro sin palabras
 **Decisiones de diseño:**
 1. **Cabecera:** logo (mascota, "HumWorld" y humor del mundo) a la izquierda, que lleva al mapa, y botón ☰ ("Abrir menú") a la derecha. La cabecera queda fija al desplazarse.
 2. **Menú lateral** desde la derecha: "Mapa de humor", "Nube de palabras" y "Noticias" arriba; "Administración" al pie con ícono de usuario. Se cierra al elegir una vista, con "×", con Escape o tocando fuera; al abrirse, el foco va a "Cerrar menú" y al cerrarse vuelve a ☰.
-3. **Mapa (segundo ajuste de la PO, 2026-11-14):** vista abierta, sin tarjeta. El encabezado, de borde a borde, muestra el título y, en una fila, el humor global, la leyenda de caritas con su ayuda "?" y la fecha. El mapa ocupa todo el ancho (hasta 640 px de alto) y lleva encima, con fondo blanco translúcido y difuminado, el panel "Continentes" a la izquierda y la escala del día abajo; el zoom pasa arriba a la derecha. El gráfico de evolución queda debajo, fuera del mapa. En pantallas de 700 px o menos los paneles pasan debajo del mapa.
+3. **Mapa (tercer ajuste de la PO, 2026-11-14):** vista abierta, sin tarjeta. El encabezado, de borde a borde, muestra el título y, debajo, "Humor global" en letra grande con el valor, la cantidad de noticias en pequeño y su ayuda "?", y la fecha pegada a la orilla derecha. El mapa ocupa todo el ancho (hasta 640 px de alto) y lleva encima, con fondo blanco translúcido y difuminado, el panel "Continentes" a la izquierda, la leyenda de caritas arriba a la derecha (con el zoom debajo) y la escala del día abajo. El gráfico de evolución queda debajo, fuera del mapa. En pantallas de 700 px o menos los paneles pasan debajo del mapa.
+4. **Logo:** la mascota pasa de un cerebro a un **planeta con anillo** (`PlanetaHumor.jsx`, dibujo SVG original) que flota, se mece y cambia de cara según el humor del mundo (contento, tranquilo o triste con una lágrima). Respeta `prefers-reduced-motion`.
+5. **Ayudas "?":** celeste medio (`#7CC6DC`) con el signo en azul oscuro (contraste 6,5:1), en toda la interfaz. La PO descartó el celeste fluorescente.
+6. **Encabezado del mapa:** fondo celeste translúcido; más espacio entre el título y la descripción, que sube a 17 px; el valor del humor global va a 20 px.
 
 ### Criterios de aceptación (Gherkin)
 
@@ -668,9 +671,13 @@ Escenario: El logo lleva al mapa
 Escenario: Humor global, leyenda y paneles sobre el mapa
   Dado que el humor global del día elegido es -1.8 con 214 noticias
   Cuando el usuario abre el mapa
-  Entonces el encabezado muestra, en este orden, "Humor global -1.8 · 214 noticias", la leyenda de caritas y la fecha
-  Y sobre el mapa, con fondo translúcido, se ven el panel "Continentes" (cada continente con su carita, valor y cantidad de noticias) y la escala con "Mundo -1.8"
+  Entonces el encabezado muestra "Humor global", "-1.8", "214 noticias" y su ayuda "?", con la fecha a la derecha
+  Y sobre el mapa, con fondo translúcido, se ven el panel "Continentes" a la izquierda, la leyenda de caritas arriba a la derecha y la escala con "Mundo -1.8" abajo
   Y el gráfico de evolución aparece debajo del mapa
+
+Escenario: El logo refleja el humor del mundo
+  Dado que el humor global es -1.8
+  Entonces el planeta del logo tiene cara triste y su descripción es "Planeta triste: el humor del mundo es negativo"
 ```
 
 ### Definition of Done

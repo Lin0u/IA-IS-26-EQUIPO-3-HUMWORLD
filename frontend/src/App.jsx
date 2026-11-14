@@ -8,7 +8,7 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import { obtenerMapa } from './api/cliente.js'
-import CerebroHumor from './componentes/CerebroHumor.jsx'
+import PlanetaHumor from './componentes/PlanetaHumor.jsx'
 import Administracion from './pantallas/Administracion.jsx'
 import ListadoNoticias from './pantallas/ListadoNoticias.jsx'
 import MapaHumor from './pantallas/MapaHumor.jsx'
@@ -114,7 +114,7 @@ export default function App() {
       <header className="cabecera">
         <h1 className="solo-lector">HumWorld</h1>
         <button type="button" className="marca" onClick={() => irA('mapa')} aria-label="HumWorld: ir al mapa de humor">
-          <CerebroHumor humor={humorGlobal} tamano={52} />
+          <PlanetaHumor humor={humorGlobal} tamano={58} />
           <span className="marca-textos">
             <span className="marca-nombre">HumWorld</span>
             <span className="marca-frase">
