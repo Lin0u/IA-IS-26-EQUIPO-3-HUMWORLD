@@ -643,6 +643,7 @@ Escenario: Filtro sin palabras
 4. **Logo:** la mascota pasa de un cerebro a un **planeta con anillo** (`PlanetaHumor.jsx`, dibujo SVG original) que flota, se mece y cambia de cara según el humor del mundo (contento, tranquilo o triste con una lágrima). Respeta `prefers-reduced-motion`.
 5. **Ayudas "?":** celeste medio (`#7CC6DC`) con el signo en azul oscuro (contraste 6,5:1), en toda la interfaz. La PO descartó el celeste fluorescente.
 6. **Encabezado del mapa:** fondo celeste translúcido; más espacio entre el título y la descripción, que sube a 17 px; el valor del humor global va a 20 px.
+7. **Gráfico interactivo (idea de la PO del 2026-11-14):** a la derecha del gráfico de evolución, el planeta del logo pone la cara del día que está bajo el mouse (basta con acercarlo a la columna del día) y muestra su fecha, valor, tipo y cantidad de noticias. Sin mouse, muestra el día elegido en el mapa o, si no está en la serie, el último día con humor. En pantallas angostas el planeta va debajo del gráfico.
 
 ### Criterios de aceptación (Gherkin)
 
@@ -674,6 +675,12 @@ Escenario: Humor global, leyenda y paneles sobre el mapa
   Entonces el encabezado muestra "Humor global", "-1.8", "214 noticias" y su ayuda "?", con la fecha a la derecha
   Y sobre el mapa, con fondo translúcido, se ven el panel "Continentes" a la izquierda, la leyenda de caritas arriba a la derecha y la escala con "Mundo -1.8" abajo
   Y el gráfico de evolución aparece debajo del mapa
+
+Escenario: El planeta del gráfico sigue al mouse
+  Dado que el 27 oct 2026 el humor global fue +2.7 con 2 noticias
+  Cuando el usuario pasa el mouse sobre ese día en el gráfico de evolución
+  Entonces el planeta de la derecha pone cara contenta y muestra "27 oct 2026", "+2.7" y "Positivo · 2 noticias"
+  Y al sacar el mouse del gráfico vuelve a mostrar el día elegido en el mapa
 
 Escenario: El logo refleja el humor del mundo
   Dado que el humor global es -1.8

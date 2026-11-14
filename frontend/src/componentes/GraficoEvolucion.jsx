@@ -1,12 +1,17 @@
 // HumWorld - gráfico de evolución temporal del humor global.
 // Origen: HU-DASH-001-v3 (gráfico temporal) y ADR-005 (Chart.js). Consume
 // serie_temporal de GET /api/v1/sentiment (HU-SENT-004); no calcula humor.
+// HU-DASH-005 (idea de la PO del 2026-11-14): a la derecha, el planeta del logo
+// pone la cara del día que está bajo el mouse, con su fecha, valor y noticias.
 import { CategoryScale, Chart as ChartJS, LinearScale, LineElement, PointElement, Tooltip } from 'chart.js'
 import { useEffect, useState } from 'react'
 import { Line } from 'react-chartjs-2'
 import { obtenerSerieGlobal } from '../api/cliente.js'
 import Ayuda from './Ayuda.jsx'
-import { COLORES_HUMOR, formatoHumor, tipoHumor } from '../utilidades/humor.js'
+import PlanetaHumor from './PlanetaHumor.jsx'
+import { COLORES_HUMOR, diaDestacado, fechaLegible, formatoHumor, tipoHumor } from '../utilidades/humor.js'
+
+const NOMBRE_TIPO = { positivo: 'Positivo', negativo: 'Negativo', neutro: 'Neutro', sinDatos: 'Sin noticias' }
 
 ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Tooltip)
 
@@ -30,6 +35,8 @@ function rangoDelGrafico(primeraFecha, ultimaFecha) {
 export default function GraficoEvolucion({ primeraFecha, ultimaFecha, fechaElegida }) {
   const [serie, setSerie] = useState(null)
   const [error, setError] = useState(null)
+  // Índice del día bajo el mouse; null cuando el mouse está fuera del gráfico.
+  const [indiceActivo, setIndiceActivo] = useState(null)
   const rango = rangoDelGrafico(primeraFecha, ultimaFecha)
   const desde = rango?.desde
   const hasta = rango?.hasta
@@ -72,6 +79,8 @@ export default function GraficoEvolucion({ primeraFecha, ultimaFecha, fechaElegi
         pointRadius: serie.map((dia) => (dia.fecha === fechaElegida ? 7 : 4)),
         pointBackgroundColor: serie.map((dia) => COLORES_HUMOR[tipoHumor(dia.humor_promedio)]),
         pointBorderColor: '#173847',
+        pointHoverRadius: 8,
+        pointHoverBorderWidth: 3,
       },
     ],
   }
@@ -79,6 +88,12 @@ export default function GraficoEvolucion({ primeraFecha, ultimaFecha, fechaElegi
   const opciones = {
     responsive: true,
     maintainAspectRatio: false,
+    // Basta con acercar el mouse a la columna del día, no hace falta tocar el punto.
+    interaction: { mode: 'index', intersect: false },
+    onHover: (_evento, elementos) => {
+      const indice = elementos.length > 0 ? elementos[0].index : null
+      setIndiceActivo((actual) => (actual === indice ? actual : indice))
+    },
     scales: { y: { suggestedMin: -3, suggestedMax: 3, title: { display: true, text: 'Humor' } } },
     plugins: {
       tooltip: {
@@ -92,20 +107,41 @@ export default function GraficoEvolucion({ primeraFecha, ultimaFecha, fechaElegi
     },
   }
 
+  const destacado = diaDestacado(serie, indiceActivo, fechaElegida)
+
   return (
     <div className="grafico-evolucion">
       <div className="titulo-con-ayuda">
         <h3>Evolución del humor global</h3>
         <Ayuda titulo="La línea muestra la tendencia">
-          Cómo cambió el humor global día a día. Para ver qué noticias pesaron más, ve a &quot;Noticias&quot;.
+          Cómo cambió el humor global día a día. Al pasar el mouse, el planeta de la derecha pone la cara de ese día.
+          Para ver qué noticias pesaron más, ve a &quot;Noticias&quot;.
         </Ayuda>
       </div>
       <p>
         {serie.length === 1 ? 'Último día' : `Últimos ${serie.length} días`} con su promedio diario. Los días sin
         noticias evaluadas quedan sin punto.
       </p>
-      <div className="grafico-lienzo">
-        <Line data={datos} options={opciones} aria-label="Gráfico de evolución del humor global" />
+      <div className="grafico-cuerpo">
+        <div className="grafico-lienzo" onMouseLeave={() => setIndiceActivo(null)}>
+          <Line data={datos} options={opciones} aria-label="Gráfico de evolución del humor global" />
+        </div>
+        {destacado && (
+          <aside className="grafico-planeta" aria-live="polite" aria-label="Humor del día destacado">
+            <PlanetaHumor humor={destacado.humor_promedio} tamano={120} />
+            <strong className="grafico-planeta-fecha">{fechaLegible(destacado.fecha)}</strong>
+            <span className={`grafico-planeta-valor texto-${tipoHumor(destacado.humor_promedio)}`}>
+              {formatoHumor(destacado.humor_promedio)}
+            </span>
+            <span className="grafico-planeta-tipo">
+              {NOMBRE_TIPO[tipoHumor(destacado.humor_promedio)]}
+              {destacado.cantidad_noticias_evaluadas > 0 && ` · ${destacado.cantidad_noticias_evaluadas} noticias`}
+            </span>
+            {!destacado.bajoElMouse && (
+              <span className="grafico-planeta-pista">Pasa el mouse por el gráfico para ver cada día.</span>
+            )}
+          </aside>
+        )}
       </div>
     </div>
   )
