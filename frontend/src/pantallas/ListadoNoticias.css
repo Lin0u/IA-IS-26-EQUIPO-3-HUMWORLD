@@ -37,7 +37,7 @@
 }
 
 .filtro.activo {
-  background: var(--amarillo);
+  background: var(--activo);
   box-shadow: 2px 2px 0 var(--tinta);
 }
 
@@ -134,7 +134,7 @@
   font-size: 13px;
   font-weight: 700;
   color: var(--texto);
-  background: var(--amarillo);
+  background: var(--activo);
   border: var(--borde);
   border-radius: 999px;
   padding: 3px 12px;

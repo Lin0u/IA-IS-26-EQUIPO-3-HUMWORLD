@@ -36,8 +36,8 @@
   font: inherit;
   font-size: 13px;
   font-weight: 800;
-  color: var(--tinta);
-  background: var(--amarillo);
+  color: #ffffff;
+  background: var(--ayuda);
   border: var(--borde);
   border-radius: 50%;
   cursor: help;
@@ -59,7 +59,7 @@
   gap: 6px;
   padding: 10px 12px;
   color: var(--texto);
-  background: #fff8e0;
+  background: var(--globo);
   border: var(--borde);
   border-radius: 12px;
   box-shadow: var(--sombra);

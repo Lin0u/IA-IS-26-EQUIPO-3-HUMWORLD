@@ -6,20 +6,29 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
 
 :root {
-  --tinta: #2b2350;          /* violeta casi negro: textos, bordes y sombras */
-  --papel: #e5e5e5;          /* gris claro: fondo de la página */
+  /* Paleta basada en el celeste del mar del mapa (#aad3df, el mismo de
+     OpenStreetMap): azules del mismo tono para la estructura, el celeste base
+     para lo activo y un naranjo quemado oscuro, complementario del celeste,
+     solo para las ayudas "?". Decisión de la PO del 2026-11-13. */
+  --celeste: #aad3df;        /* celeste del mar del mapa: color base */
+  --tinta: #173847;          /* azul petróleo muy oscuro: textos, bordes y sombras */
+  --papel: #e8f3f6;          /* celeste muy claro: fondo de la página y recuadros */
   --superficie: #ffffff;     /* fondo de las tarjetas */
-  --texto: #2b2350;
-  --texto-suave: #5a5380;
-  --acento: #6c4df6;         /* violeta de la cabecera */
-  --amarillo: #ffc93c;
+  --texto: #173847;
+  --texto-suave: #4b6875;
+  --acento: #2a7491;         /* azul profundo de la cabecera (contraste 5,2:1 con blanco) */
+  --activo: var(--celeste);  /* botones y pestañas activos, números de bloque */
+  --ayuda: #c2410c;          /* naranjo quemado: ícono "?" (contraste 5,2:1 con blanco) */
+  --globo: #f3fafc;          /* fondo de los globos de ayuda y recuadros destacados */
   --rosa: #ff8fb1;
 
-  /* Colores de humor para rellenos (caritas, puntos). */
+  /* Colores de humor para rellenos (caritas, puntos). Se mantienen: rojo,
+     amarillo y verde son el código de lectura del humor (HU-DASH-004); el
+     amarillo solo se usa para el humor neutro. */
   --humor-positivo: #2ec4a0;
   --humor-negativo: #ff5a5f;
   --humor-neutro: #ffc93c;
-  --humor-sin-datos: #d9d4ea;
+  --humor-sin-datos: #cfe2e8;
 
   /* Los mismos colores, más oscuros, para que los números se lean sobre blanco. */
   --texto-positivo: #14806a;
