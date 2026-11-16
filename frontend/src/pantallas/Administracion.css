@@ -12,9 +12,9 @@
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin: 0 calc(50% - 50vw) 24px;
-  padding: 0 calc(50vw - 50% - 14px);
-  background: var(--banda);
+  margin: 0 0 24px;
+  padding: 0;
+  border-bottom: var(--borde);
 }
 
 .admin-pestanas .filtro {
@@ -22,7 +22,7 @@
   box-shadow: none;
   transform: none;
   padding: 12px 14px;
-  color: var(--noche-texto);
+  color: var(--texto-suave);
   background: none;
   border: none;
   border-bottom: 3px solid transparent;
@@ -30,19 +30,19 @@
 }
 
 .admin-pestanas .filtro:hover {
-  color: #ffffff;
+  color: var(--tinta);
   background: none;
   box-shadow: none;
-  border-bottom-color: #4a5d7a;
+  border-bottom-color: var(--linea-fuerte);
 }
 
 .admin-pestanas .filtro.activo,
 .admin-pestanas .filtro.activo:hover {
-  color: #ffffff;
+  color: var(--tinta);
   background: none;
   box-shadow: none;
-  /* Pestaña elegida: oro estelar (selección). */
-  border-bottom-color: var(--estrella);
+  /* Pestaña elegida: latón (selección). */
+  border-bottom-color: var(--laton);
 }
 
 .admin-panel {
@@ -218,7 +218,7 @@
   font-size: 13px;
   font-weight: 800;
   color: var(--superficie);
-  background: var(--noche);
+  background: var(--acento);
   border-radius: 50%;
 }
 

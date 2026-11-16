@@ -1,171 +1,12 @@
 /* HumWorld - estilos de la pantalla "Mapa de humor".
-   HU-DASH-005-v2, mundo «Carta celeste»: banda azul noche con el título, la fecha
-   y las lecturas del día en módulos contiguos; mapa a todo el ancho con teselas
-   desaturadas, gratícula y los continentes como astros; paneles blancos con
-   filete sobre el mapa; el gráfico, debajo. */
+   HU-DASH-005-v3, mundo «Globo de escritorio»: el humor del mundo en grande a la
+   izquierda, el globo al centro y el catálogo de continentes a la derecha, sobre
+   la luz del escritorio; debajo, la escala del día y la evolución. */
 .pantalla-mapa {
-  animation: entrar 0.35s ease-out backwards;
-}
-
-.pantalla-mapa h2 {
-  font-family: var(--letra-titulos);
-  font-size: 32px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-  margin-bottom: 6px;
-  color: #ffffff;
-}
-
-.pantalla-mapa p {
-  color: var(--texto-suave);
-}
-
-.mapa-titulo p {
-  font-size: 16px;
-  color: var(--noche-texto);
-}
-
-.mapa-encabezado {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px 24px;
-  padding: 24px 24px 28px;
-  background: var(--banda);
-  border-top: 1px solid var(--noche-alta);
-}
-
-/* Fila del título: título y descripción a la izquierda, fecha a la derecha. */
-.mapa-cabeza {
-  flex: 1 1 100%;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 12px 24px;
-}
-
-.mapa-cabeza .campo-con-ayuda {
-  align-items: center;
-}
-
-.mapa-cabeza .campo {
-  color: var(--noche-texto);
-}
-
-.mapa-cabeza .campo input {
-  border-color: transparent;
-}
-
-.mapa-cabeza .campo-con-ayuda .ayuda {
-  margin-bottom: 0;
-}
-
-/* Lecturas del día: módulos blancos contiguos, separados por filetes. */
-.mapa-kpis {
-  flex: 1 1 100%;
-  list-style: none;
-  display: grid;
-  grid-template-columns: 1.35fr repeat(3, minmax(0, 1fr));
-  gap: 1px;
-  margin: 0;
-  padding: 0;
-  background: var(--linea);
-  border: 1px solid var(--linea);
-  border-radius: var(--radio);
-  overflow: hidden;
-}
-
-.kpi {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-  padding: 16px 20px 18px;
-  background: var(--superficie);
-  color: var(--texto);
-}
-
-/* Marca del humor: un filete de color arriba del módulo. */
-.kpi::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 3px;
-  background: transparent;
-}
-
-.kpi-positivo::before {
-  background: var(--humor-positivo);
-}
-.kpi-negativo::before {
-  background: var(--humor-negativo);
-}
-.kpi-neutro::before {
-  background: var(--humor-neutro);
-}
-
-.kpi-etiqueta {
-  display: flex;
-  align-items: center;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--texto-suave);
-}
-
-.kpi-valor {
-  font-family: var(--letra-titulos);
-  font-size: 34px;
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-}
-
-.kpi-principal .kpi-valor {
-  font-size: 44px;
-}
-
-.kpi-frase {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--texto);
-}
-
-.kpi-nota {
-  font-size: 13px;
-  color: var(--texto-suave);
-}
-
-.kpi-continente {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.kpi-valor-chico {
-  font-size: 24px;
-  line-height: 1.2;
-  color: var(--texto);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.kpi-cifra {
-  font-size: 20px;
-  font-weight: 800;
-}
-
-@media (max-width: 900px) {
-  .mapa-kpis {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 8px 24px 48px;
+  animation: entrar 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
 .mapa-avisos:empty {
@@ -173,57 +14,165 @@
 }
 
 .mapa-avisos {
-  padding: 12px 24px 0;
+  padding: 12px 0 0;
 }
 
-.mapa-debajo {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 24px 48px;
+.mapa-escena {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(0, 560px) minmax(260px, 320px);
+  align-items: center;
+  gap: 24px 40px;
+  min-height: 620px;
 }
 
-/* Mapa a todo el ancho; lo que va encima se posiciona sobre él. */
-.mapa-marco {
+/* Lectura del día. */
+.mapa-lectura {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lectura-etiqueta {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.lectura-valor {
+  font-size: 96px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  margin-top: 6px;
+}
+
+.lectura-frase {
+  font-family: var(--letra-titulos);
+  font-size: 32px;
+  line-height: 1.15;
+  color: var(--tinta);
+  text-wrap: balance;
+}
+
+.pantalla-mapa .lectura-nota {
+  max-width: 34ch;
+  margin: 6px 0 18px;
+  font-size: 16px;
+  color: var(--texto-suave);
+}
+
+.mapa-lectura .campo-con-ayuda {
+  align-items: center;
+}
+
+.mapa-lectura .campo-con-ayuda .ayuda {
+  margin-bottom: 0;
+}
+
+/* Globo con su leyenda. */
+.mapa-globo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.globo {
   position: relative;
+  width: 100%;
+  max-width: 560px;
+  touch-action: none;
 }
 
-.mapa-contenedor {
-  height: min(620px, calc(100vh - 150px));
-  min-height: 460px;
-  border-bottom: 1px solid var(--linea-fuerte);
+.globo-dibujo {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: grab;
+  user-select: none;
 }
 
-/* Teselas desaturadas: en la carta solo el humor tiene color. */
-.mapa-contenedor .leaflet-tile-pane {
-  filter: grayscale(1) brightness(1.17) contrast(0.8);
+.globo-dibujo:active {
+  cursor: grabbing;
 }
 
-/* Paneles sobre el mapa: módulos blancos con filete. z-index 1000: sobre las
-   capas de Leaflet (400) y a la altura de sus controles. */
-.mapa-flotante {
+.globo-paises path {
+  transition: fill-opacity 0.3s ease-out;
+}
+
+.globo-etiqueta {
   position: absolute;
-  z-index: 1000;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 10px;
+  font: inherit;
+  font-size: 14px;
+  white-space: nowrap;
+  color: var(--tinta);
   background: var(--superficie);
-  border: 1px solid var(--linea-fuerte);
-  border-radius: var(--radio);
-  box-shadow: 0 4px 14px rgba(15, 27, 51, 0.1);
+  border: var(--borde);
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(42, 58, 68, 0.14);
+  cursor: pointer;
+  transition:
+    opacity 0.3s ease-out,
+    box-shadow 0.2s ease-out;
 }
 
-/* Catálogo de continentes, a la izquierda. */
+.globo-etiqueta .nombre-astro {
+  font-size: 15px;
+}
+
+.globo-etiqueta strong {
+  font-weight: 800;
+}
+
+.globo-etiqueta:hover {
+  box-shadow: 0 6px 16px rgba(42, 58, 68, 0.2);
+}
+
+/* Continente del otro lado del globo: en el borde, más tenue. */
+.globo-etiqueta-detras {
+  opacity: 0.72;
+  background: var(--globo);
+  box-shadow: none;
+}
+
+.globo-etiqueta-atenuada {
+  opacity: 0.4;
+}
+
+.mapa-globo .leyenda {
+  margin: 0;
+  justify-content: center;
+  gap: 4px 14px;
+}
+
+.mapa-globo .leyenda li {
+  font-size: 13px;
+  color: var(--texto-suave);
+}
+
+/* Catálogo de continentes, de más positivo a más negativo. */
 .mapa-continentes {
-  top: 16px;
-  left: 16px;
-  width: 268px;
-  max-height: calc(100% - 140px);
-  overflow-y: auto;
-  padding: 12px 0 4px;
+  padding: 18px 8px 8px;
+  background: var(--superficie);
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
 }
 
 .mapa-continentes h3 {
-  margin: 0 16px 6px;
+  margin: 0 12px 8px;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--texto-suave);
 }
@@ -234,34 +183,46 @@
   padding: 0;
 }
 
-.mapa-continentes .continente {
-  display: grid;
-  grid-template-columns: 22px 1fr auto;
-  grid-template-rows: auto auto;
-  column-gap: 10px;
-  align-items: center;
-  padding: 8px 16px;
-  border-top: 1px solid var(--linea);
-  cursor: default;
-  transition:
-    opacity 0.2s ease-out,
-    background-color 0.2s ease-out;
+.mapa-continentes li {
+  border-top: var(--borde);
+  transition: opacity 0.3s ease-out;
 }
 
-.mapa-continentes .continente:hover,
-.mapa-continentes .continente:focus-visible {
+.mapa-continentes li:first-child {
+  border-top: none;
+}
+
+.continente {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: none;
+  border-radius: var(--radio-chico);
+  cursor: pointer;
+}
+
+.continente:hover,
+.continente[aria-pressed='true'] {
   background: var(--globo);
 }
 
-.mapa-continentes .continente:focus-visible {
-  outline-offset: -2px;
+.continente[aria-pressed='true'] {
+  box-shadow: inset 3px 0 0 var(--laton);
 }
 
 .continente-atenuado {
-  opacity: 0.35;
+  opacity: 0.45;
 }
 
-.mapa-continentes .continente .carita {
+.continente .carita {
   grid-column: 1;
   grid-row: 1 / span 2;
 }
@@ -269,15 +230,8 @@
 .continente-nombre {
   grid-column: 2;
   grid-row: 1;
-  font-size: 18px;
-  line-height: 1.2;
-}
-
-.continente-humor {
-  grid-column: 3;
-  grid-row: 1 / span 2;
   font-size: 19px;
-  font-weight: 800;
+  line-height: 1.2;
 }
 
 .continente-noticias {
@@ -287,205 +241,72 @@
   color: var(--texto-suave);
 }
 
-/* Leyenda: tamaño (magnitudes) y color, arriba a la derecha. */
-.mapa-leyenda {
-  top: 16px;
-  right: 16px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 8px 14px;
+.continente-humor {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  font-size: 22px;
+  font-weight: 800;
 }
 
-.leyenda-grupo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding-right: 16px;
-  border-right: 1px solid var(--linea);
-}
-
-.leyenda-titulo {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--texto);
-}
-
-.leyenda-magnitudes {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  color: var(--texto-suave);
-}
-
-.leyenda-magnitud {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.leyenda-disco {
-  display: inline-block;
-  border-radius: 50%;
-  background: var(--papel-hondo);
-  border: 1.5px solid var(--tinta);
-}
-
-.mapa-leyenda .leyenda {
-  margin: 0;
-  gap: 4px 12px;
-}
-
-.mapa-leyenda .leyenda li {
-  color: var(--texto);
-  font-size: 13px;
-}
-
-/* El zoom de Leaflet queda a la derecha, bajo la leyenda. */
-.mapa-contenedor .leaflet-top.leaflet-right {
-  top: 62px;
-}
-
-.mapa-contenedor .leaflet-bar {
-  border: 1px solid var(--linea-fuerte);
-  border-radius: var(--radio);
-  box-shadow: none;
-}
-
-/* Escala del día, abajo sobre el mapa. Deja libres los créditos de la derecha. */
+/* Escala del día bajo la escena. */
 .mapa-escala {
-  left: 16px;
-  right: 16px;
-  bottom: 28px;
-  padding: 4px 18px 8px;
+  margin-top: 16px;
+  padding: 6px 22px 10px;
+  background: var(--superficie);
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
 }
 
 .mapa-escala .escala {
   margin-top: 6px;
 }
 
-/* En pantallas angostas los paneles van debajo del mapa para no taparlo. */
-@media (max-width: 700px) {
-  .mapa-encabezado {
-    padding: 16px;
+.mapa-debajo {
+  margin-top: 8px;
+}
+
+@media (max-width: 1100px) {
+  .mapa-escena {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
   }
 
-  .mapa-kpis {
-    grid-template-columns: 1fr 1fr;
+  .mapa-globo {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+@media (max-width: 760px) {
+  .pantalla-mapa {
+    padding: 4px 16px 32px;
   }
 
-  .kpi {
-    padding: 12px 14px 14px;
-  }
-
-  .kpi-principal .kpi-valor {
-    font-size: 36px;
-  }
-
-  .kpi-valor-chico {
-    font-size: 20px;
-  }
-
-  .mapa-contenedor {
-    height: 360px;
+  .mapa-escena {
+    grid-template-columns: 1fr;
     min-height: 0;
   }
 
-  .mapa-flotante {
-    position: static;
-    width: auto;
-    max-height: none;
-    margin: 12px 16px 0;
-    box-shadow: none;
+  .mapa-globo {
+    grid-row: auto;
   }
 
-  .mapa-leyenda {
-    flex-wrap: wrap;
+  .lectura-valor {
+    font-size: 72px;
   }
 
-  .leyenda-grupo {
-    border-right: 0;
-    padding-right: 0;
+  .lectura-frase {
+    font-size: 26px;
   }
 
-  .mapa-debajo {
-    padding: 0 16px 32px;
-  }
-
-  .mapa-contenedor .leaflet-top.leaflet-right {
-    top: 0;
-  }
-
-  /* Astros más chicos en el celular, para que no se tapen entre sí. */
-  .astro-cuerpo {
-    transform: scale(0.62);
-  }
-
-  .marcador-humor:hover .astro-cuerpo {
-    transform: scale(0.66);
-  }
-
-  .marcador-valor {
-    margin-top: -14px;
+  .globo-etiqueta {
+    padding: 3px 8px;
     font-size: 12px;
   }
 
-  .kpi-continente {
-    flex-wrap: wrap;
-    row-gap: 2px;
+  .globo-etiqueta .nombre-astro {
+    font-size: 13px;
   }
-
-  .kpi-valor-chico {
-    white-space: normal;
-  }
-}
-
-/* El mapa de Leaflet necesita una altura explícita para poder dibujarse. */
-.mapa-contenedor .leaflet-container {
-  height: 100%;
-  font: inherit;
-  /* El mismo gris del mar de las teselas desaturadas: los bordes no se notan. */
-  background: #d8d8d8;
-}
-
-/* Astro de cada continente: carita al tamaño de su magnitud, con anillo, y el
-   valor debajo. Al enfocar otro continente, se atenúa. */
-.marcador-humor {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  transition: opacity 0.2s ease-out;
-}
-
-.astro-cuerpo {
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  border: 1px solid rgba(20, 33, 61, 0.45);
-  background: rgba(255, 255, 255, 0.55);
-  box-shadow: 0 2px 8px rgba(15, 27, 51, 0.25);
-  transition: transform 0.2s ease-out;
-}
-
-.marcador-humor:hover .astro-cuerpo {
-  transform: scale(1.06);
-}
-
-.astro-atenuado {
-  opacity: 0.3;
-}
-
-.marcador-valor {
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--tinta);
-  background: var(--superficie);
-  border: 1px solid var(--linea-fuerte);
-  border-radius: var(--radio-chico);
-  padding: 0 7px;
-  white-space: nowrap;
 }
 
 /* Avisos de carga y de error (HU-DASH-001-v4, escenario de backend sin respuesta). */
@@ -493,19 +314,18 @@
   margin: 0 0 12px;
   padding: 10px 14px;
   font-size: 14px;
-  border-top: 3px solid var(--acento);
-  border-radius: 0;
   background: var(--superficie);
+  border: var(--borde);
+  border-radius: var(--radio-chico);
 }
 
 .mapa-error {
   color: var(--texto-negativo);
-  background: #fbeeee;
-  border-color: #efc6c6;
-  border-top-color: var(--texto-negativo);
+  background: #f8ece9;
+  border-color: #e9c7c0;
 }
 
-/* Gráfico de evolución temporal (HU-DASH-001-v4), abierto, sin tarjeta. */
+/* Gráfico de evolución temporal (HU-DASH-001-v4). */
 .grafico-evolucion {
   margin-top: 32px;
 }
@@ -513,26 +333,26 @@
 .grafico-evolucion h3 {
   margin: 0 0 4px;
   font-family: var(--letra-titulos);
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
+  font-size: 26px;
+  font-weight: 400;
 }
 
 .grafico-evolucion p {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   color: var(--texto-suave);
 }
 
 /* Gráfico a la izquierda y planeta del día a la derecha. */
 .grafico-cuerpo {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 190px;
+  grid-template-columns: minmax(0, 1fr) 200px;
   gap: 16px;
   align-items: center;
-  padding: 16px 16px 12px;
+  padding: 18px 18px 14px;
   background: var(--superficie);
   border: var(--borde);
   border-radius: var(--radio);
+  box-shadow: var(--sombra);
 }
 
 .grafico-planeta {
@@ -555,8 +375,7 @@
 }
 
 .grafico-planeta-valor {
-  font-family: var(--letra-titulos);
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 800;
   line-height: 1.1;
 }

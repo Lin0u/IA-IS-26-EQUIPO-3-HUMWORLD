@@ -11,6 +11,7 @@
 | [ADR-003](ADR-003-eleccion-algoritmo-agregacion-sentimiento.md) | Algoritmo de agregación de sentimiento (promedio simple, polarización, lematización y reglas de relevancia) | Propuesto | 2026-09-28 | Equipo 3 (PO y arquitectura) | HU-SENT-002-v3, HU-SENT-003, HU-SENT-005-v2, HU-SENT-007-v4, HU-SENT-009 |
 | [ADR-004](ADR-004-arquitectura-modelo-ml-sentimiento.md) | Arquitectura del modelo de ML para el cálculo de humor (Gemini Embedding + Ridge) | Aceptado | 2026-09-28 | Equipo 3 (PO y arquitectura) | HU-SENT-002-v3, HU-SENT-006 |
 | [ADR-005](ADR-005-stack-frontend-dashboards.md) | Stack y arquitectura del frontend (React, Vite, Leaflet, Chart.js) | Propuesto | 2026-10-03 | Equipo 3 (PO y frontend) | HU-DASH-001-v3, HU-DASH-002-v3, HU-DASH-003-v2, HU-DASH-004-v2, HU-ADMIN-004 |
+| [ADR-006](ADR-006-globo-d3-mapa-humor.md) | Globo con D3 (d3-geo) para el mapa de humor, en lugar de Leaflet | Propuesto | 2026-11-16 | Equipo 3 (PO y frontend) | HU-DASH-001-v4, HU-DASH-005-v3 |
 
 ## Estados
 
@@ -38,3 +39,4 @@
 | v1.0 | 2026-11-11 | Creación del índice (checklist, punto 13). Estados tomados de cada ADR a esta fecha. |
 | v1.1 | 2026-11-11 | ADR-003 v1.5 (reglas de relevancia): se actualizan su título y sus historias. |
 | v1.2 | 2026-11-12 | ADR-005: su historia HU-DASH-004 pasa a HU-DASH-004-v2 (ayudas "?"). |
+| v1.3 | 2026-11-16 | Se agrega ADR-006 (globo con D3 para el mapa de humor; reemplaza la sección 4 de ADR-005 en esa vista). |

@@ -1,61 +1,61 @@
-/* HumWorld - estilos generales. Mundo visual «Carta celeste» (HU-DASH-005-v2,
-   decisión de la PO del 2026-11-16): marco azul noche plano, trabajo sobre papel
-   de atlas claro, módulos blancos separados por filetes de 1 px y los continentes
-   como astros. Los colores y medidas se definen una sola vez aquí arriba. */
-/* Tipografía: Public Sans para texto, controles y cifras; Spectral itálica para
-   los nombres propios (continentes, países y medios), como en un atlas. */
-@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=Spectral:ital,wght@1,500;1,600&display=swap');
+/* HumWorld - estilos generales. Mundo visual «Globo de escritorio» (HU-DASH-005-v3,
+   decisión de la PO del 2026-11-16): luz de lámpara sobre un escritorio claro,
+   módulos blancos en capas con sombras suaves, colores del humor apagados
+   (terracota, arena y salvia) y latón para el foco y la selección. Los colores y
+   medidas se definen una sola vez aquí arriba. */
+/* Tipografía: Young Serif para títulos y nombres de continentes; Figtree para
+   texto, controles y cifras. */
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Young+Serif&display=swap');
 
 :root {
-  /* Marco y papel. */
-  --noche: #0f1b33; /* marco: cabecera, banda de cada vista y menú */
-  --noche-alta: #1a2a4a; /* realces y bordes dentro del marco */
-  --noche-texto: #c9d6e6; /* texto secundario sobre el marco (contraste 10:1) */
-  --tinta: #14213d; /* texto principal y filetes fuertes */
-  --papel: #eef2f6; /* fondo de la página: papel de atlas frío */
-  --papel-hondo: #e3e9f0; /* recuadros secundarios */
-  --linea: #d3dde8; /* filetes de 1 px entre módulos */
-  --linea-fuerte: #9fb3c8; /* bordes de campos, botones y gratícula */
+  /* Escritorio y luz. */
+  --papel: #e8edeb; /* fondo: escritorio claro */
+  --papel-hondo: #dde4e1; /* recuadros secundarios */
+  --luz: #f7f9f8; /* centro de la luz de la lámpara */
   --superficie: #ffffff; /* módulos */
-  --texto: #14213d;
-  --texto-suave: #4a5d7a; /* contraste 6,4:1 sobre blanco */
-  --acento: #24477e; /* azul atlas: enlaces, botón principal (8,9:1 con blanco) */
-  --activo: #e6edf6; /* fondo de elementos seleccionados (con texto --acento) */
-  --estrella: #f2c14e; /* oro estelar: solo foco y selección */
-  --ayuda: #bcd0e6; /* ícono "?" (con el signo en --tinta) */
-  --globo: #f7f9fc; /* globos de ayuda y recuadros destacados */
-  --celeste: #dfe7ef; /* agua del mapa, desaturada */
+  --globo: #f5f8f7; /* globos de ayuda, filas al pasar el mouse */
+  --tinta: #2a3a44; /* texto principal */
+  --texto: #2a3a44;
+  --texto-suave: #56666e; /* contraste 4,9:1 sobre el fondo y 6:1 sobre blanco */
+  --linea: #d6dedb; /* filetes finos */
+  --linea-fuerte: #b3c0bc; /* bordes de campos y botones */
+  --acento: #3f6f80; /* azul petróleo suave: botón principal (5,6:1 con blanco) */
+  --activo: #e3edee; /* fondo de elementos seleccionados (con texto --acento) */
+  --laton: #b8975a; /* latón del globo: foco y selección */
+  --laton-texto: #7d6230; /* latón legible sobre blanco */
+  --mar: #a9c4cf; /* mar del globo */
+  --ayuda: #d7e3e4; /* ícono "?" (con el signo en --tinta) */
 
-  /* Colores de humor para rellenos (astros, caritas, puntos). */
-  --humor-positivo: #2e9e78;
-  --humor-negativo: #d64545;
-  --humor-neutro: #e0a526;
-  --humor-sin-datos: #c9d5e2;
+  /* Colores de humor apagados para rellenos (países, caritas, puntos). */
+  --humor-positivo: #8fc2a7;
+  --humor-negativo: #d98a7d;
+  --humor-neutro: #e3c27d;
+  --humor-sin-datos: #cfd7d4;
 
-  /* Los mismos colores, más oscuros, para números y texto (AA sobre blanco y
-     sobre sus fondos tenues). */
-  --texto-positivo: #1b7457;
-  --texto-negativo: #b02f2f;
-  --texto-neutro: #7d5a06;
+  /* Los mismos colores, oscuros, para cifras y texto (AA sobre blanco). */
+  --texto-positivo: #2f7556;
+  --texto-negativo: #a8503f;
+  --texto-neutro: #7d6020;
 
   --borde: 1px solid var(--linea);
-  --sombra: 0 1px 2px rgba(15, 27, 51, 0.06);
-  --sombra-elevada: 0 10px 28px rgba(15, 27, 51, 0.2);
-  --foco: 0 0 0 3px rgba(242, 193, 78, 0.6);
-  --radio: 6px;
-  --radio-chico: 4px;
-  --letra-texto: 'Public Sans', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --letra-titulos: 'Public Sans', system-ui, sans-serif;
-  --letra-astro: 'Spectral', Georgia, serif;
-  /* Banda superior de cada vista: el mismo azul noche plano de la cabecera. */
-  --banda: var(--noche);
-  /* Cuánto se monta el primer bloque de contenido sobre el borde de la banda. */
-  --montaje: 32px;
+  --sombra: 0 1px 2px rgba(42, 58, 68, 0.05), 0 6px 18px rgba(42, 58, 68, 0.07);
+  --sombra-elevada: 0 18px 40px rgba(42, 58, 68, 0.18);
+  --foco: 0 0 0 3px rgba(184, 151, 90, 0.45);
+  --radio: 12px;
+  --radio-chico: 8px;
+  --letra-texto: 'Figtree', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --letra-titulos: 'Young Serif', Georgia, serif;
+  --letra-astro: 'Young Serif', Georgia, serif;
+  /* Banda superior de cada vista: sin color propio, sobre la luz del escritorio. */
+  --banda: transparent;
+  --montaje: 0px;
 
   font-family: var(--letra-texto);
   font-size: 15px;
   line-height: 1.55;
   font-variant-numeric: tabular-nums;
+  /* Young Serif tiene un solo peso y sin itálica: el navegador no los inventa. */
+  font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--texto);
@@ -71,7 +71,9 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--papel);
+  background:
+    radial-gradient(1200px 700px at 62% 0%, var(--luz) 0%, rgba(247, 249, 248, 0) 70%) no-repeat,
+    var(--papel);
 }
 
 h1,
@@ -138,21 +140,20 @@ p {
   }
 }
 
-/* Nombres propios en itálica de atlas (HU-DASH-005-v2). */
+/* Nombres propios (continentes, países y medios) en la serif de títulos (HU-DASH-005-v3). */
 .nombre-astro {
   font-family: var(--letra-astro);
-  font-style: italic;
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: 0;
 }
 
 ::selection {
-  background: rgba(242, 193, 78, 0.45);
+  background: rgba(184, 151, 90, 0.35);
   color: var(--tinta);
 }
 
 :focus-visible {
-  outline: 2px solid var(--estrella);
+  outline: 2px solid var(--laton);
   outline-offset: 2px;
 }
 

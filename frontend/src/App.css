@@ -11,9 +11,10 @@
   position: sticky;
   top: 0;
   z-index: 1200;
-  /* Mismo degradado que la banda de cada vista: sin línea ni sombra entre ambas. */
-  background: var(--banda);
-  color: #ffffff;
+  /* Cabecera clara sobre el escritorio, con un filete fino abajo (HU-DASH-005-v3). */
+  background: rgba(247, 249, 248, 0.96);
+  border-bottom: var(--borde);
+  color: var(--tinta);
   padding: 8px 24px;
   display: flex;
   align-items: center;
@@ -60,11 +61,12 @@
 
 .marca-frase {
   font-size: 13px;
-  color: var(--noche-texto);
+  color: var(--texto-suave);
 }
 
 .marca-frase strong {
-  background: #ffffff;
+  background: var(--superficie);
+  border: var(--borde);
   border-radius: var(--radio-chico);
   padding: 0 7px;
   margin-left: 4px;
@@ -73,7 +75,7 @@
 
 .marca:focus-visible,
 .boton-menu:focus-visible {
-  outline: 2px solid var(--estrella);
+  outline: 2px solid var(--laton);
   outline-offset: 4px;
   border-radius: var(--radio);
 }
@@ -87,7 +89,7 @@
   justify-content: center;
   align-items: center;
   gap: 5px;
-  background: var(--noche-alta);
+  background: var(--papel-hondo);
   border: 1px solid #2c3f63;
   border-radius: var(--radio-chico);
   cursor: pointer;
@@ -98,11 +100,11 @@
   width: 20px;
   height: 2px;
   border-radius: 2px;
-  background: #ffffff;
+  background: var(--tinta);
 }
 
 .boton-menu:hover {
-  background: #24375c;
+  background: var(--globo);
 }
 
 /* Menú lateral que entra por la derecha. */
@@ -125,9 +127,9 @@
   flex-direction: column;
   gap: 6px;
   padding: 18px 16px;
-  color: #ffffff;
-  background: var(--noche);
-  border-left: 1px solid var(--noche-alta);
+  color: var(--tinta);
+  background: var(--superficie);
+  border-left: var(--borde);
   box-shadow: var(--sombra-elevada);
   animation: entrar-menu 0.22s ease-out;
 }
@@ -138,12 +140,12 @@
   align-items: center;
   padding: 0 4px 12px;
   margin-bottom: 6px;
-  border-bottom: 1px solid var(--noche-alta);
+  border-bottom: 1px solid var(--papel-hondo);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--noche-texto);
+  color: var(--texto-suave);
 }
 
 .menu-cerrar {
@@ -152,7 +154,7 @@
   font: inherit;
   font-size: 22px;
   line-height: 1;
-  color: #ffffff;
+  color: var(--tinta);
   background: none;
   border: 1px solid transparent;
   border-radius: var(--radio-chico);
@@ -160,7 +162,7 @@
 }
 
 .menu-cerrar:hover {
-  background: var(--noche-alta);
+  background: var(--papel-hondo);
 }
 
 .menu-vistas {
@@ -173,7 +175,7 @@
 .menu-pie {
   margin-top: auto;
   padding-top: 10px;
-  border-top: 1px solid var(--noche-alta);
+  border-top: 1px solid var(--papel-hondo);
 }
 
 .menu-boton {
@@ -185,7 +187,7 @@
   font-size: 15px;
   font-weight: 600;
   text-align: left;
-  color: var(--noche-texto);
+  color: var(--texto-suave);
   background: none;
   border: none;
   border-radius: var(--radio-chico);
@@ -197,8 +199,8 @@
 }
 
 .menu-boton:hover {
-  color: #ffffff;
-  background: var(--noche-alta);
+  color: var(--tinta);
+  background: var(--globo);
 }
 
 .menu-boton:focus-visible,
@@ -207,12 +209,12 @@
   box-shadow: var(--foco);
 }
 
-/* Vista actual: oro estelar (selección). */
+/* Vista actual: filete de latón (selección). */
 .menu-boton.activo {
-  color: #ffffff;
-  background: var(--noche-alta);
+  color: var(--tinta);
+  background: var(--activo);
   font-weight: 700;
-  box-shadow: inset 3px 0 0 var(--estrella);
+  box-shadow: inset 3px 0 0 var(--laton);
 }
 
 .icono-usuario {
@@ -267,15 +269,12 @@
   margin-bottom: 8px;
 }
 
-/* Banda superior de cada vista (revisión de diseño del 2026-11-16): azul
-   profundo de borde a borde, con el título en blanco y los controles encima.
-   Sale del contenedor central con márgenes negativos. */
+/* Encabezado de cada vista (HU-DASH-005-v3): título en serif sobre la luz del
+   escritorio, sin banda de color, con sus controles al lado. */
 .encabezado-vista {
-  margin: -32px calc(50% - 50vw) 0;
-  padding: 28px calc(50vw - 50%) calc(var(--montaje) + 28px);
-  color: #ffffff;
-  /* Arriba continúa la cabecera; abajo termina con un borde nítido, sin fundido. */
-  background: var(--banda);
+  margin: 0 0 24px;
+  padding: 8px 0 0;
+  color: var(--tinta);
 }
 
 /* El primer bloque de contenido se monta sobre el borde de la banda, así banda
@@ -290,11 +289,11 @@
 .pantalla .encabezado-vista p {
   max-width: 62ch;
   font-size: 16px;
-  color: var(--noche-texto);
+  color: var(--texto-suave);
 }
 
 .encabezado-vista .campo {
-  color: var(--noche-texto);
+  color: var(--texto-suave);
 }
 
 .encabezado-vista .campo select,

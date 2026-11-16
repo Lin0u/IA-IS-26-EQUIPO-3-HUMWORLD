@@ -5,10 +5,10 @@
 // Mismos colores que las variables --humor-* de index.css. Se repiten aquí para
 // las piezas que necesitan el código del color y no el nombre de la variable.
 export const COLORES_HUMOR = {
-  positivo: '#2e9e78',
-  negativo: '#d64545',
-  neutro: '#e0a526',
-  sinDatos: '#c9d5e2',
+  positivo: '#8fc2a7',
+  negativo: '#d98a7d',
+  neutro: '#e3c27d',
+  sinDatos: '#cfd7d4',
 }
 
 // Rango neutro: valores entre -0,5 y +0,5 (sin incluir los extremos) se muestran
@@ -51,7 +51,7 @@ export const BOCAS_CARITA = {
 // dibujo de sus marcadores como texto. El resto de la página usa el componente
 // Carita.jsx, que dibuja lo mismo.
 export function caritaComoTexto(tipo, tamano) {
-  const tinta = '#14213d'
+  const tinta = '#2a3a44'
   return (
     `<svg class="carita" viewBox="0 0 40 40" width="${tamano}" height="${tamano}" aria-hidden="true">` +
     `<circle cx="20" cy="20" r="17" fill="${COLORES_HUMOR[tipo]}" stroke="${tinta}" stroke-width="2.5"/>` +
@@ -134,16 +134,4 @@ const FRASES_MUNDO = {
 
 export function fraseHumorMundo(valor) {
   return FRASES_MUNDO[tipoHumor(valor)]
-}
-
-// Tamaño del astro de un continente en el mapa (HU-DASH-005-v2, decisión 4):
-// crece con la raíz cuadrada de sus noticias del día, entre 30 y 64 px, para que
-// el área sea proporcional a la cantidad. Sin noticias, el tamaño mínimo.
-export const ASTRO_MINIMO = 30
-export const ASTRO_MAXIMO = 64
-
-export function magnitudAstro(noticias, maximo) {
-  if (!noticias || !maximo || noticias <= 0 || maximo <= 0) return ASTRO_MINIMO
-  const proporcion = Math.sqrt(Math.min(noticias, maximo) / maximo)
-  return Math.round(ASTRO_MINIMO + (ASTRO_MAXIMO - ASTRO_MINIMO) * proporcion)
 }

@@ -668,7 +668,64 @@ Escenario: Filtro sin palabras
 
 ---
 
-## HU-DASH-005-v2 — Mundo visual «Carta celeste»
+## HU-DASH-005-v3 — Mundo visual «Globo de escritorio»
+
+**Reemplaza a:** HU-DASH-005-v2 (Deprecada). **Qué cambió:** el mundo «Carta celeste» se reemplaza por «Globo de escritorio»: el mapa de humor pasa a ser un globo terráqueo iluminado (d3-geo, ADR-006) cuyos continentes se pintan con su humor; la paleta se suaviza (colores del humor apagados, sin azul noche) y gana profundidad con luz de lámpara y capas. **Por qué:** decisión de la PO del 2026-11-16: la Carta celeste se veía con colores duros (azul noche pesado, rojo y verde chillones, contraste brusco) y plana; pidió algo más elaborado (profundidad, más detalle de datos, identidad e ilustración, movimiento). Se mantienen las decisiones 1, 2, 5, 6, 7 y 12 de HU-DASH-005 (☰ en todas las anchuras, menú lateral, ayudas "?", gráfico con el planeta del día y frase del humor global).
+
+**Tipo:** Historia de Usuario
+**Como** docente que evalúa HumWorld o usuario del sistema,
+**quiero** ver el humor del mundo sobre un globo terráqueo con colores suaves y una interfaz cuidada,
+**para** entender de un vistazo cómo está cada región y disfrutar explorándolo.
+
+**Prioridad:** Media
+**Estimación:** sin estimar. Punto de partida a validar por el equipo en Planning Poker, no un valor definitivo.
+**Depende de contrato de API:** No. Usa `GET /dashboards/map` y `GET /sentiment` como HU-DASH-001-v4.
+**Variante del algoritmo:** no calcula humor.
+
+**Decisiones de diseño (decisión de la PO del 2026-11-16):**
+1. **Luz de lámpara:** fondo claro con una luz suave arriba; módulos blancos con sombra suave en capas. Sin azul noche.
+2. **Colores del humor apagados:** terracota (negativo), arena (neutro) y salvia (positivo) para rellenos, con versiones oscuras para las cifras (contraste AA). El latón (`#b8975a`) marca foco y selección.
+3. **Tipografía:** Young Serif para títulos y nombres de continentes; Figtree para texto, controles y cifras (tabulares).
+4. **Globo:** la vista "Mapa de humor" muestra un globo ortográfico con meridiano de latón y pie; cada país toma el color del humor de su continente. El globo gira hacia el continente que se enfoca en el catálogo o en el globo, y se puede arrastrar. Los continentes del otro lado del globo se muestran en su borde, atenuados.
+5. **Disposición del mapa:** a la izquierda, el humor del mundo en grande con su frase, la cantidad de noticias y la fecha; al centro, el globo con la leyenda; a la derecha, el catálogo de los 5 continentes ordenado de más positivo a más negativo. Debajo, la escala del día y la evolución.
+6. **Mascota:** el planeta pasa a ser un globo de escritorio con meridiano de latón y pie; conserva sus caras según el humor.
+7. **Movimiento:** el globo gira con una curva suave al cambiar de continente; con `prefers-reduced-motion` salta sin animar.
+
+### Criterios de aceptación (Gherkin)
+
+Se mantienen los escenarios de HU-DASH-005. Se agregan:
+
+```gherkin
+Escenario: Continentes coloreados en el globo
+  Dado que Europa tiene humor -0.9 y Asia +1.1 en la fecha elegida
+  Cuando el usuario abre el mapa
+  Entonces los países de Europa se pintan con el color negativo y los de Asia con el positivo
+  Y el globo muestra la etiqueta de cada uno de los 5 continentes, atenuada si está del otro lado
+
+Escenario: El globo gira hacia el continente enfocado
+  Dado que el usuario está en el mapa
+  Cuando elige "Oceanía" en el catálogo de continentes
+  Entonces el globo gira hasta dejar Oceanía al frente
+  Y los demás continentes del catálogo y del globo se atenúan
+
+Escenario: Catálogo ordenado por humor
+  Cuando el usuario abre el mapa
+  Entonces el catálogo lista los 5 continentes del más positivo al más negativo, con su cantidad de noticias
+```
+
+### Definition of Done
+(Bloque general DoD, sección 14.) Adicionalmente:
+- Pruebas de la clasificación de países por continente y de la proyección (`utilidades/globo.test.js`) y de la vista (`MapaHumor.test.jsx`).
+- Validado visualmente en escritorio (1440 px) y celular (390 px), con capturas en el Pull Request.
+- `ADR-006-globo-d3-mapa-humor.md` y `DESIGN.md` actualizados.
+
+**Estado de implementación (2026-11-16):** en la rama `feature/relevancia-noticias`, pendiente de revisión en el PR.
+
+---
+
+## HU-DASH-005-v2 — Mundo visual «Carta celeste» (DEPRECADA)
+
+> **Estado: Deprecada (2026-11-16).** Reemplazada por **HU-DASH-005-v3**. Se conserva sin cambios para trazabilidad. Motivo: a la PO no la convenció (colores duros y aspecto plano).
 
 **Reemplaza a:** HU-DASH-005 (Deprecada). **Qué cambió:** se reemplaza el mundo visual de las decisiones 8 a 11 de HU-DASH-005 (degradados azules, vidrio difuminado, tarjetas flotantes, Montserrat e Inter) por el mundo «Carta celeste»: cada continente se dibuja como un astro cuyo tamaño es su cantidad de noticias y cuyo color es su humor, sobre una gratícula. Se mantienen las decisiones 1 a 7 y 12 (cabecera con ☰ en todas las anchuras, menú lateral, disposición del mapa, planeta, ayudas "?", gráfico con el planeta del día y frase del humor global). **Por qué:** decisión de la PO del 2026-11-16: el aspecto anterior no se veía profesional ni propio; el público principal son los docentes que evalúan en su laptop. La dirección se eligió entre varias propuestas (registro en `.impeccable/surfaces/`). Solo presentación: no cambia endpoints, contratos ni cálculos.
 
@@ -958,7 +1015,8 @@ Escenario: Fuente sin canal
 | HU-DASH-004 | Historia de Usuario — **Deprecada**, reemplazada por HU-DASH-004-v2 | — | — | — | — |
 | HU-DASH-004-v2 | Historia de Usuario | Alta | sin estimar | Sin endpoint propio; usa los existentes | §4.3, §2 (objetivo específico 3) |
 | HU-DASH-005 | Historia de Usuario — **Deprecada**, reemplazada por HU-DASH-005-v2 | — | — | — | — |
-| HU-DASH-005-v2 | Historia de Usuario | Media | sin estimar | Sin endpoint propio; usa los de HU-DASH-001-v4 | §4.3, §4.3.2 |
+| HU-DASH-005-v2 | Historia de Usuario — **Deprecada**, reemplazada por HU-DASH-005-v3 | — | — | — | — |
+| HU-DASH-005-v3 | Historia de Usuario | Media | sin estimar | Sin endpoint propio; usa los de HU-DASH-001-v4 | §4.3, §4.3.2 |
 
 Las estimaciones en puntos provienen del Planning Poker de P3 y son un punto de partida, no un valor definitivo: deben revalidarse con el equipo ahora que el alcance está detallado.
 
@@ -995,3 +1053,4 @@ Las estimaciones en puntos provienen del Planning Poker de P3 y son un punto de 
 | HU-DASH-005 | v1.15 | 2026-11-16 | Decisión de la PO: decisión 12, frase llana bajo "Humor global" con la clasificación de `tipoHumor`. Solo presentación. Las caras con intensidad graduada quedan como mejora futura. |
 | HU-DASH-002-v3 | corrección | 2026-11-16 | Decisión de la PO (opción A, solo presentación): cada noticia muestra "Medio de <país>, <continente>" y las ayudas de Noticias y del mapa aclaran que el lugar es el del medio que publica, no el del hecho (ADR-002, HU-SENT-004). Sigue mostrando canal y continente, como pide el escenario "Datos visibles de cada noticia". No cambian el modelo, los filtros ni los contratos. Ubicar el hecho (opción B) se descartó. |
 | HU-DASH-005-v2 | v1.16 | 2026-11-16 | Decisión de la PO: HU-DASH-005 pasa a **Deprecada** y se crea HU-DASH-005-v2, mundo visual «Carta celeste» (marco azul noche, Public Sans y Spectral, módulos con filete, continentes como astros según sus noticias, gratícula y foco). Se mantienen las decisiones 1 a 7 y 12. 2 escenarios nuevos. Solo presentación. |
+| HU-DASH-005-v3 | v1.17 | 2026-11-16 | Decisión de la PO: HU-DASH-005-v2 pasa a **Deprecada** y se crea HU-DASH-005-v3, mundo visual «Globo de escritorio» (globo con d3-geo según ADR-006, colores del humor apagados, luz de lámpara, Young Serif y Figtree, catálogo ordenado por humor y mascota como globo de escritorio). 3 escenarios nuevos. Solo presentación. |

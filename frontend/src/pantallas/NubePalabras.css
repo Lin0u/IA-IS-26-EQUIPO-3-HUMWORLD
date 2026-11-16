@@ -25,7 +25,6 @@
 
 .palabra {
   font-family: var(--letra-astro);
-  font-style: italic;
   line-height: 1.15;
   font-weight: 600;
   animation: saltar 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -81,7 +80,7 @@
 /* Palabra elegida: anillo de oro estelar (selección). */
 .palabra-boton[aria-pressed='true'] {
   background: var(--superficie);
-  box-shadow: 0 0 0 2px var(--estrella);
+  box-shadow: 0 0 0 2px var(--laton);
 }
 
 .palabra-boton:focus-visible {
@@ -152,7 +151,6 @@
 
 .ranking-palabra {
   font-family: var(--letra-astro);
-  font-style: italic;
   font-size: 17px;
   font-weight: 600;
   color: var(--texto);

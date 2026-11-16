@@ -49,6 +49,8 @@ El frontend vive en `frontend/`, en la raíz del repositorio, separado de `src/`
 
 ### 4. Mapas: Leaflet con react-leaflet, sobre teselas de OpenStreetMap
 
+> **Nota (2026-11-16):** en la vista "Mapa de humor" esta decisión se reemplaza por un globo con D3 (`d3-geo`), según `ADR-006-globo-d3-mapa-humor.md`.
+
 `leaflet` 1.9 y su adaptador `react-leaflet` 5 para el mapa mundial de HU-DASH-001-v3. La cartografía de fondo se obtiene del servidor público de teselas de OpenStreetMap, con la atribución que su licencia exige.
 
 ### 5. Gráficos: Chart.js con react-chartjs-2
