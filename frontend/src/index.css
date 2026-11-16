@@ -51,14 +51,17 @@
   /* Banda superior de cada vista: azul profundo con degradado horizontal. La
      cabecera usa el mismo degradado, así ambas se ven como una sola pieza. */
   --banda: linear-gradient(90deg, #0f3a4c 0%, #1b5f79 55%, #2a7c9b 100%);
-  /* Fundido de la banda hacia el fondo de la página, en su parte baja. */
+  /* Celeste claro con el que termina la banda y empieza el cuerpo (pedido de la
+     PO del 2026-11-16: en vez de fundirse con blanco). */
+  --celeste-claro: #cce4ed;
+  /* Fundido de la banda hacia ese celeste claro, en su parte baja. */
   --banda-fundido: linear-gradient(
     180deg,
-    rgba(242, 247, 249, 0) calc(100% - 120px),
-    rgba(242, 247, 249, 0.12) calc(100% - 84px),
-    rgba(242, 247, 249, 0.45) calc(100% - 46px),
-    rgba(242, 247, 249, 0.82) calc(100% - 18px),
-    var(--papel) 100%
+    rgba(204, 228, 237, 0) calc(100% - 120px),
+    rgba(204, 228, 237, 0.14) calc(100% - 84px),
+    rgba(204, 228, 237, 0.5) calc(100% - 46px),
+    rgba(204, 228, 237, 0.86) calc(100% - 18px),
+    var(--celeste-claro) 100%
   );
 
   font-family: var(--letra-texto);
@@ -79,11 +82,9 @@
 body {
   margin: 0;
   min-height: 100vh;
-  /* Fondo con un leve degradado celeste arriba. */
-  background:
-    radial-gradient(1200px 420px at 15% -10%, rgba(170, 211, 223, 0.35), transparent 70%),
-    var(--papel);
-  background-attachment: fixed;
+  /* El cuerpo empieza en el celeste claro donde termina la banda y se aclara
+     de a poco hacia abajo. */
+  background: linear-gradient(180deg, var(--celeste-claro) 0, var(--celeste-claro) 460px, #e2eff4 900px, var(--papel) 1400px);
 }
 
 h1,
