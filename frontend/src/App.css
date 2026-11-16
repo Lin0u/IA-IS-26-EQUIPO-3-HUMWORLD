@@ -11,9 +11,9 @@
   position: sticky;
   top: 0;
   z-index: 1200;
-  background: linear-gradient(115deg, #1b5670 0%, var(--acento) 55%, #3a91b0 100%);
+  /* Mismo degradado que la banda de cada vista: sin línea ni sombra entre ambas. */
+  background: var(--banda);
   color: #ffffff;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12), 0 2px 10px rgba(16, 42, 54, 0.12);
   padding: 8px 24px;
   display: flex;
   align-items: center;
@@ -265,10 +265,11 @@
    profundo de borde a borde, con el título en blanco y los controles encima.
    Sale del contenedor central con márgenes negativos. */
 .encabezado-vista {
-  margin: -32px calc(50% - 50vw) 28px;
-  padding: 34px calc(50vw - 50% + 0px) 30px;
+  margin: -32px calc(50% - 50vw) 8px;
+  padding: 30px calc(50vw - 50% + 0px) 104px;
   color: #ffffff;
-  background: var(--banda);
+  /* Arriba continúa la cabecera; abajo se funde con el fondo de la página. */
+  background: var(--banda-fundido), var(--banda);
 }
 
 .pantalla .encabezado-vista p {

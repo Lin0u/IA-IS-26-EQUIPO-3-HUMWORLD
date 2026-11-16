@@ -12,6 +12,8 @@
 
 .admin-pestanas .filtro {
   min-height: 0;
+  box-shadow: none;
+  transform: none;
   margin-bottom: -1px;
   padding: 10px 14px;
   color: var(--texto-suave);
@@ -24,6 +26,7 @@
 .admin-pestanas .filtro:hover {
   color: var(--texto);
   background: none;
+  box-shadow: none;
   border-bottom-color: var(--linea-fuerte);
 }
 
@@ -31,6 +34,7 @@
 .admin-pestanas .filtro.activo:hover {
   color: var(--acento);
   background: none;
+  box-shadow: none;
   border-bottom-color: var(--acento);
 }
 
@@ -152,9 +156,11 @@
   overflow-wrap: anywhere;
 }
 
-.filtro:disabled {
-  opacity: 0.45;
+.filtro:disabled,
+.filtro:disabled:hover {
+  opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
   box-shadow: none;
 }
 

@@ -48,8 +48,18 @@
   --radio-chico: 8px;
   --letra-texto: 'Inter', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --letra-titulos: 'Montserrat', 'Inter', system-ui, sans-serif;
-  /* Banda superior de cada vista: azul profundo con degradado. */
-  --banda: linear-gradient(120deg, #0f3a4c 0%, #1b5f79 55%, #2a7c9b 100%);
+  /* Banda superior de cada vista: azul profundo con degradado horizontal. La
+     cabecera usa el mismo degradado, así ambas se ven como una sola pieza. */
+  --banda: linear-gradient(90deg, #0f3a4c 0%, #1b5f79 55%, #2a7c9b 100%);
+  /* Fundido de la banda hacia el fondo de la página, en su parte baja. */
+  --banda-fundido: linear-gradient(
+    180deg,
+    rgba(242, 247, 249, 0) calc(100% - 120px),
+    rgba(242, 247, 249, 0.12) calc(100% - 84px),
+    rgba(242, 247, 249, 0.45) calc(100% - 46px),
+    rgba(242, 247, 249, 0.82) calc(100% - 18px),
+    var(--papel) 100%
+  );
 
   font-family: var(--letra-texto);
   font-size: 15px;

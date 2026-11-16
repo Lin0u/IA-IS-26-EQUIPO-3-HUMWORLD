@@ -12,29 +12,38 @@
   gap: 8px;
 }
 
-/* Botones compartidos por todas las vistas. .filtro es el botón secundario
-   (borde fino); .filtro.activo es el principal o el seleccionado (relleno azul). */
+/* Botones compartidos por todas las vistas (revisión de diseño del 2026-11-16).
+   .filtro: secundario (blanco con borde y sombra leve). .filtro.activo: principal
+   (azul con degradado). .peligro: acciones que borran o desactivan. */
 .filtro {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 36px;
+  min-height: 38px;
   font: inherit;
   font-size: 14px;
   font-weight: 600;
+  letter-spacing: 0.005em;
   color: var(--texto);
   background: var(--superficie);
   border: 1px solid var(--linea-fuerte);
-  border-radius: var(--radio-chico);
-  padding: 7px 14px;
+  border-radius: 10px;
+  padding: 8px 16px;
+  box-shadow: 0 1px 2px rgba(16, 42, 54, 0.06);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s, transform 0.1s;
 }
 
 .filtro:hover {
-  background: var(--papel);
+  background: #f7fbfc;
   border-color: var(--acento);
+  box-shadow: 0 2px 6px rgba(16, 42, 54, 0.1);
+}
+
+.filtro:active {
+  transform: translateY(1px);
+  box-shadow: none;
 }
 
 .filtro:focus-visible {
@@ -44,42 +53,70 @@
 
 .filtro.activo {
   color: #ffffff;
-  background: var(--acento);
-  border-color: var(--acento);
+  background: linear-gradient(180deg, #3186a6 0%, var(--acento) 100%);
+  border-color: #22627b;
+  box-shadow: 0 1px 2px rgba(16, 42, 54, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
 .filtro.activo:hover {
-  background: #22627b;
+  background: linear-gradient(180deg, #2a7a99 0%, #22627b 100%);
+  box-shadow: 0 4px 12px rgba(42, 116, 145, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+/* Acciones destructivas. */
+.filtro.peligro {
+  color: var(--texto-negativo);
+  border-color: #f0c2c3;
+}
+
+.filtro.peligro:hover {
+  background: #fdf1f1;
+  border-color: var(--texto-negativo);
+}
+
+.filtro.activo.peligro {
+  color: #ffffff;
+  background: linear-gradient(180deg, #e0484e 0%, var(--texto-negativo) 100%);
+  border-color: #b02a30;
+}
+
+.filtro.activo.peligro:hover {
+  background: linear-gradient(180deg, #d23d43 0%, #b02a30 100%);
+  box-shadow: 0 4px 12px rgba(208, 52, 58, 0.35);
 }
 
 /* Grupo de filtros como control segmentado. */
 .filtros {
   display: inline-flex;
-  gap: 0;
-  padding: 3px;
-  background: var(--papel-hondo);
-  border-radius: calc(var(--radio-chico) + 3px);
+  gap: 2px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
 }
 
 .filtros .filtro {
-  min-height: 30px;
-  padding: 5px 14px;
-  color: var(--texto-suave);
+  min-height: 32px;
+  padding: 6px 16px;
+  color: rgba(255, 255, 255, 0.85);
   background: none;
   border-color: transparent;
+  box-shadow: none;
 }
 
 .filtros .filtro:hover {
-  color: var(--texto);
-  background: rgba(255, 255, 255, 0.6);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .filtros .filtro.activo,
 .filtros .filtro.activo:hover {
   color: var(--acento);
   background: var(--superficie);
-  border-color: var(--linea);
-  box-shadow: 0 1px 2px rgba(16, 42, 54, 0.08);
+  border-color: transparent;
+  box-shadow: 0 2px 6px rgba(6, 28, 38, 0.25);
 }
 
 .noticias-lista {
@@ -200,6 +237,9 @@
 
 /* HU-DASH-002-v3 y HU-DASH-004: explicación del valor de humor. */
 .explicacion-boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -215,6 +255,21 @@
 
 .explicacion-boton:hover {
   border-color: var(--acento);
+}
+
+/* Flecha que indica que se despliega. */
+.explicacion-boton::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 0.15s;
+}
+
+.explicacion-boton[aria-expanded='true']::after {
+  transform: rotate(-135deg) translateY(-1px);
 }
 
 .explicacion-boton[aria-expanded='true'] {
