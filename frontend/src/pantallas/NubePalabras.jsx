@@ -124,7 +124,7 @@ export default function NubePalabras() {
 
   return (
     <section className="pantalla">
-      <div className="nube-encabezado">
+      <div className="nube-encabezado encabezado-vista">
         <div>
           <div className="titulo-con-ayuda">
             <h2>Nube de palabras</h2>

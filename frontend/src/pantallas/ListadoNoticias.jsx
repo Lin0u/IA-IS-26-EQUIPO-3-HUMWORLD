@@ -156,7 +156,7 @@ export default function ListadoNoticias() {
 
   return (
     <section className="pantalla">
-      <div className="noticias-encabezado">
+      <div className="noticias-encabezado encabezado-vista">
         <div>
           <div className="titulo-con-ayuda">
             <h2>Noticias</h2>

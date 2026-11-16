@@ -1,7 +1,7 @@
-/* HumWorld - estilos generales. Estilo "mascota con cara": colores vivos,
-   bordes gruesos, esquinas redondeadas y sombras duras, como una caricatura.
-   Los colores se definen una sola vez aquí arriba: para cambiar el aspecto de
-   toda la página basta con cambiar estos valores. */
+/* HumWorld - estilos generales. Estilo profesional (HU-DASH-005, pedido de la PO
+   del 2026-11-16): bordes finos, sombras suaves, esquinas moderadas y una escala
+   tipográfica sobria. La mascota (planeta) y los colores del humor se mantienen.
+   Los colores y medidas se definen una sola vez aquí arriba. */
 /* Tipografía: Montserrat en toda la interfaz (decisión de la PO del 2026-11-13). */
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
 
@@ -12,12 +12,15 @@
      Decisiones de la PO del 2026-11-13 y 2026-11-14. */
   --celeste: #aad3df;        /* celeste del mar del mapa: color base */
   --tinta: #173847;          /* azul petróleo muy oscuro: textos, bordes y sombras */
-  --papel: #e8f3f6;          /* celeste muy claro: fondo de la página y recuadros */
+  --papel: #f2f7f9;          /* gris azulado muy claro: fondo de la página */
+  --papel-hondo: #e6f0f4;    /* recuadros secundarios dentro de una tarjeta */
+  --linea: #d8e5ea;          /* bordes finos de tarjetas y divisores */
+  --linea-fuerte: #b7cfd8;   /* bordes de campos y botones */
   --superficie: #ffffff;     /* fondo de las tarjetas */
   --texto: #173847;
-  --texto-suave: #4b6875;
+  --texto-suave: #557381;
   --acento: #2a7491;         /* azul profundo de la cabecera (contraste 5,2:1 con blanco) */
-  --activo: var(--celeste);  /* botones y pestañas activos, números de bloque */
+  --activo: #e1f0f5;         /* fondo de elementos seleccionados (con texto --acento) */
   --ayuda: #7cc6dc;          /* celeste medio: ícono "?" (con el signo en --tinta) */
   --globo: #f3fafc;          /* fondo de los globos de ayuda y recuadros destacados */
   --rosa: #ff8fb1;
@@ -35,14 +38,20 @@
   --texto-negativo: #d0343a;
   --texto-neutro: #946b00;
 
-  --borde: 2px solid var(--tinta);
-  --sombra: 4px 4px 0 var(--tinta);
-  --radio: 16px;
+  --borde: 1px solid var(--linea);
+  --sombra: 0 1px 2px rgba(16, 42, 54, 0.05), 0 4px 16px rgba(16, 42, 54, 0.06);
+  --sombra-elevada: 0 12px 32px rgba(16, 42, 54, 0.18);
+  --foco: 0 0 0 3px rgba(42, 116, 145, 0.3);
+  --radio: 12px;
+  --radio-chico: 8px;
   --letra-texto: 'Montserrat', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --letra-titulos: var(--letra-texto);
 
   font-family: var(--letra-texto);
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   color: var(--texto);
   background: var(--papel);
 }
