@@ -31,19 +31,10 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px 24px;
-  padding: 26px 24px 40px;
-  /* Banda azul profunda que continúa la cabecera y se funde abajo, igual que en
-     las demás vistas (revisión de diseño del 2026-11-16). */
-  /* En el mapa la banda se funde con el celeste del mar, que es lo que sigue. */
-  background:
-    linear-gradient(
-      180deg,
-      rgba(170, 211, 223, 0) calc(100% - 110px),
-      rgba(170, 211, 223, 0.35) calc(100% - 50px),
-      rgba(170, 211, 223, 0.85) calc(100% - 12px),
-      var(--celeste) 100%
-    ),
-    var(--banda);
+  padding: 26px 24px 28px;
+  /* Banda azul profunda que continúa la cabecera y termina con un borde nítido
+     sobre el mapa (revisión de diseño del 2026-11-16). */
+  background: var(--banda);
 }
 
 /* Fila del título: título y descripción a la izquierda, fecha a la derecha. */

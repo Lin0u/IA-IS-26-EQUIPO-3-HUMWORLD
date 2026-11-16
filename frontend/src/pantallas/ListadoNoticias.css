@@ -207,8 +207,13 @@
   color: var(--linea-fuerte);
 }
 
+/* Como tarjeta: puede quedar montado sobre la banda. */
 .noticias-vacio {
-  padding: 24px 0;
+  padding: 24px;
+  background: var(--superficie);
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
 }
 
 /* Filtro por continente junto a los botones de signo (HU-DASH-002-v2). */

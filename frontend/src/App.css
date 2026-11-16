@@ -265,11 +265,20 @@
    profundo de borde a borde, con el título en blanco y los controles encima.
    Sale del contenedor central con márgenes negativos. */
 .encabezado-vista {
-  margin: -32px calc(50% - 50vw) 8px;
-  padding: 30px calc(50vw - 50% + 0px) 104px;
+  margin: -32px calc(50% - 50vw) 0;
+  padding: 28px calc(50vw - 50%) calc(var(--montaje) + 28px);
   color: #ffffff;
-  /* Arriba continúa la cabecera; abajo se funde con el fondo de la página. */
-  background: var(--banda-fundido), var(--banda);
+  /* Arriba continúa la cabecera; abajo termina con un borde nítido, sin fundido. */
+  background: var(--banda);
+}
+
+/* El primer bloque de contenido se monta sobre el borde de la banda, así banda
+   y cuerpo quedan unidos sin difuminar. */
+.encabezado-vista + .noticias-lista,
+.encabezado-vista + .noticias-vacio,
+.encabezado-vista + .nube-diseno {
+  position: relative;
+  margin-top: calc(-1 * var(--montaje));
 }
 
 .pantalla .encabezado-vista p {

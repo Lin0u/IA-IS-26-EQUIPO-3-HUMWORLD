@@ -2,40 +2,46 @@
    index.css y las clases compartidas .campo, .filtro y .paginacion. */
 
 /* Pestañas subrayadas. */
+/* Encabezado compacto: las pestañas van en el borde inferior de la banda. */
+.admin-encabezado.encabezado-vista {
+  padding-bottom: 16px;
+}
+
+/* Pestañas sobre la misma banda, de borde a borde. */
 .admin-pestanas {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-bottom: 20px;
-  border-bottom: var(--borde);
+  margin: 0 calc(50% - 50vw) 24px;
+  padding: 0 calc(50vw - 50% - 14px);
+  background: var(--banda);
 }
 
 .admin-pestanas .filtro {
   min-height: 0;
   box-shadow: none;
   transform: none;
-  margin-bottom: -1px;
-  padding: 10px 14px;
-  color: var(--texto-suave);
+  padding: 12px 14px;
+  color: rgba(255, 255, 255, 0.72);
   background: none;
   border: none;
-  border-bottom: 2px solid transparent;
+  border-bottom: 3px solid transparent;
   border-radius: 0;
 }
 
 .admin-pestanas .filtro:hover {
-  color: var(--texto);
+  color: #ffffff;
   background: none;
   box-shadow: none;
-  border-bottom-color: var(--linea-fuerte);
+  border-bottom-color: rgba(255, 255, 255, 0.35);
 }
 
 .admin-pestanas .filtro.activo,
 .admin-pestanas .filtro.activo:hover {
-  color: var(--acento);
+  color: #ffffff;
   background: none;
   box-shadow: none;
-  border-bottom-color: var(--acento);
+  border-bottom-color: #ffffff;
 }
 
 .admin-panel {

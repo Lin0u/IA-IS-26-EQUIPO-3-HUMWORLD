@@ -50,8 +50,13 @@
   }
 }
 
+/* Como tarjeta: puede quedar montado sobre la banda. */
 .nube-vacia {
-  padding: 24px 0;
+  padding: 24px;
+  background: var(--superficie);
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
 }
 
 .filtros-lugar {
