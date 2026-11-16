@@ -28,24 +28,24 @@
 }
 
 .ayuda-boton {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   display: grid;
   place-items: center;
   padding: 0;
   font: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
   color: var(--tinta);
   background: var(--ayuda);
-  border: var(--borde);
+  border: 1px solid rgba(23, 56, 71, 0.25);
   border-radius: 50%;
   cursor: help;
 }
 
 .ayuda-boton:focus-visible {
-  outline: 3px solid var(--acento);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--foco);
 }
 
 .ayuda-globo {
@@ -57,12 +57,13 @@
   max-width: min(300px, calc(100vw - 32px));
   display: grid;
   gap: 6px;
-  padding: 10px 12px;
+  padding: 12px 14px;
+  font-size: 13px;
   color: var(--texto);
-  background: var(--globo);
+  background: var(--superficie);
   border: var(--borde);
-  border-radius: 12px;
-  box-shadow: var(--sombra);
+  border-radius: var(--radio-chico);
+  box-shadow: var(--sombra-elevada);
   visibility: hidden;
   opacity: 0;
   transition: opacity 0.12s ease;
@@ -113,9 +114,9 @@
 
 .escala-barra {
   position: relative;
-  height: 14px;
+  height: 10px;
   margin-top: 26px;
-  border: var(--borde);
+  border: none;
   border-radius: 999px;
   background: linear-gradient(90deg, var(--humor-negativo), var(--humor-neutro) 50%, var(--humor-positivo));
 }
@@ -129,10 +130,10 @@
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
-  color: var(--tinta);
-  background: var(--superficie);
-  border: var(--borde);
-  border-radius: 999px;
+  color: #ffffff;
+  background: var(--tinta);
+  border: none;
+  border-radius: 6px;
 }
 
 /* Triángulo que apunta al valor en la barra. */

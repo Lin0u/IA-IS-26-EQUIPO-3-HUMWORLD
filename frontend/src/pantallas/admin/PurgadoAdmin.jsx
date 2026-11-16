@@ -42,13 +42,13 @@ export default function PurgadoAdmin() {
       <div className="admin-acciones">
         <button
           type="button"
-          className="filtro activo"
+          className="filtro activo peligro"
           disabled={!fecha || fecha > hoyIso() || enCurso}
           onClick={() => purgar(true)}
         >
           Purgar
         </button>
-        <button type="button" className="filtro" disabled={enCurso} onClick={() => purgar(false)}>
+        <button type="button" className="filtro peligro" disabled={enCurso} onClick={() => purgar(false)}>
           Purgar según caducidad
         </button>
       </div>

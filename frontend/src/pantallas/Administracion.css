@@ -1,14 +1,47 @@
 /* HumWorld - panel de administración (HU-ADMIN-004). Reutiliza las variables de
    index.css y las clases compartidas .campo, .filtro y .paginacion. */
-.admin-encabezado {
-  margin-bottom: 14px;
+
+/* Pestañas subrayadas. */
+/* Encabezado compacto: las pestañas van en el borde inferior de la banda. */
+.admin-encabezado.encabezado-vista {
+  padding-bottom: 16px;
 }
 
+/* Pestañas sobre la misma banda, de borde a borde. */
 .admin-pestanas {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 4px;
+  margin: 0 calc(50% - 50vw) 24px;
+  padding: 0 calc(50vw - 50% - 14px);
+  background: var(--banda);
+}
+
+.admin-pestanas .filtro {
+  min-height: 0;
+  box-shadow: none;
+  transform: none;
+  padding: 12px 14px;
+  color: rgba(255, 255, 255, 0.72);
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+}
+
+.admin-pestanas .filtro:hover {
+  color: #ffffff;
+  background: none;
+  box-shadow: none;
+  border-bottom-color: rgba(255, 255, 255, 0.35);
+}
+
+.admin-pestanas .filtro.activo,
+.admin-pestanas .filtro.activo:hover {
+  color: #ffffff;
+  background: none;
+  box-shadow: none;
+  border-bottom-color: #ffffff;
 }
 
 .admin-panel {
@@ -16,7 +49,7 @@
   border: var(--borde);
   border-radius: var(--radio);
   box-shadow: var(--sombra);
-  padding: 20px;
+  padding: 24px;
 }
 
 .admin-formulario {
@@ -48,25 +81,33 @@
 }
 
 .admin-aviso {
-  border: var(--borde);
-  border-radius: 10px;
-  padding: 8px 12px;
-  margin: 10px 0;
+  border: 1px solid transparent;
+  border-left-width: 4px;
+  border-radius: var(--radio-chico);
+  padding: 10px 14px;
+  margin: 12px 0;
+  font-size: 14px;
   font-weight: 600;
 }
 
 .admin-aviso-error {
-  background: #ffe1e2;
+  background: #fdecec;
+  border-color: #f6c9ca;
+  border-left-color: var(--texto-negativo);
   color: var(--texto-negativo);
 }
 
 .admin-aviso-exito {
-  background: #d9f6ee;
+  background: #e6f7f1;
+  border-color: #bfe8d9;
+  border-left-color: var(--texto-positivo);
   color: var(--texto-positivo);
 }
 
 .admin-aviso-info {
-  background: #e3f1f6;
+  background: var(--activo);
+  border-color: #c6e2ec;
+  border-left-color: var(--acento);
   color: var(--acento);
 }
 
@@ -93,15 +134,23 @@
 .admin-tabla th,
 .admin-tabla td {
   text-align: left;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--humor-sin-datos);
+  padding: 10px 12px;
+  border-bottom: var(--borde);
   vertical-align: middle;
 }
 
 .admin-tabla th {
-  font-family: var(--letra-titulos);
-  font-weight: 600;
-  border-bottom: var(--borde);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+  background: var(--papel);
+  border-bottom-color: var(--linea-fuerte);
+}
+
+.admin-tabla tbody tr:hover {
+  background: #f8fbfc;
 }
 
 .admin-tabla input[type='number'] {
@@ -113,9 +162,10 @@
   overflow-wrap: anywhere;
 }
 
-.filtro:disabled {
-  opacity: 0.45;
-  cursor: default;
+.filtro:disabled,
+.filtro:disabled:hover {
+  opacity: 0.5;
+  cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
@@ -127,40 +177,48 @@
 }
 
 /* HU-DASH-004: bloques numerados de la pestaña Fuentes RSS. */
+/* Bloques numerados: secciones dentro del panel, separadas por una línea. */
 .admin-bloques {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 0;
 }
 
 .admin-bloque {
-  border: var(--borde);
-  border-radius: var(--radio);
-  padding: 14px 16px;
-  background: var(--superficie);
+  padding: 22px 0;
+  border-top: var(--borde);
+}
+
+.admin-bloque:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.admin-bloque:last-child {
+  padding-bottom: 0;
 }
 
 .admin-bloque-titulo {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 0 0 4px;
+  margin: 0 0 6px;
   font-family: var(--letra-titulos);
-  font-size: 19px;
-  font-weight: 600;
+  font-size: 17px;
+  font-weight: 700;
 }
 
 .admin-bloque-numero {
   flex: none;
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   display: grid;
   place-items: center;
-  font-size: 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--acento);
   background: var(--activo);
-  border: var(--borde);
   border-radius: 50%;
-  box-shadow: 2px 2px 0 var(--tinta);
 }
 
 .pantalla .admin-bloque-texto {
@@ -183,9 +241,11 @@
 }
 
 .pantalla .admin-flecha {
-  margin: -4px 0;
+  margin: 0;
+  padding: 0 0 14px;
   text-align: center;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--acento);
 }
 
@@ -196,9 +256,8 @@
 }
 
 @media (max-width: 600px) {
-  .admin-panel,
-  .admin-bloque {
-    padding: 12px;
+  .admin-panel {
+    padding: 16px;
   }
 
   .admin-fila-formulario {
@@ -238,9 +297,10 @@
   align-items: center;
   gap: 4px;
   font-size: 13px;
-  padding: 2px 4px 2px 10px;
+  font-weight: 600;
+  padding: 3px 4px 3px 10px;
   border: var(--borde);
-  border-radius: 999px;
+  border-radius: 6px;
   background: var(--papel);
 }
 
@@ -259,7 +319,7 @@
 
 .admin-quitar:hover,
 .admin-quitar:focus-visible {
-  background: #ffe1e2;
+  background: #fdecec;
   outline: none;
 }
 
@@ -271,21 +331,24 @@
 }
 
 .admin-cobertura div {
-  border: 1px solid var(--texto-suave);
-  border-radius: 12px;
-  padding: 8px 12px;
+  border: var(--borde);
+  border-radius: var(--radio-chico);
+  padding: 12px 14px;
   background: var(--papel);
 }
 
 .admin-cobertura dt {
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--texto-suave);
 }
 
 .admin-cobertura dd {
-  margin: 0;
+  margin: 4px 0 0;
   font-family: var(--letra-titulos);
-  font-size: 24px;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
 
@@ -293,10 +356,10 @@
 .admin-panel-titulo {
   display: flex;
   align-items: center;
-  margin: 0 0 14px;
+  margin: 0 0 16px;
   font-family: var(--letra-titulos);
-  font-size: 19px;
-  font-weight: 600;
+  font-size: 17px;
+  font-weight: 700;
 }
 
 /* HU-ADMIN-001-v2, ajuste del 2026-11-12: botón que muestra u oculta la lista de exclusión. */
@@ -347,11 +410,11 @@
 }
 
 .admin-panel-nuevo {
-  margin-bottom: 12px;
-  padding: 12px 14px;
-  background: var(--globo);
+  margin-bottom: 16px;
+  padding: 16px 18px;
+  background: var(--papel);
   border: var(--borde);
-  border-radius: 12px;
+  border-radius: var(--radio-chico);
 }
 
 .admin-panel-nuevo .admin-fila-formulario {
@@ -362,4 +425,102 @@
   margin: 4px 0 6px;
   font-weight: 700;
   color: var(--texto);
+}
+
+/* HU-DASH-005: resumen visual de la cobertura (barra apilada y colores por
+   categoría, iguales en la barra y en los indicadores). */
+.cobertura-resumen {
+  margin-bottom: 14px;
+}
+
+.pantalla .cobertura-porcentaje {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--texto);
+}
+
+.cobertura-porcentaje strong {
+  font-size: 22px;
+  color: var(--texto-positivo);
+}
+
+.cobertura-barra {
+  display: flex;
+  height: 12px;
+  overflow: hidden;
+  background: var(--papel-hondo);
+  border-radius: 999px;
+}
+
+.cobertura-tramo {
+  height: 100%;
+}
+
+.admin-cobertura > div {
+  position: relative;
+  padding-left: 18px;
+}
+
+.admin-cobertura > div::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--linea-fuerte);
+}
+
+.cobertura-con-humor,
+.cobertura-tramo.cobertura-con-humor { --color-cobertura: var(--humor-positivo); }
+.cobertura-sin-terminos,
+.cobertura-tramo.cobertura-sin-terminos { --color-cobertura: #9fb7c1; }
+.cobertura-bajo-minimo,
+.cobertura-tramo.cobertura-bajo-minimo { --color-cobertura: var(--humor-neutro); }
+.cobertura-excluidas,
+.cobertura-tramo.cobertura-excluidas { --color-cobertura: var(--humor-negativo); }
+.cobertura-pendientes,
+.cobertura-tramo.cobertura-pendientes { --color-cobertura: var(--acento); }
+.cobertura-total { --color-cobertura: var(--tinta); }
+
+.cobertura-tramo {
+  background: var(--color-cobertura);
+}
+
+.admin-cobertura > div::before {
+  background: var(--color-cobertura, var(--linea-fuerte));
+}
+
+/* Revisión de diseño del 2026-11-16: en los formularios la etiqueta va sobre el
+   campo y los campos se ordenan en una grilla, sin espacios vacíos a la derecha. */
+.admin-formulario {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  align-items: end;
+  gap: 14px 18px;
+}
+
+.admin-formulario > :not(.campo) {
+  grid-column: 1 / -1;
+}
+
+.admin-formulario > button {
+  justify-self: start;
+}
+
+.admin-formulario .campo,
+.admin-fila-formulario .campo {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.admin-fila-formulario {
+  align-items: flex-end;
+}
+
+.admin-formulario .campo input,
+.admin-formulario .campo select {
+  width: 100%;
 }
