@@ -110,3 +110,28 @@ export function tramoEnEscala(valor) {
   const posicion = posicionEnEscala(valor)
   return posicion >= 50 ? { izquierda: 50, ancho: posicion - 50 } : { izquierda: posicion, ancho: 50 - posicion }
 }
+
+// Eje vertical del gráfico de evolución (HU-DASH-001-v4, decisión de la PO del
+// 2026-11-16): se adapta a los datos, siempre incluye el 0 y cubre como mínimo de
+// -3 a +3, sin salirse de la escala de -10 a +10. Los días sin humor no cuentan.
+export const RANGO_MINIMO_EJE = 3
+
+export function rangoEjeHumor(valores) {
+  const conDatos = (valores ?? []).filter((valor) => valor !== null && valor !== undefined)
+  const menor = Math.min(-RANGO_MINIMO_EJE, ...conDatos)
+  const mayor = Math.max(RANGO_MINIMO_EJE, ...conDatos)
+  return { min: Math.max(-10, Math.floor(menor)), max: Math.min(10, Math.ceil(mayor)) }
+}
+
+// Frase llana junto a "Humor global" (HU-DASH-005, decisión 12 de la PO del
+// 2026-11-16). Usa la misma clasificación que las caritas (tipoHumor).
+const FRASES_MUNDO = {
+  positivo: 'El mundo está de buen humor',
+  neutro: 'El mundo está neutro',
+  negativo: 'El mundo está de mal humor',
+  sinDatos: 'Sin noticias evaluadas ese día',
+}
+
+export function fraseHumorMundo(valor) {
+  return FRASES_MUNDO[tipoHumor(valor)]
+}

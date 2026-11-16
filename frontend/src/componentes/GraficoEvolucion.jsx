@@ -1,5 +1,5 @@
 // HumWorld - gráfico de evolución temporal del humor global.
-// Origen: HU-DASH-001-v3 (gráfico temporal) y ADR-005 (Chart.js). Consume
+// Origen: HU-DASH-001-v4 (gráfico temporal con eje adaptable) y ADR-005 (Chart.js). Consume
 // serie_temporal de GET /api/v1/sentiment (HU-SENT-004); no calcula humor.
 // HU-DASH-005 (idea de la PO del 2026-11-14): a la derecha, el planeta del logo
 // pone la cara del día que está bajo el mouse, con su fecha, valor y noticias.
@@ -9,7 +9,14 @@ import { Line } from 'react-chartjs-2'
 import { obtenerSerieGlobal } from '../api/cliente.js'
 import Ayuda from './Ayuda.jsx'
 import PlanetaHumor from './PlanetaHumor.jsx'
-import { COLORES_HUMOR, diaDestacado, fechaLegible, formatoHumor, tipoHumor } from '../utilidades/humor.js'
+import {
+  COLORES_HUMOR,
+  diaDestacado,
+  fechaLegible,
+  formatoHumor,
+  rangoEjeHumor,
+  tipoHumor,
+} from '../utilidades/humor.js'
 
 const NOMBRE_TIPO = { positivo: 'Positivo', negativo: 'Negativo', neutro: 'Neutro', sinDatos: 'Sin noticias' }
 
@@ -90,6 +97,9 @@ export default function GraficoEvolucion({ primeraFecha, ultimaFecha, fechaElegi
     ],
   }
 
+  // HU-DASH-001-v4: el eje se adapta a los datos, incluye el 0 y cubre al menos -3..+3.
+  const eje = rangoEjeHumor(serie.map((dia) => dia.humor_promedio))
+
   const opciones = {
     responsive: true,
     maintainAspectRatio: false,
@@ -102,8 +112,8 @@ export default function GraficoEvolucion({ primeraFecha, ultimaFecha, fechaElegi
     scales: {
       x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkipPadding: 16 } },
       y: {
-        suggestedMin: -3,
-        suggestedMax: 3,
+        min: eje.min,
+        max: eje.max,
         title: { display: true, text: 'Humor' },
         border: { display: false },
         // La línea del 0 se marca más fuerte que el resto.

@@ -2,18 +2,63 @@
 
 **Proyecto:** HumWorld — Equipo 3
 **Origen:** PDF de especificaciones (`0 PROYECTO_FINAL_HUMWORLD 260821.pdf`), secciones 4.1 (Procesos principales, punto de visualización), 4.3 (Interfaces y experiencia de usuario), 4.3.1 (Dashboard de palabras influyentes), 4.3.2 (Dashboard de Humor), 6.1 (Capa de presentación) y 10.2 (Endpoints mínimos obligatorios: `/sentiment`, `/news`, `/dashboards`). Stack de la capa de presentación decidido y justificado en `ADR-005-stack-frontend-dashboards.md`.
-**Estado general:** Propuesto — historias generadas a partir de los títulos ya oficializados en el backlog del entregable P3 (`Anexo-I-Planificacion-entregado-P3.md`: HU-DASH-001, HU-DASH-002 y HU-DASH-003; versiones vigentes: HU-DASH-001-v3, HU-DASH-002-v3 y HU-DASH-003-v2; se agrega HU-DASH-004) y de la estimación en puntos ya realizada en Planning Poker (Sprint 3 = 12 puntos). Pendiente de revisión crítica del equipo.
-**Versión del documento:** v1.6. Ver la Tabla de control de versiones al final del documento.
+**Estado general:** Propuesto — historias generadas a partir de los títulos ya oficializados en el backlog del entregable P3 (`Anexo-I-Planificacion-entregado-P3.md`: HU-DASH-001, HU-DASH-002 y HU-DASH-003; versiones vigentes: HU-DASH-001-v4, HU-DASH-002-v3 y HU-DASH-003-v2; se agrega HU-DASH-004) y de la estimación en puntos ya realizada en Planning Poker (Sprint 3 = 12 puntos). Pendiente de revisión crítica del equipo.
+**Versión del documento:** v1.15. Ver la Tabla de control de versiones al final del documento.
 
 > **Nota de grounding general:** el PDF exige "dashboards interactivos que visualicen el humor global y por regiones" (Objetivos específicos, punto 3) y enumera las vistas en la sección 4.3: Dashboard de humor (mapa mundial interactivo con selector de fecha), Nube de palabras (términos influyentes con filtros por país/continente) y Listado de noticias (detalle de las noticias más relevantes para el humor calculado). Este documento formaliza esas tres vistas; no agrega ninguna vista nueva. El Panel de administración (cuarta vista de la sección 4.3) pertenece a EPIC-ADMIN (HU-ADMIN-004, Sprint 4) y queda fuera de este documento.
 
 > **Nota sobre el algoritmo de humor (sección 11 de las instrucciones del proyecto):** ninguna historia de EPIC-DASH calcula humor. La capa de presentación solo muestra valores ya calculados y persistidos por el backend: `valor_humor` por noticia (HU-SENT-002-v2, cálculo híbrido: modelo de ML cuando está disponible, o promedio simple de diccionario como fallback según HU-SENT-007 y `ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`) y `humor_promedio` agregado (HU-SENT-004). Cada historia indica abajo qué valor consume.
 
-> **Estado de implementación (2026-11-11):** las vistas están conectadas al backend real en `frontend/`: mapa y gráfico temporal (HU-DASH-001-v3), listado de noticias con la explicación de su humor (HU-DASH-002-v3), nube de palabras con filtro por continente y país (HU-DASH-003-v2) y la guía visual de lectura (HU-DASH-004). Tienen pruebas con Vitest y Testing Library que corren en el pipeline. Pendiente: ratificación del equipo y estimación en Planning Poker.
+> **Estado de implementación (2026-11-11):** las vistas están conectadas al backend real en `frontend/`: mapa y gráfico temporal (HU-DASH-001-v4), listado de noticias con la explicación de su humor (HU-DASH-002-v3), nube de palabras con filtro por continente y país (HU-DASH-003-v2) y la guía visual de lectura (HU-DASH-004). Tienen pruebas con Vitest y Testing Library que corren en el pipeline. Pendiente: ratificación del equipo y estimación en Planning Poker.
 
 ---
 
-## HU-DASH-001-v3 — Dashboard mapa mundial de humor y evolución temporal
+## HU-DASH-001-v4 — Dashboard mapa mundial de humor y evolución temporal (eje adaptable)
+
+**Reemplaza a:** HU-DASH-001-v3 (Deprecada). **Qué cambió:** el eje vertical del gráfico de evolución temporal deja de ser fijo de -10 a +10: se adapta a los datos, siempre incluye el 0 y cubre como mínimo de -3 a +3, sin salirse de la escala de -10 a +10. Cambia solo el escenario "Gráfico de evolución temporal del humor global" y se agrega "Eje del gráfico con valores fuera del rango mínimo". **Por qué:** con el eje fijo de -10 a +10 los promedios diarios (casi siempre entre -3 y +3) se veían como una línea plana; la implementación ya usaba un rango sugerido de -3 a +3, que no cumplía el criterio de la v3 (hallazgo de la revisión de diseño del 2026-11-16). Decisión de la PO del 2026-11-16. La escala de -10 a +10 de la leyenda y de la barra "Mundo" no cambia (PDF §10.4).
+
+**Tipo:** Historia de Usuario
+**Como** analista de medios o usuario interesado en la evolución del sentimiento global *(PDF, sección 4.1)*,
+**quiero** ver en un mapa del mundo el humor de cada continente en una fecha que yo elija dentro del rango con información disponible,
+**para** identificar de un vistazo qué regiones están de mejor o peor humor y cómo cambia ese humor de un día a otro.
+
+**Prioridad:** Alta *(es la vista principal del proyecto: PDF, sección 4.3.2)*
+**Estimación:** sin cambio de alcance respecto de HU-DASH-001-v3; sigue pendiente su reestimación en Planning Poker.
+**Depende de contrato de API:** Sí — los mismos de HU-DASH-001-v3: `GET /api/v1/dashboards/map` (`contrato-dashboards.openapi.yaml`, esquema `MapaHumor`) y `GET /api/v1/sentiment` con `desde` y `hasta` (`contrato-sentimiento-diccionario.openapi.yaml`, campo `serie_temporal`).
+**Valor de humor que consume:** `humor_promedio`, calculado por el backend. No aplica ninguna variante propia del algoritmo.
+
+**Puntos pendientes de decisión del equipo:** los de HU-DASH-001-v3, sin cambios (`enum` de continentes y fecha que se muestra al abrir). El punto 4 (rangos de color) quedó resuelto por la corrección de la PO del 2026-11-11: neutro entre -0,5 y +0,5.
+
+### Criterios de aceptación (Gherkin)
+
+Se mantienen sin cambios los escenarios de HU-DASH-001-v3, salvo "Gráfico de evolución temporal del humor global", que se reemplaza por el siguiente. Se agrega un escenario.
+
+```gherkin
+Escenario: Gráfico de evolución temporal del humor global
+  Dado que GET /api/v1/sentiment con desde = F_min y hasta = F_max devuelve una serie_temporal con N fechas
+  Y todos sus valores de humor_promedio están entre -3 y +3
+  Cuando el usuario abre el dashboard "Mapa de humor"
+  Entonces la vista muestra un gráfico de líneas con exactamente N puntos, 1 por cada fecha de la serie
+  Y el eje vertical del gráfico va de -3 a +3
+
+Escenario: Eje del gráfico con valores fuera del rango mínimo
+  Dado que la serie_temporal tiene un día con humor_promedio = -3.4 y otro con +6.3
+  Cuando la vista dibuja el gráfico de evolución temporal
+  Entonces el eje vertical va de -4 a +7, con límites enteros que contienen todos los valores
+  Y el eje siempre incluye el 0 y nunca sale de la escala de -10 a +10
+```
+
+### Definition of Done
+La de HU-DASH-001-v3. Además:
+- Pruebas del eje en `frontend/src/componentes/GraficoEvolucion.test.jsx` y de la función `rangoEjeHumor` en `frontend/src/utilidades/humor.test.js`, con la API simulada.
+
+**Estado de implementación (2026-11-16):** implementada en la rama `feature/relevancia-noticias`, pendiente de revisión en el PR.
+
+---
+
+## HU-DASH-001-v3 — Dashboard mapa mundial de humor y evolución temporal (DEPRECADA)
+
+> **Estado: Deprecada (2026-11-16).** Reemplazada por **HU-DASH-001-v4**. Se conserva sin cambios para trazabilidad. Motivo: el eje fijo de -10 a +10 del gráfico de evolución aplanaba la línea; la PO decidió un eje adaptable con rango mínimo de -3 a +3.
 
 **Reemplaza a:** HU-DASH-001-v2 (Deprecada). **Qué cambió:** (a) el mapa obtiene sus datos de un endpoint único, `GET /api/v1/dashboards/map`, que entrega el humor global, el de los 5 continentes y el rango de fechas con información, en lugar de una llamada a `/sentiment` por continente; (b) se agrega un gráfico de evolución temporal del humor global. **Por qué:** decisiones de equipo de la sesión del 2026-10-05, que cierran los puntos pendientes 2 y 3 y dan respaldo funcional a Chart.js, aprobado en ADR-005 sin historia que lo pidiera (hallazgos H-4 y H-5 de `Revision-consistencia-EPIC-DASH-2026-10-05.md`).
 
@@ -648,6 +693,7 @@ Escenario: Filtro sin palabras
 9. **Refuerzo visual (pedido de la PO del 2026-11-16):** encabezado del mapa con 4 indicadores (humor global, noticias evaluadas, continente más positivo y más negativo, con franja de color según su humor); cada continente del panel lleva una barra desde el 0 hasta su valor; el gráfico rellena en verde el tramo sobre 0 y en rojo el tramo bajo 0, con curva suavizada y la línea del 0 marcada; cada noticia lleva una franja de color a la izquierda y su humor con fondo del mismo tono; la cobertura de Parámetros muestra el porcentaje con humor y una barra apilada con los mismos colores que sus indicadores; cabecera con degradado azul. Lógica nueva en `utilidades/humor.js` (`extremosContinentes`, `tramoEnEscala`) con pruebas.
 10. **Revisión de diseño (2026-11-16):** (a) tipografía en dos familias: Montserrat 800 para títulos y cifras e Inter para texto y controles, con títulos de vista de 32 px; (b) cada vista abre con una banda azul profunda de borde a borde con el título en blanco y sus controles; (c) se aprovecha el ancho: indicadores del mapa con cantidad de noticias y barra, ranking "Más frecuentes" al costado de la nube y formularios de Administración en grilla con la etiqueta sobre el campo.
 11. **Botones y bandas (pedido de la PO del 2026-11-16):** la cabecera y la banda de cada vista comparten el mismo degradado horizontal, sin línea entre ambas, y la banda se funde abajo con el fondo (en el mapa, con el celeste del mar). Botones de 38 px con esquinas de 10 px: principal azul con degradado y brillo, secundario blanco con sombra leve, efecto al presionar, y estilo de peligro (rojo) para Eliminar, Desactivar y Purgar. Los filtros de Noticias son un control segmentado translúcido sobre la banda; "¿Por qué…?" lleva una flecha que gira al abrirse.
+12. **Frase llana del humor global (decisión de la PO del 2026-11-16):** bajo el valor de "Humor global" se lee una frase que lo dice en palabras, con la misma clasificación que las caritas (`tipoHumor`): "El mundo está de buen humor", "El mundo está neutro", "El mundo está de mal humor" o "Sin noticias evaluadas ese día". No agrega umbrales.
 
 ### Criterios de aceptación (Gherkin)
 
@@ -848,7 +894,8 @@ Escenario: Fuente sin canal
 |---|---|---|---|---|---|
 | HU-DASH-001 | Historia de Usuario — **Deprecada**, reemplazada por HU-DASH-001-v2 | — | — | — | — |
 | HU-DASH-001-v2 | Historia de Usuario — **Deprecada**, reemplazada por HU-DASH-001-v3 | — | — | — | — |
-| HU-DASH-001-v3 | Historia de Usuario | Alta | 5 (por reestimar) | `GET /api/v1/dashboards/map` — ver `contrato-dashboards.openapi.yaml`; `GET /api/v1/sentiment` (serie temporal, HU-SENT-004) | §4.3, §4.3.2, §10.2 |
+| HU-DASH-001-v3 | Historia de Usuario — **Deprecada**, reemplazada por HU-DASH-001-v4 | — | — | — | — |
+| HU-DASH-001-v4 | Historia de Usuario | Alta | 5 (por reestimar) | `GET /api/v1/dashboards/map` — ver `contrato-dashboards.openapi.yaml`; `GET /api/v1/sentiment` (serie temporal, HU-SENT-004) | §4.3, §4.3.2, §10.2 |
 | HU-DASH-002 | Historia de Usuario — **Deprecada**, reemplazada por HU-DASH-002-v2 | — | — | — | — |
 | HU-DASH-002-v2 | Historia de Usuario — **Deprecada**, reemplazada por HU-DASH-002-v3 | — | — | — | — |
 | HU-DASH-002-v3 | Historia de Usuario | Alta | sin estimar | `GET /api/v1/news` y `GET /api/v1/news/{id}` — ver `contrato-noticias.openapi.yaml` (v1.2.0) | §4.3, §4.3.2, §10.2 |
@@ -864,8 +911,8 @@ Las estimaciones en puntos provienen del Planning Poker de P3 y son un punto de 
 
 | Historia | Depende de | Motivo |
 |---|---|---|
-| HU-DASH-001-v3 | HU-SENT-004, HU-SENT-002-v2, HU-SENT-003 | Sin humor calculado y sin el endpoint de consulta no hay datos reales que mostrar |
-| HU-DASH-001-v3 | HU-RSS-009 | Fija la lista de 5 continentes (América, Europa, Asia, África, Oceanía) que el mapa debe mostrar |
+| HU-DASH-001-v4 | HU-SENT-004, HU-SENT-002-v2, HU-SENT-003 | Sin humor calculado y sin el endpoint de consulta no hay datos reales que mostrar |
+| HU-DASH-001-v4 | HU-RSS-009 | Fija la lista de 5 continentes (América, Europa, Asia, África, Oceanía) que el mapa debe mostrar |
 | HU-DASH-002-v3 | HU-SENT-002-v3, HU-SENT-008 | Necesita `valor_humor` persistido en cada noticia y sus coincidencias término–noticia para explicarlo |
 | HU-DASH-003-v2 | HU-SENT-001, HU-SENT-008 | Necesita el diccionario y las coincidencias término–noticia persistidas (`HU-SENT-008-coincidencias-terminos.md`) |
 
@@ -889,3 +936,6 @@ Las estimaciones en puntos provienen del Planning Poker de P3 y son un punto de 
 | HU-DASH-004 → HU-DASH-004-v2 | v1.12 | 2026-11-12 | Decisión de la PO: el recuadro ancho "Cómo leer esta pantalla" se reemplaza por ayudas "?" junto a cada parte de la vista (componente `Ayuda`: se abre con el mouse, el teclado o un toque, y en el celular como tarjeta fija abajo). Los textos se mantienen, repartidos por parte. HU-DASH-004 queda Deprecada. Sin cambios en endpoints ni contratos. |
 | HU-DASH-005 | v1.13 | 2026-11-14 | Creación de HU-DASH-005 a partir de los bosquejos de la PO: cabecera con logo y botón ☰, menú lateral (vistas arriba, Administración abajo) y mapa con el recuadro "Estado del humor" encima, gráfico debajo y "Detalle del día" al final. Solo presentación. |
 | HU-DASH-005 | v1.14 | 2026-11-16 | Ajustes de la PO del 14 al 16 de noviembre: mapa de borde a borde con paneles translúcidos, logo planeta, gráfico con el planeta del día bajo el mouse y estilo profesional en todas las vistas (decisiones 3 a 8). Solo presentación. |
+| HU-DASH-001-v4 | v1.15 | 2026-11-16 | Decisión de la PO: HU-DASH-001-v3 pasa a **Deprecada** y se crea HU-DASH-001-v4. El eje vertical del gráfico de evolución se adapta a los datos, siempre incluye el 0 y cubre como mínimo de -3 a +3 (antes, fijo de -10 a +10). Se reemplaza un escenario y se agrega otro. La escala de la leyenda no cambia. |
+| HU-DASH-005 | v1.15 | 2026-11-16 | Decisión de la PO: decisión 12, frase llana bajo "Humor global" con la clasificación de `tipoHumor`. Solo presentación. Las caras con intensidad graduada quedan como mejora futura. |
+| HU-DASH-002-v3 | corrección | 2026-11-16 | Decisión de la PO (opción A, solo presentación): cada noticia muestra "Medio de <país>, <continente>" y las ayudas de Noticias y del mapa aclaran que el lugar es el del medio que publica, no el del hecho (ADR-002, HU-SENT-004). Sigue mostrando canal y continente, como pide el escenario "Datos visibles de cada noticia". No cambian el modelo, los filtros ni los contratos. Ubicar el hecho (opción B) se descartó. |

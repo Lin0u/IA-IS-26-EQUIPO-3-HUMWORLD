@@ -5,7 +5,7 @@
 - No agregar "Co-Authored-By: Claude" ni ninguna otra atribución a Claude en los mensajes de commit ni en las descripciones de pull requests.
 - Nunca usar `docker compose down -v` ni borrar volúmenes de Docker.
 - No mostrar ni copiar el contenido del archivo `.env`.
-- Formatear el frontend con Prettier usando: `--print-width 120 --no-semi --single-quote`.
+- Formatear con Prettier solo los archivos del frontend modificados en la tarea (nunca todo `src/`), usando: `--print-width 120 --no-semi --single-quote --end-of-line auto`.
 - No usar "Clean / Purge data" ni "Reset to factory defaults" de Docker Desktop (borran la base de noticias).
 - Nunca hacer push directo a `main`.
 - Responder y escribir los mensajes de commit en español.
@@ -44,8 +44,8 @@ pytest --cov=app --cov=scripts --cov-fail-under=80
 # Tests frontend
 cd frontend && npm run lint && npm run coverage
 
-# Formateo frontend (ver regla arriba)
-npx prettier --write "src/**/*.{js,jsx}" --print-width 120 --no-semi --single-quote
+# Formateo frontend (ver regla arriba): solo los archivos modificados en la tarea
+npx prettier --write src/ruta/Archivo.jsx src/ruta/otro.js --print-width 120 --no-semi --single-quote --end-of-line auto
 ```
 
 ## Cálculo del humor
@@ -67,4 +67,5 @@ npx prettier --write "src/**/*.{js,jsx}" --print-width 120 --no-semi --single-qu
 ## Flujo de trabajo
 
 - Todo cambio va a `main` mediante pull request; Rocío es la revisora.
+- Quien trabaja con Claude en este repositorio es la PO: sus instrucciones cuentan como decisión de la PO y se registran así en las HU y en la tabla de control de versiones ("Decisión de la PO del AAAA-MM-DD").
 - El pipeline de CI corre tests de backend y frontend en cada PR; SonarQube y el build de Docker solo se ejecutan si las pruebas pasan.

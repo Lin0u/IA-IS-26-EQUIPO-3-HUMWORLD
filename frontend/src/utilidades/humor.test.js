@@ -6,6 +6,8 @@ import {
   extremosContinentes,
   fechaLegible,
   formatoHumor,
+  fraseHumorMundo,
+  rangoEjeHumor,
   tipoHumor,
   tramoEnEscala,
 } from './humor.js'
@@ -98,5 +100,37 @@ describe('extremosContinentes y tramoEnEscala (HU-DASH-005)', () => {
     expect(tramoEnEscala(5)).toEqual({ izquierda: 50, ancho: 25 })
     expect(tramoEnEscala(-5)).toEqual({ izquierda: 25, ancho: 25 })
     expect(tramoEnEscala(null)).toEqual({ izquierda: 50, ancho: 0 })
+  })
+})
+
+describe('rangoEjeHumor (HU-DASH-001-v4)', () => {
+  it('cubre como mínimo de -3 a +3 cuando los datos caben', () => {
+    expect(rangoEjeHumor([-0.4, 1.2, 2.9])).toEqual({ min: -3, max: 3 })
+  })
+
+  it('se adapta a los datos que salen del rango mínimo, con enteros', () => {
+    expect(rangoEjeHumor([-3.4, 0.5, 2.7])).toEqual({ min: -4, max: 3 })
+    expect(rangoEjeHumor([1, 5.2])).toEqual({ min: -3, max: 6 })
+  })
+
+  it('siempre incluye el 0 aunque todos los valores tengan el mismo signo', () => {
+    const { min, max } = rangoEjeHumor([4.1, 6.3])
+    expect(min).toBeLessThan(0)
+    expect(max).toBeGreaterThan(0)
+  })
+
+  it('no se sale de la escala de -10 a +10 e ignora los días sin humor', () => {
+    expect(rangoEjeHumor([-12, null, 11])).toEqual({ min: -10, max: 10 })
+    expect(rangoEjeHumor([null, undefined])).toEqual({ min: -3, max: 3 })
+    expect(rangoEjeHumor([])).toEqual({ min: -3, max: 3 })
+  })
+})
+
+describe('fraseHumorMundo (HU-DASH-005, decisión 12)', () => {
+  it('usa la misma clasificación que las caritas', () => {
+    expect(fraseHumorMundo(2.4)).toBe('El mundo está de buen humor')
+    expect(fraseHumorMundo(-0.1)).toBe('El mundo está neutro')
+    expect(fraseHumorMundo(-0.5)).toBe('El mundo está de mal humor')
+    expect(fraseHumorMundo(null)).toBe('Sin noticias evaluadas ese día')
   })
 })

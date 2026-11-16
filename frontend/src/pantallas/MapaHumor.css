@@ -125,6 +125,12 @@
   color: var(--texto);
 }
 
+.kpi-frase {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--texto);
+}
+
 .kpi-nota {
   font-size: 12px;
   color: var(--texto-suave);

@@ -16,7 +16,14 @@ import GraficoEvolucion from '../componentes/GraficoEvolucion.jsx'
 import Ayuda from '../componentes/Ayuda.jsx'
 import '../componentes/GuiaVisual.css'
 import { buscarContinente } from '../datos/continentes.js'
-import { caritaComoTexto, extremosContinentes, formatoHumor, tipoHumor, tramoEnEscala } from '../utilidades/humor.js'
+import {
+  caritaComoTexto,
+  extremosContinentes,
+  formatoHumor,
+  fraseHumorMundo,
+  tipoHumor,
+  tramoEnEscala,
+} from '../utilidades/humor.js'
 import './MapaHumor.css'
 
 // Esquinas del mapa al abrir: [abajo-izquierda, arriba-derecha] en [latitud, longitud].
@@ -98,6 +105,7 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
             <strong className={`kpi-valor texto-${hayDatos ? tipoHumor(global.humor_promedio) : 'sinDatos'}`}>
               {hayDatos ? formatoHumor(global.humor_promedio) : 'Sin datos'}
             </strong>
+            <span className="kpi-frase">{fraseHumorMundo(hayDatos ? global.humor_promedio : null)}</span>
             <span className="kpi-nota">escala de -10 a +10</span>
           </li>
           <li className="kpi">
@@ -225,7 +233,8 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
             <li>
               <Ayuda titulo="Cada carita es un continente" alinear="derecha">
                 Su número es el promedio de las noticias de ese continente. Rojo y triste: negativo; amarillo: neutro
-                (entre -0.5 y +0.5); verde y feliz: positivo; gris: sin noticias ese día.
+                (entre -0.5 y +0.5); verde y feliz: positivo; gris: sin noticias ese día. Cada noticia cuenta en el
+                continente del medio que la publica, no en el lugar donde ocurrió el hecho.
               </Ayuda>
             </li>
           </ul>

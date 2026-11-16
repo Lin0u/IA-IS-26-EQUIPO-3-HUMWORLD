@@ -38,6 +38,10 @@ const PASOS_AYUDA = [
     texto: 'Se ordenan por influencia: mientras más lejos de 0 está su humor, más arriba aparece.',
   },
   {
+    titulo: 'El lugar es el del medio',
+    texto: 'El país y el continente son los del medio que publica la noticia, no los del lugar donde ocurrió.',
+  },
+  {
     titulo: 'Mira por qué tiene ese número',
     texto: 'El botón celeste muestra qué palabras del diccionario encontró el sistema y cómo calculó el promedio.',
   },
@@ -138,7 +142,10 @@ export default function ListadoNoticias() {
               </a>
               <div className="noticia-datos">
                 <span>{noticia.canal}</span>
-                <span>{noticia.pais ? `${noticia.pais}, ${noticia.continente}` : noticia.continente}</span>
+                {/* Opción A de la PO (2026-11-16): el lugar es el del medio, no el del hecho (ADR-002). */}
+                <span title="País y continente del medio que publica la noticia">
+                  {`Medio de ${noticia.pais ? `${noticia.pais}, ${noticia.continente}` : noticia.continente}`}
+                </span>
                 {noticia.categoria_iptc && <span>{nombreCategoria(noticia.categoria_iptc)}</span>}
                 <span>{formatoFecha(noticia.fecha_publicacion ?? noticia.fecha_registro)}</span>
               </div>
