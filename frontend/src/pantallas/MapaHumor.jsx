@@ -16,7 +16,7 @@ import GraficoEvolucion from '../componentes/GraficoEvolucion.jsx'
 import Ayuda from '../componentes/Ayuda.jsx'
 import '../componentes/GuiaVisual.css'
 import { buscarContinente } from '../datos/continentes.js'
-import { caritaComoTexto, formatoHumor, tipoHumor } from '../utilidades/humor.js'
+import { caritaComoTexto, extremosContinentes, formatoHumor, tipoHumor, tramoEnEscala } from '../utilidades/humor.js'
 import './MapaHumor.css'
 
 // Esquinas del mapa al abrir: [abajo-izquierda, arriba-derecha] en [latitud, longitud].
@@ -57,34 +57,16 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
   }))
 
   const hayDatos = Boolean(global && global.cantidad_noticias_evaluadas > 0)
+  const { masPositivo, masNegativo } = extremosContinentes(continentes)
 
   return (
     <section className="pantalla-mapa">
       <div className="mapa-encabezado">
-        <div className="mapa-titulo">
-          <h2>Mapa de humor</h2>
-          <p>Humor promedio de cada continente en la fecha elegida.</p>
-        </div>
-
-        <div className="mapa-resumen">
-          <div className="mapa-global">
-            <span className="mapa-global-titulo">Humor global</span>
-            {hayDatos ? (
-              <>
-                <strong className={`mapa-global-valor texto-${tipoHumor(global.humor_promedio)}`}>
-                  {formatoHumor(global.humor_promedio)}
-                </strong>
-                <span className="mapa-global-noticias">{global.cantidad_noticias_evaluadas} noticias</span>
-              </>
-            ) : (
-              <strong className="mapa-global-valor texto-sinDatos">Sin datos</strong>
-            )}
-            <Ayuda titulo="Humor global">
-              El promedio del humor de todas las noticias del día elegido, en la escala de -10 a +10. La barra sobre el
-              mapa muestra dónde cae.
-            </Ayuda>
+        <div className="mapa-cabeza">
+          <div className="mapa-titulo">
+            <h2>Mapa de humor</h2>
+            <p>Humor promedio de cada continente en la fecha elegida.</p>
           </div>
-
           <div className="campo-con-ayuda">
             <label className="campo">
               Fecha
@@ -102,6 +84,52 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
             </Ayuda>
           </div>
         </div>
+
+        {/* HU-DASH-005: indicadores del día. */}
+        <ul className="mapa-kpis" aria-label="Resumen del día">
+          <li className={`kpi kpi-principal kpi-${hayDatos ? tipoHumor(global.humor_promedio) : 'sinDatos'}`}>
+            <span className="kpi-etiqueta">
+              Humor global
+              <Ayuda titulo="Humor global">
+                El promedio del humor de todas las noticias del día elegido, en la escala de -10 a +10. La barra sobre
+                el mapa muestra dónde cae.
+              </Ayuda>
+            </span>
+            <strong className={`kpi-valor texto-${hayDatos ? tipoHumor(global.humor_promedio) : 'sinDatos'}`}>
+              {hayDatos ? formatoHumor(global.humor_promedio) : 'Sin datos'}
+            </strong>
+            <span className="kpi-nota">escala de -10 a +10</span>
+          </li>
+          <li className="kpi">
+            <span className="kpi-etiqueta">Noticias evaluadas</span>
+            <strong className="kpi-valor">{hayDatos ? global.cantidad_noticias_evaluadas : 0}</strong>
+            <span className="kpi-nota">en {continentes.filter((c) => c.noticias > 0).length} continentes</span>
+          </li>
+          <li className={`kpi kpi-${masPositivo ? tipoHumor(masPositivo.humor) : 'sinDatos'}`}>
+            <span className="kpi-etiqueta">Más positivo</span>
+            {masPositivo ? (
+              <span className="kpi-continente">
+                <Carita tipo={tipoHumor(masPositivo.humor)} tamano={26} />
+                <strong className="kpi-valor-chico">{masPositivo.nombre}</strong>
+                <span className={`texto-${tipoHumor(masPositivo.humor)}`}>{formatoHumor(masPositivo.humor)}</span>
+              </span>
+            ) : (
+              <strong className="kpi-valor-chico">—</strong>
+            )}
+          </li>
+          <li className={`kpi kpi-${masNegativo ? tipoHumor(masNegativo.humor) : 'sinDatos'}`}>
+            <span className="kpi-etiqueta">Más negativo</span>
+            {masNegativo ? (
+              <span className="kpi-continente">
+                <Carita tipo={tipoHumor(masNegativo.humor)} tamano={26} />
+                <strong className="kpi-valor-chico">{masNegativo.nombre}</strong>
+                <span className={`texto-${tipoHumor(masNegativo.humor)}`}>{formatoHumor(masNegativo.humor)}</span>
+              </span>
+            ) : (
+              <strong className="kpi-valor-chico">—</strong>
+            )}
+          </li>
+        </ul>
       </div>
 
       <div className="mapa-avisos">
@@ -191,6 +219,15 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
                     {formatoHumor(continente.humor)}
                   </strong>
                   <span className="continente-noticias">{continente.noticias} noticias</span>
+                  <span className="continente-barra" aria-hidden="true">
+                    <span
+                      className={`continente-tramo tramo-${tipoHumor(continente.humor)}`}
+                      style={{
+                        left: `${tramoEnEscala(continente.humor).izquierda}%`,
+                        width: `${tramoEnEscala(continente.humor).ancho}%`,
+                      }}
+                    />
+                  </span>
                 </li>
               ))}
             </ul>

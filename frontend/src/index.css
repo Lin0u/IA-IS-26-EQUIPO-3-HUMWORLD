@@ -65,6 +65,11 @@
 body {
   margin: 0;
   min-height: 100vh;
+  /* Fondo con un leve degradado celeste arriba. */
+  background:
+    radial-gradient(1200px 420px at 15% -10%, rgba(170, 211, 223, 0.35), transparent 70%),
+    var(--papel);
+  background-attachment: fixed;
 }
 
 h1,

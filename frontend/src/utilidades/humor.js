@@ -93,3 +93,20 @@ export function fechaLegible(fecha) {
     timeZone: 'UTC',
   })
 }
+
+// Continentes con el humor más alto y más bajo del día (HU-DASH-005: tarjetas del
+// encabezado del mapa). Ignora los continentes sin datos; null si no hay ninguno.
+export function extremosContinentes(continentes) {
+  const conDatos = (continentes ?? []).filter((c) => c.humor !== null && c.humor !== undefined)
+  if (conDatos.length === 0) return { masPositivo: null, masNegativo: null }
+  const ordenados = [...conDatos].sort((a, b) => b.humor - a.humor)
+  return { masPositivo: ordenados[0], masNegativo: ordenados[ordenados.length - 1] }
+}
+
+// Tramo de una barra centrada en 0 que va desde el 0 hasta el valor, en % del
+// ancho de la escala -10..+10 (HU-DASH-005: barras de los continentes).
+export function tramoEnEscala(valor) {
+  if (valor === null || valor === undefined) return { izquierda: 50, ancho: 0 }
+  const posicion = posicionEnEscala(valor)
+  return posicion >= 50 ? { izquierda: 50, ancho: posicion - 50 } : { izquierda: posicion, ancho: 50 - posicion }
+}

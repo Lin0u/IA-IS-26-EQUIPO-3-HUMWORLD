@@ -262,28 +262,52 @@ export default function ParametrosAdmin() {
           <p className="admin-ayuda">No se pudo cargar la cobertura.</p>
         ) : (
           <>
+            {estadisticas.total > 0 && (
+              <div className="cobertura-resumen">
+                <p className="cobertura-porcentaje">
+                  <strong>{Math.round((estadisticas.con_humor / estadisticas.total) * 100)} %</strong> de las noticias
+                  guardadas tiene humor
+                </p>
+                {/* Barra apilada: cada tramo es una de las categorías de abajo. */}
+                <div className="cobertura-barra" aria-hidden="true">
+                  {[
+                    ['con-humor', estadisticas.con_humor],
+                    ['sin-terminos', estadisticas.sin_terminos],
+                    ['bajo-minimo', estadisticas.bajo_minimo_terminos],
+                    ['excluidas', estadisticas.excluidas_por_lista],
+                    ['pendientes', estadisticas.pendientes],
+                  ].map(([clase, cantidad]) => (
+                    <span
+                      key={clase}
+                      className={`cobertura-tramo cobertura-${clase}`}
+                      style={{ width: `${(cantidad / estadisticas.total) * 100}%` }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
             <dl className="admin-cobertura">
-              <div>
+              <div className="cobertura-con-humor">
                 <dt>Con humor</dt>
                 <dd>{estadisticas.con_humor}</dd>
               </div>
-              <div>
+              <div className="cobertura-sin-terminos">
                 <dt>Sin palabras del diccionario</dt>
                 <dd>{estadisticas.sin_terminos}</dd>
               </div>
-              <div>
+              <div className="cobertura-bajo-minimo">
                 <dt>Con menos de {estadisticas.minimo_terminos_humor} palabras</dt>
                 <dd>{estadisticas.bajo_minimo_terminos}</dd>
               </div>
-              <div>
+              <div className="cobertura-excluidas">
                 <dt>Excluidas por la lista</dt>
                 <dd>{estadisticas.excluidas_por_lista}</dd>
               </div>
-              <div>
+              <div className="cobertura-pendientes">
                 <dt>Por calcular</dt>
                 <dd>{estadisticas.pendientes}</dd>
               </div>
-              <div>
+              <div className="cobertura-total">
                 <dt>Total guardadas</dt>
                 <dd>{estadisticas.total}</dd>
               </div>

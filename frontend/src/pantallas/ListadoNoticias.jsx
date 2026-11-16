@@ -122,7 +122,11 @@ export default function ListadoNoticias() {
       // La "key" cambia con los filtros para que la animación se repita.
       <ul className="noticias-lista" key={`${filtro}-${continente}-${pais}-${pagina}`}>
         {noticias.map((noticia, posicion) => (
-          <li key={noticia.id} className="noticia" style={{ animationDelay: `${posicion * 50}ms` }}>
+          <li
+            key={noticia.id}
+            className={`noticia noticia-${tipoHumor(noticia.valor_humor)}`}
+            style={{ animationDelay: `${posicion * 50}ms` }}
+          >
             <div className="noticia-humor">
               <Carita tipo={tipoHumor(noticia.valor_humor)} tamano={38} />
               <strong className={`texto-${tipoHumor(noticia.valor_humor)}`}>{formatoHumor(noticia.valor_humor)}</strong>

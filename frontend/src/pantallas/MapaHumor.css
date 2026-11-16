@@ -35,55 +35,112 @@
   border-bottom: var(--borde);
 }
 
-/* Fila bajo el título: humor global a la izquierda y fecha pegada a la orilla
-   derecha. */
-.mapa-resumen {
+/* Fila del título: título y descripción a la izquierda, fecha a la derecha. */
+.mapa-cabeza {
   flex: 1 1 100%;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px 24px;
+}
+
+.mapa-cabeza .campo-con-ayuda {
   align-items: center;
-  gap: 12px 22px;
 }
 
-.mapa-global {
-  display: flex;
-  align-items: center;
-  gap: 4px 12px;
-  flex-wrap: wrap;
-}
-
-.mapa-global-titulo {
-  font-family: var(--letra-titulos);
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--texto);
-}
-
-.mapa-global-valor {
-  font-family: var(--letra-titulos);
-  font-size: 20px;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.mapa-global-noticias {
-  font-size: 13px;
-  color: var(--texto-suave);
-}
-
-.mapa-global .ayuda {
-  margin-left: 0;
-}
-
-.mapa-resumen .campo-con-ayuda .ayuda {
+.mapa-cabeza .campo-con-ayuda .ayuda {
   margin-bottom: 0;
 }
 
-.mapa-resumen .campo-con-ayuda {
+/* Indicadores del día (HU-DASH-005). */
+.mapa-kpis {
+  flex: 1 1 100%;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 4px 0 0;
+  padding: 0;
+}
+
+.kpi {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 14px 16px 14px 18px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  overflow: hidden;
+}
+
+/* Franja de color a la izquierda según el humor. */
+.kpi::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--acento);
+}
+
+.kpi-positivo::before { background: var(--humor-positivo); }
+.kpi-negativo::before { background: var(--humor-negativo); }
+.kpi-neutro::before { background: var(--humor-neutro); }
+.kpi-sinDatos::before { background: var(--linea-fuerte); }
+
+.kpi-etiqueta {
+  display: flex;
   align-items: center;
-  margin-left: auto;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.kpi-valor {
+  font-family: var(--letra-titulos);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi {
+  color: var(--texto);
+}
+
+.kpi-nota {
+  font-size: 12px;
+  color: var(--texto-suave);
+}
+
+.kpi-continente {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-valor-chico {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--texto);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .mapa-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .mapa-avisos:empty {
@@ -157,7 +214,8 @@
 .mapa-continentes .continente {
   display: grid;
   grid-template-columns: 30px 1fr auto;
-  grid-template-rows: auto auto;
+  grid-template-rows: auto auto auto;
+  row-gap: 1px;
   column-gap: 8px;
   align-items: center;
   padding: 4px 6px;
@@ -232,6 +290,11 @@
 @media (max-width: 700px) {
   .mapa-encabezado {
     padding: 14px 16px;
+  }
+
+  .mapa-kpis {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
   }
 
   .mapa-contenedor {
@@ -396,3 +459,37 @@
 .campo-con-ayuda .ayuda {
   margin-bottom: 8px;
 }
+
+/* Barra de cada continente: tramo desde el 0 hasta su valor (HU-DASH-005). */
+.continente-barra {
+  grid-column: 2 / span 2;
+  grid-row: 3;
+  position: relative;
+  height: 5px;
+  margin-top: 3px;
+  background: rgba(23, 56, 71, 0.1);
+  border-radius: 999px;
+}
+
+/* Marca del 0 en el centro. */
+.continente-barra::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: rgba(23, 56, 71, 0.35);
+}
+
+.continente-tramo {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: var(--linea-fuerte);
+}
+
+.tramo-positivo { background: var(--humor-positivo); }
+.tramo-negativo { background: var(--humor-negativo); }
+.tramo-neutro { background: var(--humor-neutro); }

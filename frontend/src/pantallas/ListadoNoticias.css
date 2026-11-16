@@ -104,9 +104,24 @@
 }
 
 .noticia:hover {
-  border-color: var(--linea-fuerte);
+  border-top-color: var(--linea-fuerte);
+  border-right-color: var(--linea-fuerte);
+  border-bottom-color: var(--linea-fuerte);
   box-shadow: var(--sombra);
 }
+
+/* Franja de color a la izquierda y humor con fondo del mismo tono (HU-DASH-005). */
+.noticia {
+  border-left: 4px solid var(--linea-fuerte);
+}
+
+.noticia-positivo { border-left-color: var(--humor-positivo); }
+.noticia-negativo { border-left-color: var(--humor-negativo); }
+.noticia-neutro { border-left-color: var(--humor-neutro); }
+
+.noticia-positivo .noticia-humor { background: #e6f7f1; }
+.noticia-negativo .noticia-humor { background: #fdecec; }
+.noticia-neutro .noticia-humor { background: #fff6dc; }
 
 .noticia-humor {
   flex: none;

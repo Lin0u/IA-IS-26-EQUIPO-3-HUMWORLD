@@ -422,3 +422,68 @@
   margin-bottom: 16px;
   border-bottom: none;
 }
+
+/* HU-DASH-005: resumen visual de la cobertura (barra apilada y colores por
+   categoría, iguales en la barra y en los indicadores). */
+.cobertura-resumen {
+  margin-bottom: 14px;
+}
+
+.pantalla .cobertura-porcentaje {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--texto);
+}
+
+.cobertura-porcentaje strong {
+  font-size: 22px;
+  color: var(--texto-positivo);
+}
+
+.cobertura-barra {
+  display: flex;
+  height: 12px;
+  overflow: hidden;
+  background: var(--papel-hondo);
+  border-radius: 999px;
+}
+
+.cobertura-tramo {
+  height: 100%;
+}
+
+.admin-cobertura > div {
+  position: relative;
+  padding-left: 18px;
+}
+
+.admin-cobertura > div::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--linea-fuerte);
+}
+
+.cobertura-con-humor,
+.cobertura-tramo.cobertura-con-humor { --color-cobertura: var(--humor-positivo); }
+.cobertura-sin-terminos,
+.cobertura-tramo.cobertura-sin-terminos { --color-cobertura: #9fb7c1; }
+.cobertura-bajo-minimo,
+.cobertura-tramo.cobertura-bajo-minimo { --color-cobertura: var(--humor-neutro); }
+.cobertura-excluidas,
+.cobertura-tramo.cobertura-excluidas { --color-cobertura: var(--humor-negativo); }
+.cobertura-pendientes,
+.cobertura-tramo.cobertura-pendientes { --color-cobertura: var(--acento); }
+.cobertura-total { --color-cobertura: var(--tinta); }
+
+.cobertura-tramo {
+  background: var(--color-cobertura);
+}
+
+.admin-cobertura > div::before {
+  background: var(--color-cobertura, var(--linea-fuerte));
+}

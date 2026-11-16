@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { caritaComoTexto, datoDeLaFecha, diaDestacado, fechaLegible, formatoHumor, tipoHumor } from './humor.js'
+import {
+  caritaComoTexto,
+  datoDeLaFecha,
+  diaDestacado,
+  extremosContinentes,
+  fechaLegible,
+  formatoHumor,
+  tipoHumor,
+  tramoEnEscala,
+} from './humor.js'
 
 describe('tipoHumor', () => {
   it('clasifica por signo y distingue la ausencia de datos', () => {
@@ -70,5 +79,24 @@ describe('diaDestacado (HU-DASH-005)', () => {
   it('formatea la fecha sin desfase de zona horaria', () => {
     expect(fechaLegible('2026-10-27')).toMatch(/27/)
     expect(fechaLegible('2026-10-27')).toMatch(/2026/)
+  })
+})
+
+describe('extremosContinentes y tramoEnEscala (HU-DASH-005)', () => {
+  it('elige el continente más positivo y el más negativo, sin contar los vacíos', () => {
+    const { masPositivo, masNegativo } = extremosContinentes([
+      { nombre: 'América', humor: -2.4 },
+      { nombre: 'Asia', humor: 0.6 },
+      { nombre: 'Oceanía', humor: null },
+    ])
+    expect(masPositivo.nombre).toBe('Asia')
+    expect(masNegativo.nombre).toBe('América')
+    expect(extremosContinentes([{ nombre: 'Europa', humor: null }])).toEqual({ masPositivo: null, masNegativo: null })
+  })
+
+  it('arma el tramo desde el 0 hasta el valor', () => {
+    expect(tramoEnEscala(5)).toEqual({ izquierda: 50, ancho: 25 })
+    expect(tramoEnEscala(-5)).toEqual({ izquierda: 25, ancho: 25 })
+    expect(tramoEnEscala(null)).toEqual({ izquierda: 50, ancho: 0 })
   })
 })

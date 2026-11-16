@@ -3,7 +3,7 @@
 // serie_temporal de GET /api/v1/sentiment (HU-SENT-004); no calcula humor.
 // HU-DASH-005 (idea de la PO del 2026-11-14): a la derecha, el planeta del logo
 // pone la cara del día que está bajo el mouse, con su fecha, valor y noticias.
-import { CategoryScale, Chart as ChartJS, LinearScale, LineElement, PointElement, Tooltip } from 'chart.js'
+import { CategoryScale, Chart as ChartJS, Filler, LinearScale, LineElement, PointElement, Tooltip } from 'chart.js'
 import { useEffect, useState } from 'react'
 import { Line } from 'react-chartjs-2'
 import { obtenerSerieGlobal } from '../api/cliente.js'
@@ -13,7 +13,9 @@ import { COLORES_HUMOR, diaDestacado, fechaLegible, formatoHumor, tipoHumor } fr
 
 const NOMBRE_TIPO = { positivo: 'Positivo', negativo: 'Negativo', neutro: 'Neutro', sinDatos: 'Sin noticias' }
 
-ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Tooltip)
+ChartJS.register(CategoryScale, Filler, LinearScale, LineElement, PointElement, Tooltip)
+ChartJS.defaults.font.family = "'Montserrat', system-ui, sans-serif"
+ChartJS.defaults.color = '#557381'
 
 // Días que muestra el gráfico, hacia atrás desde el último día con datos.
 // Valor propuesto, a ratificar por el equipo.
@@ -74,8 +76,11 @@ export default function GraficoEvolucion({ primeraFecha, ultimaFecha, fechaElegi
         label: 'Humor global',
         data: serie.map((dia) => dia.humor_promedio),
         borderColor: '#173847',
-        borderWidth: 2,
+        borderWidth: 2.5,
+        tension: 0.35,
         spanGaps: true,
+        // Área verde sobre el 0 y roja bajo el 0 (HU-DASH-005).
+        fill: { target: 'origin', above: 'rgba(46, 196, 160, 0.16)', below: 'rgba(255, 90, 95, 0.14)' },
         pointRadius: serie.map((dia) => (dia.fecha === fechaElegida ? 7 : 4)),
         pointBackgroundColor: serie.map((dia) => COLORES_HUMOR[tipoHumor(dia.humor_promedio)]),
         pointBorderColor: '#173847',
@@ -94,9 +99,25 @@ export default function GraficoEvolucion({ primeraFecha, ultimaFecha, fechaElegi
       const indice = elementos.length > 0 ? elementos[0].index : null
       setIndiceActivo((actual) => (actual === indice ? actual : indice))
     },
-    scales: { y: { suggestedMin: -3, suggestedMax: 3, title: { display: true, text: 'Humor' } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkipPadding: 16 } },
+      y: {
+        suggestedMin: -3,
+        suggestedMax: 3,
+        title: { display: true, text: 'Humor' },
+        border: { display: false },
+        // La línea del 0 se marca más fuerte que el resto.
+        grid: {
+          color: (contexto) => (contexto.tick.value === 0 ? 'rgba(23, 56, 71, 0.45)' : 'rgba(23, 56, 71, 0.08)'),
+        },
+      },
+    },
     plugins: {
       tooltip: {
+        backgroundColor: '#173847',
+        padding: 10,
+        cornerRadius: 8,
+        displayColors: false,
         callbacks: {
           label: (contexto) => {
             const dia = serie[contexto.dataIndex]
