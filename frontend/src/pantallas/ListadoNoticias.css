@@ -12,9 +12,9 @@
   gap: 8px;
 }
 
-/* Botones compartidos por todas las vistas (revisión de diseño del 2026-11-16).
-   .filtro: secundario (blanco con borde y sombra leve). .filtro.activo: principal
-   (azul con degradado). .peligro: acciones que borran o desactivan. */
+/* Botones compartidos por todas las vistas (HU-DASH-005-v2). .filtro: secundario
+   (blanco con filete). .filtro.activo: principal (azul atlas plano). .peligro:
+   acciones que borran o desactivan. */
 .filtro {
   display: inline-flex;
   align-items: center;
@@ -28,17 +28,22 @@
   color: var(--texto);
   background: var(--superficie);
   border: 1px solid var(--linea-fuerte);
-  border-radius: 10px;
+  border-radius: var(--radio);
   padding: 8px 16px;
-  box-shadow: 0 1px 2px rgba(16, 42, 54, 0.06);
+  box-shadow: none;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    box-shadow 0.15s,
+    transform 0.1s;
 }
 
 .filtro:hover {
-  background: #f7fbfc;
+  background: var(--globo);
   border-color: var(--acento);
-  box-shadow: 0 2px 6px rgba(16, 42, 54, 0.1);
+  box-shadow: none;
 }
 
 .filtro:active {
@@ -53,36 +58,36 @@
 
 .filtro.activo {
   color: #ffffff;
-  background: linear-gradient(180deg, #3186a6 0%, var(--acento) 100%);
-  border-color: #22627b;
-  box-shadow: 0 1px 2px rgba(16, 42, 54, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  background: var(--acento);
+  border-color: var(--acento);
+  box-shadow: none;
 }
 
 .filtro.activo:hover {
-  background: linear-gradient(180deg, #2a7a99 0%, #22627b 100%);
-  box-shadow: 0 4px 12px rgba(42, 116, 145, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  background: #1b3a69;
+  box-shadow: none;
 }
 
 /* Acciones destructivas. */
 .filtro.peligro {
   color: var(--texto-negativo);
-  border-color: #f0c2c3;
+  border-color: #e3b5b5;
 }
 
 .filtro.peligro:hover {
-  background: #fdf1f1;
+  background: #fbeeee;
   border-color: var(--texto-negativo);
 }
 
 .filtro.activo.peligro {
   color: #ffffff;
-  background: linear-gradient(180deg, #e0484e 0%, var(--texto-negativo) 100%);
-  border-color: #b02a30;
+  background: var(--texto-negativo);
+  border-color: var(--texto-negativo);
 }
 
 .filtro.activo.peligro:hover {
-  background: linear-gradient(180deg, #d23d43 0%, #b02a30 100%);
-  box-shadow: 0 4px 12px rgba(208, 52, 58, 0.35);
+  background: #922626;
+  box-shadow: none;
 }
 
 /* Grupo de filtros como control segmentado. */
@@ -90,9 +95,9 @@
   display: inline-flex;
   gap: 2px;
   padding: 4px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 12px;
+  background: var(--noche-alta);
+  border: 1px solid #2c3f63;
+  border-radius: var(--radio);
 }
 
 .filtros .filtro {
@@ -116,63 +121,72 @@
   color: var(--acento);
   background: var(--superficie);
   border-color: transparent;
-  box-shadow: 0 2px 6px rgba(6, 28, 38, 0.25);
+  box-shadow: none;
 }
 
 .noticias-lista {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0;
   margin: 0;
   padding: 0;
+  background: var(--superficie);
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  overflow: hidden;
 }
 
 .noticia {
   display: flex;
   align-items: flex-start;
-  gap: 18px;
+  gap: 20px;
   background: var(--superficie);
-  border: var(--borde);
-  border-radius: var(--radio);
-  padding: 16px 20px;
+  border: none;
+  border-top: var(--borde);
+  padding: 18px 24px 18px 20px;
   animation: entrar 0.35s ease-out both;
-  transition: box-shadow 0.15s, border-color 0.15s;
+  transition: background-color 0.15s;
+}
+
+.noticia:first-child {
+  border-top: none;
 }
 
 .noticia:hover {
-  border-top-color: var(--linea-fuerte);
-  border-right-color: var(--linea-fuerte);
-  border-bottom-color: var(--linea-fuerte);
-  box-shadow: var(--sombra);
+  background: var(--globo);
 }
 
-/* Franja de color a la izquierda y humor con fondo del mismo tono (HU-DASH-005). */
+/* Franja de color a la izquierda según el humor (HU-DASH-005, se mantiene). */
 .noticia {
   border-left: 4px solid var(--linea-fuerte);
 }
 
-.noticia-positivo { border-left-color: var(--humor-positivo); }
-.noticia-negativo { border-left-color: var(--humor-negativo); }
-.noticia-neutro { border-left-color: var(--humor-neutro); }
+.noticia-positivo {
+  border-left-color: var(--humor-positivo);
+}
+.noticia-negativo {
+  border-left-color: var(--humor-negativo);
+}
+.noticia-neutro {
+  border-left-color: var(--humor-neutro);
+}
 
-.noticia-positivo .noticia-humor { background: #e6f7f1; }
-.noticia-negativo .noticia-humor { background: #fdecec; }
-.noticia-neutro .noticia-humor { background: #fff6dc; }
-
+/* Humor de la noticia: su carita como astro, la cifra y el tipo. */
 .noticia-humor {
   flex: none;
-  width: 64px;
+  width: 72px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 8px 4px;
-  font-size: 16px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  background: var(--papel);
-  border-radius: var(--radio-chico);
+  padding: 2px 0;
+  font-size: 20px;
+  font-weight: 800;
+  border-right: var(--borde);
+  padding-right: 18px;
+  box-sizing: content-box;
 }
 
 .noticia-cuerpo {
@@ -180,11 +194,12 @@
 }
 
 .noticia-titulo {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 700;
   line-height: 1.4;
   color: var(--texto);
   text-decoration: none;
+  text-wrap: pretty;
 }
 
 .noticia-titulo:hover {
@@ -195,8 +210,9 @@
 .noticia-datos {
   display: flex;
   flex-wrap: wrap;
+  align-items: baseline;
   gap: 4px 14px;
-  margin-top: 4px;
+  margin-top: 6px;
   font-size: 13px;
   color: var(--texto-suave);
 }
@@ -207,13 +223,12 @@
   color: var(--linea-fuerte);
 }
 
-/* Como tarjeta: puede quedar montado sobre la banda. */
+/* Como módulo: puede quedar montado sobre la banda. */
 .noticias-vacio {
   padding: 24px;
   background: var(--superficie);
   border: var(--borde);
   border-radius: var(--radio);
-  box-shadow: var(--sombra);
 }
 
 /* Filtro por continente junto a los botones de signo (HU-DASH-002-v2). */
@@ -255,7 +270,9 @@
   padding: 4px 10px;
   margin-top: 10px;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 
 .explicacion-boton:hover {
@@ -295,7 +312,7 @@
   font-size: 14px;
   background: var(--papel);
   border: var(--borde);
-  border-radius: var(--radio-chico);
+  border-radius: var(--radio);
 }
 
 .explicacion-paso {
@@ -340,7 +357,7 @@
 
 .termino {
   border: var(--borde);
-  border-radius: 6px;
+  border-radius: var(--radio-chico);
   padding: 2px 8px;
   font-weight: 600;
   font-size: 13px;
@@ -349,20 +366,20 @@
 
 .termino-positivo {
   color: var(--texto-positivo);
-  background: #e6f7f1;
-  border-color: #bfe8d9;
+  background: #e6f3ee;
+  border-color: #b9dccd;
 }
 
 .termino-negativo {
   color: var(--texto-negativo);
-  background: #fdecec;
-  border-color: #f6c9ca;
+  background: #fbeeee;
+  border-color: #efc6c6;
 }
 
 .noticia-tipo {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--texto-suave);
 }
@@ -383,5 +400,19 @@
     width: auto;
     flex-direction: row;
     gap: 8px;
+    padding-right: 0;
+    padding-bottom: 8px;
+    border-right: none;
+    border-bottom: var(--borde);
   }
+
+  .noticia {
+    padding: 16px;
+  }
+}
+
+/* Nombre del medio en itálica de atlas (HU-DASH-005-v2). */
+.noticia-medio {
+  font-size: 15px;
+  color: var(--texto);
 }

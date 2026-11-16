@@ -141,7 +141,7 @@ export default function ListadoNoticias() {
                 {noticia.titulo}
               </a>
               <div className="noticia-datos">
-                <span>{noticia.canal}</span>
+                <span className="nombre-astro noticia-medio">{noticia.canal}</span>
                 {/* Opción A de la PO (2026-11-16): el lugar es el del medio, no el del hecho (ADR-002). */}
                 <span title="País y continente del medio que publica la noticia">
                   {`Medio de ${noticia.pais ? `${noticia.pais}, ${noticia.continente}` : noticia.continente}`}

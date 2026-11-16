@@ -668,7 +668,61 @@ Escenario: Filtro sin palabras
 
 ---
 
-## HU-DASH-005 — Menú lateral y disposición del mapa según el bosquejo de la PO
+## HU-DASH-005-v2 — Mundo visual «Carta celeste»
+
+**Reemplaza a:** HU-DASH-005 (Deprecada). **Qué cambió:** se reemplaza el mundo visual de las decisiones 8 a 11 de HU-DASH-005 (degradados azules, vidrio difuminado, tarjetas flotantes, Montserrat e Inter) por el mundo «Carta celeste»: cada continente se dibuja como un astro cuyo tamaño es su cantidad de noticias y cuyo color es su humor, sobre una gratícula. Se mantienen las decisiones 1 a 7 y 12 (cabecera con ☰ en todas las anchuras, menú lateral, disposición del mapa, planeta, ayudas "?", gráfico con el planeta del día y frase del humor global). **Por qué:** decisión de la PO del 2026-11-16: el aspecto anterior no se veía profesional ni propio; el público principal son los docentes que evalúan en su laptop. La dirección se eligió entre varias propuestas (registro en `.impeccable/surfaces/`). Solo presentación: no cambia endpoints, contratos ni cálculos.
+
+**Tipo:** Historia de Usuario
+**Como** docente que evalúa HumWorld o usuario del sistema,
+**quiero** una interfaz con un lenguaje visual propio, sobrio y legible,
+**para** entender de un vistazo qué mide el sistema y confiar en lo que muestra.
+
+**Prioridad:** Media
+**Estimación:** sin estimar. Punto de partida a validar por el equipo en Planning Poker, no un valor definitivo.
+**Depende de contrato de API:** No.
+**Variante del algoritmo:** no calcula humor.
+
+**Decisiones de diseño (decisión de la PO del 2026-11-16):**
+1. **Marco azul noche** plano (`#0f1b33`) en la cabecera, la banda de cada vista y el menú lateral; sin degradados. El trabajo va sobre fondo claro (`#eef2f6`) y blanco.
+2. **Tipografía:** Public Sans para textos, controles y cifras (cifras tabulares); Spectral itálica para nombres propios (continentes, países y medios).
+3. **Módulos con filete:** las lecturas y paneles son bloques blancos contiguos separados por filetes de 1 px, con esquinas de 4 a 6 px y sombras mínimas; sin vidrio difuminado.
+4. **Astros:** en el mapa, cada continente es su carita dibujada como astro con anillo; su tamaño crece con la cantidad de noticias del día (raíz cuadrada, entre 30 y 64 px) y una leyenda de magnitudes lo explica.
+5. **Gratícula:** el mapa lleva meridianos y paralelos cada 30° y sus teselas se muestran desaturadas, para que solo el humor tenga color.
+6. **Foco:** al pasar el mouse o enfocar un continente en el catálogo o en el mapa, los demás astros y filas se atenúan.
+7. **Selección y foco** en oro estelar (`#f2c14e`), reservado para eso.
+8. Se mantienen los colores del humor (rojo negativo, ámbar neutro, verde positivo), afinados para el contraste AA, y la escala de -10 a +10.
+
+### Criterios de aceptación (Gherkin)
+
+Se mantienen los escenarios de HU-DASH-005. Se agregan:
+
+```gherkin
+Escenario: Tamaño del astro según las noticias
+  Dado que Europa tiene 44 noticias y América 4 en la fecha elegida
+  Cuando el usuario abre el mapa
+  Entonces el astro de Europa es más grande que el de América
+  Y la leyenda explica que el tamaño es la cantidad de noticias y el color, el humor
+
+Escenario: Foco en un continente
+  Dado que el usuario está en el mapa
+  Cuando pasa el mouse o enfoca "Asia" en el catálogo de continentes
+  Entonces los demás continentes del catálogo y del mapa se atenúan
+  Y al salir vuelven a verse todos igual
+```
+
+### Definition of Done
+(Bloque general DoD, sección 14.) Adicionalmente:
+- Pruebas de la escala de magnitudes (`utilidades/humor.test.js`) y del foco del catálogo.
+- Validado visualmente en escritorio (1440 px) y celular (390 px), con capturas en el Pull Request.
+- `DESIGN.md` con los tokens del mundo visual.
+
+**Estado de implementación (2026-11-16):** en la rama `feature/relevancia-noticias`, pendiente de revisión en el PR.
+
+---
+
+## HU-DASH-005 — Menú lateral y disposición del mapa según el bosquejo de la PO (DEPRECADA)
+
+> **Estado: Deprecada (2026-11-16).** Reemplazada por **HU-DASH-005-v2**. Se conserva sin cambios para trazabilidad. Motivo: la PO reemplazó el mundo visual de las decisiones 8 a 11; las demás decisiones siguen vigentes a través de la v2.
 
 **Tipo:** Historia de Usuario
 **Como** usuario del sistema,
@@ -903,7 +957,8 @@ Escenario: Fuente sin canal
 | HU-DASH-003-v2 | Historia de Usuario | Media | 5 | `GET /api/v1/dashboards/word-cloud` — ver `contrato-dashboards.openapi.yaml` | §4.3, §4.3.1, §10.2 |
 | HU-DASH-004 | Historia de Usuario — **Deprecada**, reemplazada por HU-DASH-004-v2 | — | — | — | — |
 | HU-DASH-004-v2 | Historia de Usuario | Alta | sin estimar | Sin endpoint propio; usa los existentes | §4.3, §2 (objetivo específico 3) |
-| HU-DASH-005 | Historia de Usuario | Media | sin estimar | Sin endpoint propio; usa los de HU-DASH-001-v3 | §4.3, §4.3.2 |
+| HU-DASH-005 | Historia de Usuario — **Deprecada**, reemplazada por HU-DASH-005-v2 | — | — | — | — |
+| HU-DASH-005-v2 | Historia de Usuario | Media | sin estimar | Sin endpoint propio; usa los de HU-DASH-001-v4 | §4.3, §4.3.2 |
 
 Las estimaciones en puntos provienen del Planning Poker de P3 y son un punto de partida, no un valor definitivo: deben revalidarse con el equipo ahora que el alcance está detallado.
 
@@ -939,3 +994,4 @@ Las estimaciones en puntos provienen del Planning Poker de P3 y son un punto de 
 | HU-DASH-001-v4 | v1.15 | 2026-11-16 | Decisión de la PO: HU-DASH-001-v3 pasa a **Deprecada** y se crea HU-DASH-001-v4. El eje vertical del gráfico de evolución se adapta a los datos, siempre incluye el 0 y cubre como mínimo de -3 a +3 (antes, fijo de -10 a +10). Se reemplaza un escenario y se agrega otro. La escala de la leyenda no cambia. |
 | HU-DASH-005 | v1.15 | 2026-11-16 | Decisión de la PO: decisión 12, frase llana bajo "Humor global" con la clasificación de `tipoHumor`. Solo presentación. Las caras con intensidad graduada quedan como mejora futura. |
 | HU-DASH-002-v3 | corrección | 2026-11-16 | Decisión de la PO (opción A, solo presentación): cada noticia muestra "Medio de <país>, <continente>" y las ayudas de Noticias y del mapa aclaran que el lugar es el del medio que publica, no el del hecho (ADR-002, HU-SENT-004). Sigue mostrando canal y continente, como pide el escenario "Datos visibles de cada noticia". No cambian el modelo, los filtros ni los contratos. Ubicar el hecho (opción B) se descartó. |
+| HU-DASH-005-v2 | v1.16 | 2026-11-16 | Decisión de la PO: HU-DASH-005 pasa a **Deprecada** y se crea HU-DASH-005-v2, mundo visual «Carta celeste» (marco azul noche, Public Sans y Spectral, módulos con filete, continentes como astros según sus noticias, gratícula y foco). Se mantienen las decisiones 1 a 7 y 12. 2 escenarios nuevos. Solo presentación. |

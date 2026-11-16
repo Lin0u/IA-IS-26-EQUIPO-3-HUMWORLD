@@ -1,62 +1,61 @@
-/* HumWorld - estilos generales. Estilo profesional (HU-DASH-005, pedido de la PO
-   del 2026-11-16): bordes finos, sombras suaves, esquinas moderadas y una escala
-   tipográfica sobria. La mascota (planeta) y los colores del humor se mantienen.
-   Los colores y medidas se definen una sola vez aquí arriba. */
-/* Tipografía: Montserrat para títulos y cifras (decisión de la PO del 2026-11-13)
-   e Inter para el texto y los controles, más legible en tamaños chicos
-   (revisión de diseño del 2026-11-16). */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap');
+/* HumWorld - estilos generales. Mundo visual «Carta celeste» (HU-DASH-005-v2,
+   decisión de la PO del 2026-11-16): marco azul noche plano, trabajo sobre papel
+   de atlas claro, módulos blancos separados por filetes de 1 px y los continentes
+   como astros. Los colores y medidas se definen una sola vez aquí arriba. */
+/* Tipografía: Public Sans para texto, controles y cifras; Spectral itálica para
+   los nombres propios (continentes, países y medios), como en un atlas. */
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=Spectral:ital,wght@1,500;1,600&display=swap');
 
 :root {
-  /* Paleta basada en el celeste del mar del mapa (#aad3df, el mismo de
-     OpenStreetMap): azules del mismo tono para la estructura, el celeste base
-     para lo activo y un celeste medio para las ayudas "?".
-     Decisiones de la PO del 2026-11-13 y 2026-11-14. */
-  --celeste: #aad3df;        /* celeste del mar del mapa: color base */
-  --tinta: #173847;          /* azul petróleo muy oscuro: textos, bordes y sombras */
-  --papel: #f2f7f9;          /* gris azulado muy claro: fondo de la página */
-  --papel-hondo: #e6f0f4;    /* recuadros secundarios dentro de una tarjeta */
-  --linea: #d8e5ea;          /* bordes finos de tarjetas y divisores */
-  --linea-fuerte: #b7cfd8;   /* bordes de campos y botones */
-  --superficie: #ffffff;     /* fondo de las tarjetas */
-  --texto: #173847;
-  --texto-suave: #557381;
-  --acento: #2a7491;         /* azul profundo de la cabecera (contraste 5,2:1 con blanco) */
-  --activo: #e1f0f5;         /* fondo de elementos seleccionados (con texto --acento) */
-  --ayuda: #7cc6dc;          /* celeste medio: ícono "?" (con el signo en --tinta) */
-  --globo: #f3fafc;          /* fondo de los globos de ayuda y recuadros destacados */
-  --rosa: #ff8fb1;
+  /* Marco y papel. */
+  --noche: #0f1b33; /* marco: cabecera, banda de cada vista y menú */
+  --noche-alta: #1a2a4a; /* realces y bordes dentro del marco */
+  --noche-texto: #c9d6e6; /* texto secundario sobre el marco (contraste 10:1) */
+  --tinta: #14213d; /* texto principal y filetes fuertes */
+  --papel: #eef2f6; /* fondo de la página: papel de atlas frío */
+  --papel-hondo: #e3e9f0; /* recuadros secundarios */
+  --linea: #d3dde8; /* filetes de 1 px entre módulos */
+  --linea-fuerte: #9fb3c8; /* bordes de campos, botones y gratícula */
+  --superficie: #ffffff; /* módulos */
+  --texto: #14213d;
+  --texto-suave: #4a5d7a; /* contraste 6,4:1 sobre blanco */
+  --acento: #24477e; /* azul atlas: enlaces, botón principal (8,9:1 con blanco) */
+  --activo: #e6edf6; /* fondo de elementos seleccionados (con texto --acento) */
+  --estrella: #f2c14e; /* oro estelar: solo foco y selección */
+  --ayuda: #bcd0e6; /* ícono "?" (con el signo en --tinta) */
+  --globo: #f7f9fc; /* globos de ayuda y recuadros destacados */
+  --celeste: #dfe7ef; /* agua del mapa, desaturada */
 
-  /* Colores de humor para rellenos (caritas, puntos). Se mantienen: rojo,
-     amarillo y verde son el código de lectura del humor (HU-DASH-004); el
-     amarillo solo se usa para el humor neutro. */
-  --humor-positivo: #2ec4a0;
-  --humor-negativo: #ff5a5f;
-  --humor-neutro: #ffc93c;
-  --humor-sin-datos: #cfe2e8;
+  /* Colores de humor para rellenos (astros, caritas, puntos). */
+  --humor-positivo: #2e9e78;
+  --humor-negativo: #d64545;
+  --humor-neutro: #e0a526;
+  --humor-sin-datos: #c9d5e2;
 
-  /* Los mismos colores, más oscuros, para que los números se lean sobre blanco. */
-  --texto-positivo: #14806a;
-  --texto-negativo: #d0343a;
-  --texto-neutro: #946b00;
+  /* Los mismos colores, más oscuros, para números y texto (AA sobre blanco y
+     sobre sus fondos tenues). */
+  --texto-positivo: #1b7457;
+  --texto-negativo: #b02f2f;
+  --texto-neutro: #7d5a06;
 
   --borde: 1px solid var(--linea);
-  --sombra: 0 1px 2px rgba(16, 42, 54, 0.05), 0 4px 16px rgba(16, 42, 54, 0.06);
-  --sombra-elevada: 0 12px 32px rgba(16, 42, 54, 0.18);
-  --foco: 0 0 0 3px rgba(42, 116, 145, 0.3);
-  --radio: 12px;
-  --radio-chico: 8px;
-  --letra-texto: 'Inter', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --letra-titulos: 'Montserrat', 'Inter', system-ui, sans-serif;
-  /* Banda superior de cada vista: azul profundo con degradado horizontal. La
-     cabecera usa el mismo degradado, así ambas se ven como una sola pieza. */
-  --banda: linear-gradient(90deg, #0f3a4c 0%, #1b5f79 55%, #2a7c9b 100%);
+  --sombra: 0 1px 2px rgba(15, 27, 51, 0.06);
+  --sombra-elevada: 0 10px 28px rgba(15, 27, 51, 0.2);
+  --foco: 0 0 0 3px rgba(242, 193, 78, 0.6);
+  --radio: 6px;
+  --radio-chico: 4px;
+  --letra-texto: 'Public Sans', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --letra-titulos: 'Public Sans', system-ui, sans-serif;
+  --letra-astro: 'Spectral', Georgia, serif;
+  /* Banda superior de cada vista: el mismo azul noche plano de la cabecera. */
+  --banda: var(--noche);
   /* Cuánto se monta el primer bloque de contenido sobre el borde de la banda. */
-  --montaje: 44px;
+  --montaje: 32px;
 
   font-family: var(--letra-texto);
   font-size: 15px;
   line-height: 1.55;
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--texto);
@@ -72,8 +71,6 @@
 body {
   margin: 0;
   min-height: 100vh;
-  /* Fondo plano: la jerarquía la dan las tarjetas y los colores del humor
-     (revisión de diseño del 2026-11-16). */
   background: var(--papel);
 }
 
@@ -84,10 +81,18 @@ p {
 }
 
 /* Colores de texto según el tipo de humor (los usan las tres pantallas). */
-.texto-positivo { color: var(--texto-positivo); }
-.texto-negativo { color: var(--texto-negativo); }
-.texto-neutro { color: var(--texto-neutro); }
-.texto-sinDatos { color: var(--texto-suave); }
+.texto-positivo {
+  color: var(--texto-positivo);
+}
+.texto-negativo {
+  color: var(--texto-negativo);
+}
+.texto-neutro {
+  color: var(--texto-neutro);
+}
+.texto-sinDatos {
+  color: var(--texto-suave);
+}
 
 /* La mascota (el planeta del logo) flota y se mece suavemente. */
 .planeta-animado {
@@ -102,8 +107,13 @@ p {
 }
 
 @keyframes flotar {
-  0%, 100% { transform: translateY(0) rotate(-3deg); }
-  50% { transform: translateY(-5px) rotate(3deg); }
+  0%,
+  100% {
+    transform: translateY(0) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(3deg);
+  }
 }
 
 /* Cada pantalla aparece subiendo suavemente al entrar. */
@@ -126,4 +136,33 @@ p {
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* Nombres propios en itálica de atlas (HU-DASH-005-v2). */
+.nombre-astro {
+  font-family: var(--letra-astro);
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+::selection {
+  background: rgba(242, 193, 78, 0.45);
+  color: var(--tinta);
+}
+
+:focus-visible {
+  outline: 2px solid var(--estrella);
+  outline-offset: 2px;
+}
+
+/* Tramos de color por humor (barras de la nube y de cobertura). */
+.tramo-positivo {
+  background: var(--humor-positivo);
+}
+.tramo-negativo {
+  background: var(--humor-negativo);
+}
+.tramo-neutro {
+  background: var(--humor-neutro);
 }

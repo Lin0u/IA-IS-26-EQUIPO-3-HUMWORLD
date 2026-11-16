@@ -7,6 +7,7 @@ import {
   fechaLegible,
   formatoHumor,
   fraseHumorMundo,
+  magnitudAstro,
   rangoEjeHumor,
   tipoHumor,
   tramoEnEscala,
@@ -50,7 +51,7 @@ describe('caritaComoTexto', () => {
   it('dibuja el SVG con el color del tipo de humor', () => {
     const svg = caritaComoTexto('positivo', 30)
     expect(svg).toContain('width="30"')
-    expect(svg).toContain('#2ec4a0')
+    expect(svg).toContain('#2e9e78')
   })
 })
 
@@ -132,5 +133,19 @@ describe('fraseHumorMundo (HU-DASH-005, decisión 12)', () => {
     expect(fraseHumorMundo(-0.1)).toBe('El mundo está neutro')
     expect(fraseHumorMundo(-0.5)).toBe('El mundo está de mal humor')
     expect(fraseHumorMundo(null)).toBe('Sin noticias evaluadas ese día')
+  })
+})
+
+describe('magnitudAstro (HU-DASH-005-v2)', () => {
+  it('va de 30 px sin noticias a 64 px en el continente con más noticias', () => {
+    expect(magnitudAstro(0, 44)).toBe(30)
+    expect(magnitudAstro(null, 44)).toBe(30)
+    expect(magnitudAstro(44, 44)).toBe(64)
+  })
+
+  it('crece con la raíz cuadrada: más noticias, astro más grande', () => {
+    expect(magnitudAstro(11, 44)).toBe(47)
+    expect(magnitudAstro(4, 44)).toBeLessThan(magnitudAstro(12, 44))
+    expect(magnitudAstro(90, 44)).toBe(64)
   })
 })

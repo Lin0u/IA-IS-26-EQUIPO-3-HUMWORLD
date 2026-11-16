@@ -1,7 +1,8 @@
 /* HumWorld - estilos de la pantalla "Mapa de humor".
-   HU-DASH-005: vista abierta, sin tarjeta. Encabezado de borde a borde con el
-   humor global, la leyenda y la fecha; mapa a todo el ancho con los continentes
-   y la escala encima (fondo translúcido y difuminado); el gráfico, debajo. */
+   HU-DASH-005-v2, mundo «Carta celeste»: banda azul noche con el título, la fecha
+   y las lecturas del día en módulos contiguos; mapa a todo el ancho con teselas
+   desaturadas, gratícula y los continentes como astros; paneles blancos con
+   filete sobre el mapa; el gráfico, debajo. */
 .pantalla-mapa {
   animation: entrar 0.35s ease-out backwards;
 }
@@ -12,7 +13,7 @@
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.15;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   color: #ffffff;
 }
 
@@ -22,7 +23,7 @@
 
 .mapa-titulo p {
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--noche-texto);
 }
 
 .mapa-encabezado {
@@ -30,11 +31,10 @@
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 12px 24px;
-  padding: 26px 24px 28px;
-  /* Banda azul profunda que continúa la cabecera y termina con un borde nítido
-     sobre el mapa (revisión de diseño del 2026-11-16). */
+  gap: 20px 24px;
+  padding: 24px 24px 28px;
   background: var(--banda);
+  border-top: 1px solid var(--noche-alta);
 }
 
 /* Fila del título: título y descripción a la izquierda, fecha a la derecha. */
@@ -52,7 +52,7 @@
 }
 
 .mapa-cabeza .campo {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--noche-texto);
 }
 
 .mapa-cabeza .campo input {
@@ -63,15 +63,19 @@
   margin-bottom: 0;
 }
 
-/* Indicadores del día (HU-DASH-005). */
+/* Lecturas del día: módulos blancos contiguos, separados por filetes. */
 .mapa-kpis {
   flex: 1 1 100%;
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin: 4px 0 0;
+  grid-template-columns: 1.35fr repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
   padding: 0;
+  background: var(--linea);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  overflow: hidden;
 }
 
 .kpi {
@@ -80,59 +84,60 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  padding: 16px 18px 16px 20px;
-  background: #ffffff;
-  border: none;
-  border-radius: var(--radio);
-  box-shadow: 0 6px 18px rgba(6, 28, 38, 0.25);
-  overflow: hidden;
+  padding: 16px 20px 18px;
+  background: var(--superficie);
+  color: var(--texto);
 }
 
-/* Franja de color a la izquierda según el humor. */
+/* Marca del humor: un filete de color arriba del módulo. */
 .kpi::before {
   content: '';
   position: absolute;
-  inset: 0 auto 0 0;
-  width: 4px;
-  background: var(--acento);
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: transparent;
 }
 
-.kpi-positivo::before { background: var(--humor-positivo); }
-.kpi-negativo::before { background: var(--humor-negativo); }
-.kpi-neutro::before { background: var(--humor-neutro); }
-.kpi-sinDatos::before { background: var(--linea-fuerte); }
+.kpi-positivo::before {
+  background: var(--humor-positivo);
+}
+.kpi-negativo::before {
+  background: var(--humor-negativo);
+}
+.kpi-neutro::before {
+  background: var(--humor-neutro);
+}
 
 .kpi-etiqueta {
   display: flex;
   align-items: center;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--texto-suave);
 }
 
 .kpi-valor {
   font-family: var(--letra-titulos);
-  font-size: 32px;
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-  font-variant-numeric: tabular-nums;
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
-.kpi {
-  color: var(--texto);
+.kpi-principal .kpi-valor {
+  font-size: 44px;
 }
 
 .kpi-frase {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--texto);
 }
 
 .kpi-nota {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--texto-suave);
 }
 
@@ -140,18 +145,21 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
+  margin-top: 4px;
 }
 
 .kpi-valor-chico {
-  font-family: var(--letra-titulos);
-  font-size: 19px;
-  font-weight: 700;
+  font-size: 24px;
+  line-height: 1.2;
   color: var(--texto);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.kpi-cifra {
+  font-size: 20px;
+  font-weight: 800;
 }
 
 @media (max-width: 900px) {
@@ -171,7 +179,7 @@
 .mapa-debajo {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 0 24px 40px;
+  padding: 0 24px 48px;
 }
 
 /* Mapa a todo el ancho; lo que va encima se posiciona sobre él. */
@@ -180,44 +188,40 @@
 }
 
 .mapa-contenedor {
-  height: min(640px, calc(100vh - 150px));
+  height: min(620px, calc(100vh - 150px));
   min-height: 460px;
-  border-bottom: var(--borde);
+  border-bottom: 1px solid var(--linea-fuerte);
 }
 
-/* Sin borde arriba: el mapa continúa el fundido de la banda. */
-.mapa-marco {
-  margin-top: 0;
+/* Teselas desaturadas: en la carta solo el humor tiene color. */
+.mapa-contenedor .leaflet-tile-pane {
+  filter: grayscale(1) brightness(1.17) contrast(0.8);
 }
 
-/* Paneles sobre el mapa: fondo blanco translúcido y difuminado, para que se vea
-   el mapa detrás. z-index 1000: sobre las capas de Leaflet (400) y a la altura
-   de sus controles, que no se tapan (zoom arriba a la derecha y créditos abajo
-   a la derecha). */
+/* Paneles sobre el mapa: módulos blancos con filete. z-index 1000: sobre las
+   capas de Leaflet (400) y a la altura de sus controles. */
 .mapa-flotante {
   position: absolute;
   z-index: 1000;
-  background: rgba(255, 255, 255, 0.62);
-  -webkit-backdrop-filter: blur(10px) saturate(1.2);
-  backdrop-filter: blur(10px) saturate(1.2);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: var(--superficie);
+  border: 1px solid var(--linea-fuerte);
   border-radius: var(--radio);
-  box-shadow: 0 8px 24px rgba(16, 42, 54, 0.16);
+  box-shadow: 0 4px 14px rgba(15, 27, 51, 0.1);
 }
 
-/* Continentes, en un costado (izquierda). */
+/* Catálogo de continentes, a la izquierda. */
 .mapa-continentes {
   top: 16px;
   left: 16px;
-  width: 250px;
+  width: 268px;
   max-height: calc(100% - 140px);
   overflow-y: auto;
-  padding: 10px 12px;
+  padding: 12px 0 4px;
 }
 
 .mapa-continentes h3 {
-  margin: 0 0 6px;
-  font-size: 11px;
+  margin: 0 16px 6px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -226,26 +230,35 @@
 
 .mapa-continentes .continentes {
   list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
   margin: 0;
   padding: 0;
 }
 
 .mapa-continentes .continente {
   display: grid;
-  grid-template-columns: 30px 1fr auto;
-  grid-template-rows: auto auto auto;
-  row-gap: 1px;
-  column-gap: 8px;
+  grid-template-columns: 22px 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: 10px;
   align-items: center;
-  padding: 4px 6px;
-  border-radius: 10px;
+  padding: 8px 16px;
+  border-top: 1px solid var(--linea);
+  cursor: default;
+  transition:
+    opacity 0.2s ease-out,
+    background-color 0.2s ease-out;
 }
 
-.mapa-continentes .continente:hover {
-  background: rgba(255, 255, 255, 0.6);
+.mapa-continentes .continente:hover,
+.mapa-continentes .continente:focus-visible {
+  background: var(--globo);
+}
+
+.mapa-continentes .continente:focus-visible {
+  outline-offset: -2px;
+}
+
+.continente-atenuado {
+  opacity: 0.35;
 }
 
 .mapa-continentes .continente .carita {
@@ -256,44 +269,88 @@
 .continente-nombre {
   grid-column: 2;
   grid-row: 1;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.2;
 }
 
 .continente-humor {
   grid-column: 3;
   grid-row: 1 / span 2;
-  font-family: var(--letra-titulos);
-  font-size: 20px;
-  font-variant-numeric: tabular-nums;
+  font-size: 19px;
+  font-weight: 800;
 }
 
 .continente-noticias {
   grid-column: 2;
   grid-row: 2;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--texto-suave);
 }
 
-/* Leyenda de caritas, arriba a la derecha sobre el mapa. */
+/* Leyenda: tamaño (magnitudes) y color, arriba a la derecha. */
 .mapa-leyenda {
   top: 16px;
   right: 16px;
-  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 14px;
+}
+
+.leyenda-grupo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 16px;
+  border-right: 1px solid var(--linea);
+}
+
+.leyenda-titulo {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--texto);
+}
+
+.leyenda-magnitudes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--texto-suave);
+}
+
+.leyenda-magnitud {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.leyenda-disco {
+  display: inline-block;
+  border-radius: 50%;
+  background: var(--papel-hondo);
+  border: 1.5px solid var(--tinta);
 }
 
 .mapa-leyenda .leyenda {
   margin: 0;
-  gap: 4px 14px;
+  gap: 4px 12px;
 }
 
 .mapa-leyenda .leyenda li {
   color: var(--texto);
+  font-size: 13px;
 }
 
 /* El zoom de Leaflet queda a la derecha, bajo la leyenda. */
 .mapa-contenedor .leaflet-top.leaflet-right {
   top: 62px;
+}
+
+.mapa-contenedor .leaflet-bar {
+  border: 1px solid var(--linea-fuerte);
+  border-radius: var(--radio);
+  box-shadow: none;
 }
 
 /* Escala del día, abajo sobre el mapa. Deja libres los créditos de la derecha. */
@@ -311,12 +368,23 @@
 /* En pantallas angostas los paneles van debajo del mapa para no taparlo. */
 @media (max-width: 700px) {
   .mapa-encabezado {
-    padding: 14px 16px;
+    padding: 16px;
   }
 
   .mapa-kpis {
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+  }
+
+  .kpi {
+    padding: 12px 14px 14px;
+  }
+
+  .kpi-principal .kpi-valor {
+    font-size: 36px;
+  }
+
+  .kpi-valor-chico {
+    font-size: 20px;
   }
 
   .mapa-contenedor {
@@ -329,8 +397,16 @@
     width: auto;
     max-height: none;
     margin: 12px 16px 0;
-    background: var(--superficie);
     box-shadow: none;
+  }
+
+  .mapa-leyenda {
+    flex-wrap: wrap;
+  }
+
+  .leyenda-grupo {
+    border-right: 0;
+    padding-right: 0;
   }
 
   .mapa-debajo {
@@ -340,73 +416,106 @@
   .mapa-contenedor .leaflet-top.leaflet-right {
     top: 0;
   }
+
+  /* Astros más chicos en el celular, para que no se tapen entre sí. */
+  .astro-cuerpo {
+    transform: scale(0.62);
+  }
+
+  .marcador-humor:hover .astro-cuerpo {
+    transform: scale(0.66);
+  }
+
+  .marcador-valor {
+    margin-top: -14px;
+    font-size: 12px;
+  }
+
+  .kpi-continente {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+
+  .kpi-valor-chico {
+    white-space: normal;
+  }
 }
 
-/* El mapa de Leaflet necesita una altura explícita para poder dibujarse.
-   El fondo usa el mismo celeste del mar para que los bordes no se noten. */
+/* El mapa de Leaflet necesita una altura explícita para poder dibujarse. */
 .mapa-contenedor .leaflet-container {
   height: 100%;
   font: inherit;
-  background: var(--celeste);
+  /* El mismo gris del mar de las teselas desaturadas: los bordes no se notan. */
+  background: #d8d8d8;
 }
 
-/* Marcador de cada continente: carita arriba y valor debajo. */
+/* Astro de cada continente: carita al tamaño de su magnitud, con anillo, y el
+   valor debajo. Al enfocar otro continente, se atenúa. */
 .marcador-humor {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  transition: transform 0.15s;
+  gap: 4px;
+  transition: opacity 0.2s ease-out;
 }
 
-.marcador-humor .carita {
-  filter: drop-shadow(0 2px 4px rgba(16, 42, 54, 0.35));
+.astro-cuerpo {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(20, 33, 61, 0.45);
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 2px 8px rgba(15, 27, 51, 0.25);
+  transition: transform 0.2s ease-out;
 }
 
-.marcador-humor:hover .carita {
-  transform: scale(1.12);
+.marcador-humor:hover .astro-cuerpo {
+  transform: scale(1.06);
+}
+
+.astro-atenuado {
+  opacity: 0.3;
 }
 
 .marcador-valor {
   font-size: 14px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
+  font-weight: 800;
   color: var(--tinta);
-  background: #ffffff;
+  background: var(--superficie);
   border: 1px solid var(--linea-fuerte);
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(16, 42, 54, 0.2);
+  border-radius: var(--radio-chico);
   padding: 0 7px;
   white-space: nowrap;
 }
 
-/* Avisos de carga y de error (HU-DASH-001-v3, escenario de backend sin respuesta). */
+/* Avisos de carga y de error (HU-DASH-001-v4, escenario de backend sin respuesta). */
 .mapa-aviso {
   margin: 0 0 12px;
   padding: 10px 14px;
   font-size: 14px;
-  border: var(--borde);
-  border-left: 4px solid var(--acento);
-  border-radius: var(--radio-chico);
+  border-top: 3px solid var(--acento);
+  border-radius: 0;
   background: var(--superficie);
 }
 
 .mapa-error {
   color: var(--texto-negativo);
-  background: #fdecec;
-  border-color: #f6c9ca;
-  border-left-color: var(--texto-negativo);
+  background: #fbeeee;
+  border-color: #efc6c6;
+  border-top-color: var(--texto-negativo);
 }
 
-/* Gráfico de evolución temporal (HU-DASH-001-v3). */
-/* Abierto, sin tarjeta, igual que el mapa (pedido de la PO del 2026-11-14). */
+/* Gráfico de evolución temporal (HU-DASH-001-v4), abierto, sin tarjeta. */
 .grafico-evolucion {
-  margin-top: 24px;
+  margin-top: 32px;
 }
 
 .grafico-evolucion h3 {
   margin: 0 0 4px;
   font-family: var(--letra-titulos);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 .grafico-evolucion p {
@@ -414,12 +523,16 @@
   color: var(--texto-suave);
 }
 
-/* HU-DASH-005: gráfico a la izquierda y planeta del día a la derecha. */
+/* Gráfico a la izquierda y planeta del día a la derecha. */
 .grafico-cuerpo {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 190px;
   gap: 16px;
   align-items: center;
+  padding: 16px 16px 12px;
+  background: var(--superficie);
+  border: var(--borde);
+  border-radius: var(--radio);
 }
 
 .grafico-planeta {
@@ -429,6 +542,7 @@
   gap: 2px;
   text-align: center;
   padding: 8px 4px;
+  border-left: var(--borde);
 }
 
 .grafico-planeta .planeta {
@@ -443,9 +557,8 @@
 .grafico-planeta-valor {
   font-family: var(--letra-titulos);
   font-size: 28px;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.1;
-  font-variant-numeric: tabular-nums;
 }
 
 .grafico-planeta-tipo {
@@ -463,13 +576,17 @@
   .grafico-cuerpo {
     grid-template-columns: 1fr;
   }
+
+  .grafico-planeta {
+    border-left: 0;
+    border-top: var(--borde);
+  }
 }
 
 .grafico-lienzo {
   position: relative;
   height: 260px;
 }
-
 
 /* HU-DASH-004-v2: selector de fecha con su ayuda "?". */
 .campo-con-ayuda {
@@ -480,44 +597,4 @@
 
 .campo-con-ayuda .ayuda {
   margin-bottom: 8px;
-}
-
-/* Barra de cada continente: tramo desde el 0 hasta su valor (HU-DASH-005). */
-.continente-barra {
-  grid-column: 2 / span 2;
-  grid-row: 3;
-  position: relative;
-  height: 5px;
-  margin-top: 3px;
-  background: rgba(23, 56, 71, 0.1);
-  border-radius: 999px;
-}
-
-/* Marca del 0 en el centro. */
-.continente-barra::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: -2px;
-  bottom: -2px;
-  width: 1px;
-  background: rgba(23, 56, 71, 0.35);
-}
-
-.continente-tramo {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  border-radius: 999px;
-  background: var(--linea-fuerte);
-}
-
-.tramo-positivo { background: var(--humor-positivo); }
-.tramo-negativo { background: var(--humor-negativo); }
-.tramo-neutro { background: var(--humor-neutro); }
-
-/* Barra del continente dentro de su indicador. */
-.kpi-barra {
-  display: block;
-  margin-top: 6px;
 }

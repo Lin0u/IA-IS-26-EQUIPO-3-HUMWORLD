@@ -1,14 +1,14 @@
 // HumWorld - pantalla "Mapa de humor".
-// Origen: HU-DASH-001-v3 (PDF, sección 4.3.2) y ADR-005. Muestra los datos de
+// Origen: HU-DASH-001-v4 (PDF, sección 4.3.2) y ADR-005. Muestra los datos de
 // GET /api/v1/dashboards/map, que App.jsx pide al backend, y el gráfico de
 // evolución de GET /api/v1/sentiment (HU-SENT-004). Esta pantalla no calcula humor.
 // HU-DASH-004-v2: ayudas "?" junto a cada parte y escala de humor.
-// HU-DASH-005 (bosquejos de la PO del 2026-11-14): el encabezado muestra el humor
-// global, la leyenda de caritas y la fecha; sobre el mapa, con fondo translúcido,
-// van los continentes (a un costado) y la escala del día (abajo); el gráfico de
-// evolución queda debajo, fuera del mapa.
+// HU-DASH-005-v2 (mundo «Carta celeste», decisión de la PO del 2026-11-16): cada
+// continente es un astro cuyo tamaño es su cantidad de noticias y cuyo color es su
+// humor, sobre una gratícula; al enfocar un continente, los demás se atenúan.
 import L from 'leaflet'
-import { MapContainer, Marker, TileLayer, Tooltip, ZoomControl } from 'react-leaflet'
+import { useState } from 'react'
+import { MapContainer, Marker, Polyline, TileLayer, Tooltip, ZoomControl } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import Carita from '../componentes/Carita.jsx'
 import EscalaHumor from '../componentes/EscalaHumor.jsx'
@@ -21,14 +21,14 @@ import {
   extremosContinentes,
   formatoHumor,
   fraseHumorMundo,
+  magnitudAstro,
   tipoHumor,
-  tramoEnEscala,
 } from '../utilidades/humor.js'
 import './MapaHumor.css'
 
 // Esquinas del mapa al abrir: [abajo-izquierda, arriba-derecha] en [latitud, longitud].
 const VISTA_INICIAL = [
-  [-55, -150],
+  [-66, -150],
   [72, 170],
 ]
 
@@ -38,18 +38,37 @@ const LIMITES_MUNDO = [
   [85, 180],
 ]
 
-// Arma el dibujo que marca un continente: una carita con el valor debajo.
-// Leaflet necesita el dibujo de sus marcadores como texto HTML.
-function marcadorContinente(humor) {
+// Gratícula cada 30°: paralelos de -60 a +60 y meridianos de -180 a +180.
+const GRATICULA = [
+  ...[-60, -30, 0, 30, 60].map((latitud) => [
+    [latitud, -180],
+    [latitud, 180],
+  ]),
+  ...[-180, -150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150, 180].map((longitud) => [
+    [-85, longitud],
+    [85, longitud],
+  ]),
+]
+const ESTILO_GRATICULA = { color: '#9fb3c8', weight: 1, opacity: 0.55, interactive: false }
+
+// Arma el astro de un continente: su carita al tamaño de su magnitud, con anillo,
+// y el valor debajo. Leaflet necesita el dibujo de sus marcadores como texto HTML.
+function marcadorContinente(humor, tamano, atenuado) {
+  const ancho = Math.max(tamano + 16, 64)
   return L.divIcon({
-    className: 'marcador-humor',
-    html: caritaComoTexto(tipoHumor(humor), 46) + `<span class="marcador-valor">${formatoHumor(humor)}</span>`,
-    iconSize: [70, 72],
-    iconAnchor: [35, 30],
+    className: atenuado ? 'marcador-humor astro astro-atenuado' : 'marcador-humor astro',
+    html:
+      `<span class="astro-cuerpo" style="width:${tamano + 12}px;height:${tamano + 12}px">` +
+      caritaComoTexto(tipoHumor(humor), tamano) +
+      `</span><span class="marcador-valor">${formatoHumor(humor)}</span>`,
+    iconSize: [ancho, tamano + 40],
+    iconAnchor: [ancho / 2, (tamano + 12) / 2],
   })
 }
 
 export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
+  // Continente enfocado (mouse o teclado): los demás se atenúan.
+  const [enfocado, setEnfocado] = useState(null)
   const fecha = mapa?.fecha ?? ''
   const primeraFecha = mapa?.fecha_minima_con_datos ?? undefined
   const ultimaFecha = mapa?.fecha_maxima_con_datos ?? undefined
@@ -62,9 +81,11 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
     humor: agregado.humor_promedio,
     noticias: agregado.cantidad_noticias_evaluadas,
   }))
+  const maximoNoticias = Math.max(0, ...continentes.map((continente) => continente.noticias ?? 0))
 
   const hayDatos = Boolean(global && global.cantidad_noticias_evaluadas > 0)
   const { masPositivo, masNegativo } = extremosContinentes(continentes)
+  const atenuado = (nombre) => enfocado !== null && enfocado !== nombre
 
   return (
     <section className="pantalla-mapa">
@@ -92,7 +113,7 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
           </div>
         </div>
 
-        {/* HU-DASH-005: indicadores del día. */}
+        {/* Lecturas del día, en módulos contiguos (HU-DASH-005-v2). */}
         <ul className="mapa-kpis" aria-label="Resumen del día">
           <li className={`kpi kpi-principal kpi-${hayDatos ? tipoHumor(global.humor_promedio) : 'sinDatos'}`}>
             <span className="kpi-etiqueta">
@@ -113,54 +134,28 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
             <strong className="kpi-valor">{hayDatos ? global.cantidad_noticias_evaluadas : 0}</strong>
             <span className="kpi-nota">en {continentes.filter((c) => c.noticias > 0).length} continentes</span>
           </li>
-          <li className={`kpi kpi-${masPositivo ? tipoHumor(masPositivo.humor) : 'sinDatos'}`}>
-            <span className="kpi-etiqueta">Más positivo</span>
-            {masPositivo ? (
-              <>
-                <span className="kpi-continente">
-                  <Carita tipo={tipoHumor(masPositivo.humor)} tamano={26} />
-                  <strong className="kpi-valor-chico">{masPositivo.nombre}</strong>
-                  <span className={`texto-${tipoHumor(masPositivo.humor)}`}>{formatoHumor(masPositivo.humor)}</span>
-                </span>
-                <span className="kpi-nota">{masPositivo.noticias} noticias</span>
-                <span className="continente-barra kpi-barra" aria-hidden="true">
-                  <span
-                    className={`continente-tramo tramo-${tipoHumor(masPositivo.humor)}`}
-                    style={{
-                      left: `${tramoEnEscala(masPositivo.humor).izquierda}%`,
-                      width: `${tramoEnEscala(masPositivo.humor).ancho}%`,
-                    }}
-                  />
-                </span>
-              </>
-            ) : (
-              <strong className="kpi-valor-chico">—</strong>
-            )}
-          </li>
-          <li className={`kpi kpi-${masNegativo ? tipoHumor(masNegativo.humor) : 'sinDatos'}`}>
-            <span className="kpi-etiqueta">Más negativo</span>
-            {masNegativo ? (
-              <>
-                <span className="kpi-continente">
-                  <Carita tipo={tipoHumor(masNegativo.humor)} tamano={26} />
-                  <strong className="kpi-valor-chico">{masNegativo.nombre}</strong>
-                  <span className={`texto-${tipoHumor(masNegativo.humor)}`}>{formatoHumor(masNegativo.humor)}</span>
-                </span>
-                <span className="kpi-nota">{masNegativo.noticias} noticias</span>
-                <span className="continente-barra kpi-barra" aria-hidden="true">
-                  <span
-                    className={`continente-tramo tramo-${tipoHumor(masNegativo.humor)}`}
-                    style={{
-                      left: `${tramoEnEscala(masNegativo.humor).izquierda}%`,
-                      width: `${tramoEnEscala(masNegativo.humor).ancho}%`,
-                    }}
-                  />
-                </span>
-              </>
-            ) : (
-              <strong className="kpi-valor-chico">—</strong>
-            )}
-          </li>
+          {[
+            { etiqueta: 'Más positivo', continente: masPositivo },
+            { etiqueta: 'Más negativo', continente: masNegativo },
+          ].map(({ etiqueta, continente }) => (
+            <li key={etiqueta} className={`kpi kpi-${continente ? tipoHumor(continente.humor) : 'sinDatos'}`}>
+              <span className="kpi-etiqueta">{etiqueta}</span>
+              {continente ? (
+                <>
+                  <span className="kpi-continente">
+                    <Carita tipo={tipoHumor(continente.humor)} tamano={26} />
+                    <strong className="kpi-valor-chico nombre-astro">{continente.nombre}</strong>
+                    <span className={`kpi-cifra texto-${tipoHumor(continente.humor)}`}>
+                      {formatoHumor(continente.humor)}
+                    </span>
+                  </span>
+                  <span className="kpi-nota">{continente.noticias} noticias</span>
+                </>
+              ) : (
+                <strong className="kpi-valor-chico">—</strong>
+              )}
+            </li>
+          ))}
         </ul>
       </div>
 
@@ -197,7 +192,10 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
               noWrap
             />
-            {/* El zoom va a la derecha, bajo la leyenda: a la izquierda están los continentes. */}
+            {GRATICULA.map((linea) => (
+              <Polyline key={linea.flat().join(',')} positions={linea} pathOptions={ESTILO_GRATICULA} />
+            ))}
+            {/* El zoom va a la derecha, bajo la leyenda: a la izquierda está el catálogo. */}
             <ZoomControl position="topright" />
             {continentes
               .filter((continente) => continente.ubicacion)
@@ -205,10 +203,18 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
                 <Marker
                   key={continente.nombre}
                   position={continente.ubicacion.centro}
-                  icon={marcadorContinente(continente.humor)}
+                  icon={marcadorContinente(
+                    continente.humor,
+                    magnitudAstro(continente.noticias, maximoNoticias),
+                    atenuado(continente.nombre),
+                  )}
                   keyboard={false}
+                  eventHandlers={{
+                    mouseover: () => setEnfocado(continente.nombre),
+                    mouseout: () => setEnfocado(null),
+                  }}
                 >
-                  <Tooltip direction="top" offset={[0, -26]}>
+                  <Tooltip direction="top" offset={[0, -30]}>
                     {continente.nombre}: {formatoHumor(continente.humor)}, promedio de {continente.noticias} noticias
                   </Tooltip>
                 </Marker>
@@ -217,24 +223,42 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
         </div>
 
         <div className="mapa-flotante mapa-leyenda">
-          <ul className="leyenda leyenda-mapa" aria-label="Significado de las caritas">
+          <div className="leyenda-grupo" aria-label="Tamaño del astro">
+            <span className="leyenda-titulo">Tamaño = noticias</span>
+            <span className="leyenda-magnitudes" aria-hidden="true">
+              {[1, Math.max(1, Math.round(maximoNoticias / 4)), Math.max(1, maximoNoticias)].map((cantidad, indice) => (
+                <span key={indice} className="leyenda-magnitud">
+                  <span
+                    className="leyenda-disco"
+                    style={{
+                      width: magnitudAstro(cantidad, maximoNoticias) / 2,
+                      height: magnitudAstro(cantidad, maximoNoticias) / 2,
+                    }}
+                  />
+                  {cantidad}
+                </span>
+              ))}
+            </span>
+          </div>
+          <ul className="leyenda leyenda-mapa" aria-label="Color del astro">
             <li>
-              <Carita tipo="negativo" tamano={22} /> Negativo
+              <Carita tipo="negativo" tamano={18} /> Negativo
             </li>
             <li>
-              <Carita tipo="neutro" tamano={22} /> Neutro
+              <Carita tipo="neutro" tamano={18} /> Neutro
             </li>
             <li>
-              <Carita tipo="positivo" tamano={22} /> Positivo
+              <Carita tipo="positivo" tamano={18} /> Positivo
             </li>
             <li>
-              <Carita tipo="sinDatos" tamano={22} /> Sin datos
+              <Carita tipo="sinDatos" tamano={18} /> Sin datos
             </li>
             <li>
-              <Ayuda titulo="Cada carita es un continente" alinear="derecha">
-                Su número es el promedio de las noticias de ese continente. Rojo y triste: negativo; amarillo: neutro
-                (entre -0.5 y +0.5); verde y feliz: positivo; gris: sin noticias ese día. Cada noticia cuenta en el
-                continente del medio que la publica, no en el lugar donde ocurrió el hecho.
+              <Ayuda titulo="Cada astro es un continente" alinear="derecha">
+                Su tamaño es la cantidad de noticias evaluadas ese día y su número, el promedio de su humor. Rojo y
+                triste: negativo; amarillo: neutro (entre -0.5 y +0.5); verde y feliz: positivo; gris: sin noticias ese
+                día. Cada noticia cuenta en el continente del medio que la publica, no en el lugar donde ocurrió el
+                hecho.
               </Ayuda>
             </li>
           </ul>
@@ -242,25 +266,24 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
 
         {continentes.length > 0 && (
           <aside className="mapa-flotante mapa-continentes" aria-labelledby="titulo-continentes">
-            <h3 id="titulo-continentes">Continentes</h3>
+            <h3 id="titulo-continentes">Catálogo de continentes</h3>
             <ul className="continentes">
               {continentes.map((continente) => (
-                <li key={continente.nombre} className="continente">
-                  <Carita tipo={tipoHumor(continente.humor)} tamano={30} />
-                  <span className="continente-nombre">{continente.nombre}</span>
+                <li
+                  key={continente.nombre}
+                  className={atenuado(continente.nombre) ? 'continente continente-atenuado' : 'continente'}
+                  tabIndex={0}
+                  onMouseEnter={() => setEnfocado(continente.nombre)}
+                  onMouseLeave={() => setEnfocado(null)}
+                  onFocus={() => setEnfocado(continente.nombre)}
+                  onBlur={() => setEnfocado(null)}
+                >
+                  <Carita tipo={tipoHumor(continente.humor)} tamano={22} />
+                  <span className="continente-nombre nombre-astro">{continente.nombre}</span>
+                  <span className="continente-noticias">{continente.noticias} noticias</span>
                   <strong className={`continente-humor texto-${tipoHumor(continente.humor)}`}>
                     {formatoHumor(continente.humor)}
                   </strong>
-                  <span className="continente-noticias">{continente.noticias} noticias</span>
-                  <span className="continente-barra" aria-hidden="true">
-                    <span
-                      className={`continente-tramo tramo-${tipoHumor(continente.humor)}`}
-                      style={{
-                        left: `${tramoEnEscala(continente.humor).izquierda}%`,
-                        width: `${tramoEnEscala(continente.humor).ancho}%`,
-                      }}
-                    />
-                  </span>
                 </li>
               ))}
             </ul>

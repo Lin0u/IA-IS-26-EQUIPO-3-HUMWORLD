@@ -22,7 +22,7 @@
   box-shadow: none;
   transform: none;
   padding: 12px 14px;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--noche-texto);
   background: none;
   border: none;
   border-bottom: 3px solid transparent;
@@ -33,7 +33,7 @@
   color: #ffffff;
   background: none;
   box-shadow: none;
-  border-bottom-color: rgba(255, 255, 255, 0.35);
+  border-bottom-color: #4a5d7a;
 }
 
 .admin-pestanas .filtro.activo,
@@ -41,7 +41,8 @@
   color: #ffffff;
   background: none;
   box-shadow: none;
-  border-bottom-color: #ffffff;
+  /* Pestaña elegida: oro estelar (selección). */
+  border-bottom-color: var(--estrella);
 }
 
 .admin-panel {
@@ -82,8 +83,8 @@
 
 .admin-aviso {
   border: 1px solid transparent;
-  border-left-width: 4px;
-  border-radius: var(--radio-chico);
+  border-top-width: 3px;
+  border-radius: 0;
   padding: 10px 14px;
   margin: 12px 0;
   font-size: 14px;
@@ -91,23 +92,23 @@
 }
 
 .admin-aviso-error {
-  background: #fdecec;
-  border-color: #f6c9ca;
-  border-left-color: var(--texto-negativo);
+  background: #fbeeee;
+  border-color: #efc6c6;
+  border-top-color: var(--texto-negativo);
   color: var(--texto-negativo);
 }
 
 .admin-aviso-exito {
-  background: #e6f7f1;
-  border-color: #bfe8d9;
-  border-left-color: var(--texto-positivo);
+  background: #e6f3ee;
+  border-color: #b9dccd;
+  border-top-color: var(--texto-positivo);
   color: var(--texto-positivo);
 }
 
 .admin-aviso-info {
   background: var(--activo);
-  border-color: #c6e2ec;
-  border-left-color: var(--acento);
+  border-color: #c7d4e6;
+  border-top-color: var(--acento);
   color: var(--acento);
 }
 
@@ -150,7 +151,7 @@
 }
 
 .admin-tabla tbody tr:hover {
-  background: #f8fbfc;
+  background: var(--globo);
 }
 
 .admin-tabla input[type='number'] {
@@ -215,9 +216,9 @@
   display: grid;
   place-items: center;
   font-size: 13px;
-  font-weight: 700;
-  color: var(--acento);
-  background: var(--activo);
+  font-weight: 800;
+  color: var(--superficie);
+  background: var(--noche);
   border-radius: 50%;
 }
 
@@ -300,7 +301,7 @@
   font-weight: 600;
   padding: 3px 4px 3px 10px;
   border: var(--borde);
-  border-radius: 6px;
+  border-radius: var(--radio-chico);
   background: var(--papel);
 }
 
@@ -319,7 +320,7 @@
 
 .admin-quitar:hover,
 .admin-quitar:focus-visible {
-  background: #fdecec;
+  background: #fbeeee;
   outline: none;
 }
 
@@ -347,9 +348,8 @@
   margin: 4px 0 0;
   font-family: var(--letra-titulos);
   font-size: 26px;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.1;
-  font-variant-numeric: tabular-nums;
 }
 
 /* HU-DASH-004-v2: título de las pestañas sin bloques, con su ayuda "?". */
@@ -441,15 +441,15 @@
 
 .cobertura-porcentaje strong {
   font-size: 22px;
-  color: var(--texto-positivo);
+  color: var(--acento);
 }
 
 .cobertura-barra {
   display: flex;
-  height: 12px;
+  height: 10px;
   overflow: hidden;
   background: var(--papel-hondo);
-  border-radius: 999px;
+  border-radius: 2px;
 }
 
 .cobertura-tramo {
@@ -472,17 +472,31 @@
   background: var(--linea-fuerte);
 }
 
+/* Cobertura con su propia escala de azules: el rojo, el ámbar y el verde quedan
+   solo para el humor (HU-DASH-005-v2). */
 .cobertura-con-humor,
-.cobertura-tramo.cobertura-con-humor { --color-cobertura: var(--humor-positivo); }
+.cobertura-tramo.cobertura-con-humor {
+  --color-cobertura: var(--acento);
+}
 .cobertura-sin-terminos,
-.cobertura-tramo.cobertura-sin-terminos { --color-cobertura: #9fb7c1; }
+.cobertura-tramo.cobertura-sin-terminos {
+  --color-cobertura: #7d93b2;
+}
 .cobertura-bajo-minimo,
-.cobertura-tramo.cobertura-bajo-minimo { --color-cobertura: var(--humor-neutro); }
+.cobertura-tramo.cobertura-bajo-minimo {
+  --color-cobertura: #a9bad0;
+}
 .cobertura-excluidas,
-.cobertura-tramo.cobertura-excluidas { --color-cobertura: var(--humor-negativo); }
+.cobertura-tramo.cobertura-excluidas {
+  --color-cobertura: #4a5d7a;
+}
 .cobertura-pendientes,
-.cobertura-tramo.cobertura-pendientes { --color-cobertura: var(--acento); }
-.cobertura-total { --color-cobertura: var(--tinta); }
+.cobertura-tramo.cobertura-pendientes {
+  --color-cobertura: #d3dde8;
+}
+.cobertura-total {
+  --color-cobertura: var(--tinta);
+}
 
 .cobertura-tramo {
   background: var(--color-cobertura);
@@ -523,4 +537,36 @@
 .admin-formulario .campo input,
 .admin-formulario .campo select {
   width: 100%;
+}
+
+/* Celular (HU-DASH-005-v2): campos a lo ancho, uno por línea, y pestañas en una
+   sola fila con desplazamiento horizontal. Va al final para ganarle a las reglas
+   generales de los formularios. */
+@media (max-width: 600px) {
+  .admin-fila-formulario,
+  .admin-formulario {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-fila-formulario .campo,
+  .admin-formulario .campo {
+    width: 100%;
+  }
+
+  .admin-fila-formulario > button,
+  .admin-formulario > button {
+    align-self: flex-start;
+  }
+
+  .admin-pestanas {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .admin-pestanas .filtro {
+    flex: none;
+  }
 }

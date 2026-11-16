@@ -60,12 +60,12 @@
 
 .marca-frase {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--noche-texto);
 }
 
 .marca-frase strong {
   background: #ffffff;
-  border-radius: 6px;
+  border-radius: var(--radio-chico);
   padding: 0 7px;
   margin-left: 4px;
   font-variant-numeric: tabular-nums;
@@ -73,9 +73,9 @@
 
 .marca:focus-visible,
 .boton-menu:focus-visible {
-  outline: 3px solid var(--celeste);
+  outline: 2px solid var(--estrella);
   outline-offset: 4px;
-  border-radius: 12px;
+  border-radius: var(--radio);
 }
 
 /* Botón ☰ (tres rayas). */
@@ -87,8 +87,8 @@
   justify-content: center;
   align-items: center;
   gap: 5px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: var(--noche-alta);
+  border: 1px solid #2c3f63;
   border-radius: var(--radio-chico);
   cursor: pointer;
 }
@@ -102,7 +102,7 @@
 }
 
 .boton-menu:hover {
-  background: rgba(255, 255, 255, 0.28);
+  background: #24375c;
 }
 
 /* Menú lateral que entra por la derecha. */
@@ -110,7 +110,7 @@
   position: fixed;
   inset: 0;
   z-index: 1300;
-  background: rgba(16, 42, 54, 0.4);
+  background: rgba(15, 27, 51, 0.45);
   animation: aparecer-fondo 0.2s ease-out;
 }
 
@@ -125,7 +125,9 @@
   flex-direction: column;
   gap: 6px;
   padding: 18px 16px;
-  background: var(--superficie);
+  color: #ffffff;
+  background: var(--noche);
+  border-left: 1px solid var(--noche-alta);
   box-shadow: var(--sombra-elevada);
   animation: entrar-menu 0.22s ease-out;
 }
@@ -136,12 +138,12 @@
   align-items: center;
   padding: 0 4px 12px;
   margin-bottom: 6px;
-  border-bottom: var(--borde);
+  border-bottom: 1px solid var(--noche-alta);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--texto-suave);
+  color: var(--noche-texto);
 }
 
 .menu-cerrar {
@@ -150,7 +152,7 @@
   font: inherit;
   font-size: 22px;
   line-height: 1;
-  color: var(--texto);
+  color: #ffffff;
   background: none;
   border: 1px solid transparent;
   border-radius: var(--radio-chico);
@@ -158,7 +160,7 @@
 }
 
 .menu-cerrar:hover {
-  background: var(--papel);
+  background: var(--noche-alta);
 }
 
 .menu-vistas {
@@ -171,7 +173,7 @@
 .menu-pie {
   margin-top: auto;
   padding-top: 10px;
-  border-top: var(--borde);
+  border-top: 1px solid var(--noche-alta);
 }
 
 .menu-boton {
@@ -183,17 +185,20 @@
   font-size: 15px;
   font-weight: 600;
   text-align: left;
-  color: var(--texto);
+  color: var(--noche-texto);
   background: none;
   border: none;
   border-radius: var(--radio-chico);
   padding: 10px 12px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .menu-boton:hover {
-  background: var(--papel);
+  color: #ffffff;
+  background: var(--noche-alta);
 }
 
 .menu-boton:focus-visible,
@@ -202,11 +207,12 @@
   box-shadow: var(--foco);
 }
 
+/* Vista actual: oro estelar (selección). */
 .menu-boton.activo {
-  color: var(--acento);
-  background: var(--activo);
+  color: #ffffff;
+  background: var(--noche-alta);
   font-weight: 700;
-  box-shadow: inset 3px 0 0 var(--acento);
+  box-shadow: inset 3px 0 0 var(--estrella);
 }
 
 .icono-usuario {
@@ -284,11 +290,11 @@
 .pantalla .encabezado-vista p {
   max-width: 62ch;
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--noche-texto);
 }
 
 .encabezado-vista .campo {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--noche-texto);
 }
 
 .encabezado-vista .campo select,
@@ -329,7 +335,9 @@
   border-radius: var(--radio-chico);
   padding: 7px 10px;
   min-height: 36px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .campo input:hover,

@@ -11,7 +11,7 @@ const DESCRIPCION = {
   sinDatos: 'Planeta tranquilo: no hay datos de humor',
 }
 
-const TINTA = '#173847'
+const TINTA = '#14213d'
 const MAR = '#5ec4e0'
 const TIERRA = '#7ad39a'
 const ANILLO = '#dff6ff'

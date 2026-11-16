@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-16T00:00:00Z",
+  "title": "Design System: HumWorld",
+  "extensions": {
+    "colorMeta": {
+      "noche": { "role": "primary", "displayName": "Azul noche" },
+      "acento": { "role": "primary", "displayName": "Azul atlas" },
+      "estrella": { "role": "secondary", "displayName": "Oro estelar" },
+      "papel": { "role": "neutral", "displayName": "Papel de atlas" },
+      "tinta": { "role": "neutral", "displayName": "Tinta" }
+    },
+    "typographyMeta": {
+      "astro": { "displayName": "Itálica de atlas", "purpose": "Nombres propios: continentes, países y medios." },
+      "display": { "displayName": "Display", "purpose": "El humor global." }
+    },
+    "shadows": [
+      { "name": "modulo", "value": "0 1px 2px rgba(15, 27, 51, 0.06)", "purpose": "Módulos en reposo." },
+      { "name": "panel-mapa", "value": "0 4px 14px rgba(15, 27, 51, 0.1)", "purpose": "Paneles sobre el mapa." },
+      { "name": "elevado", "value": "0 10px 28px rgba(15, 27, 51, 0.2)", "purpose": "Menú lateral y globos." }
+    ],
+    "motion": [
+      { "name": "foco-astro", "value": "opacity 0.2s ease-out", "purpose": "Atenuar los demás continentes al enfocar uno." }
+    ],
+    "breakpoints": [
+      { "name": "angosto", "value": "700px" },
+      { "name": "medio", "value": "900px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botón principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción principal.",
+      "html": "<button class=\"ds-btn\">Agregar canal</button>",
+      "css": ".ds-btn { background: var(--acento, #24477e); color: #fff; border: 1px solid var(--acento, #24477e); border-radius: 6px; height: 38px; padding: 0 16px; font: 600 15px 'Public Sans', sans-serif; } .ds-btn:hover { background: #1b3a69; } .ds-btn:focus-visible { outline: 2px solid #f2c14e; outline-offset: 2px; }"
+    },
+    {
+      "name": "Módulo de lectura",
+      "kind": "card",
+      "refersTo": "module",
+      "description": "Lectura del día con filete de humor arriba.",
+      "html": "<div class=\"ds-mod\"><span class=\"ds-et\">Humor global</span><strong class=\"ds-val\">-0.1</strong><span>El mundo está neutro</span></div>",
+      "css": ".ds-mod { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 16px 20px; background: #fff; border: 1px solid #d3dde8; border-top: 3px solid #e0a526; font-family: 'Public Sans', sans-serif; color: #14213d; } .ds-et { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #4a5d7a; } .ds-val { font-size: 44px; font-weight: 800; color: #7d5a06; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "La carta celeste",
+    "keyCharacteristics": [
+      "Marco azul noche plano; trabajo en papel claro y blanco.",
+      "Módulos contiguos con filete de 1 px en lugar de tarjetas con sombra.",
+      "Astros: tamaño = noticias, color = humor, con leyenda de magnitudes.",
+      "Itálica de atlas para continentes, países y medios.",
+      "Oro estelar reservado para foco y selección."
+    ],
+    "rules": [
+      { "name": "The Only-Mood-Colors Rule", "body": "En el mapa y en las cifras, el único color saturado es el del humor; la base cartográfica es gris.", "section": "colors" },
+      { "name": "The Gold-Is-Focus Rule", "body": "El oro estelar marca foco o selección y nada más.", "section": "colors" },
+      { "name": "The Tabular Rule", "body": "Toda cifra se compone con números tabulares.", "section": "typography" }
+    ],
+    "dos": [
+      "Do mostrar cada continente como astro con su leyenda de magnitudes.",
+      "Do escribir continentes, países y medios en Spectral itálica.",
+      "Do separar módulos con filetes de 1 px."
+    ],
+    "donts": [
+      "Don't usar degradados, vidrio difuminado ni brillos en botones (reemplazados en HU-DASH-005-v2).",
+      "Don't usar el azul noche dentro del área de trabajo.",
+      "Don't usar el oro estelar para algo que no sea foco o selección."
+    ]
+  }
+}

@@ -21,8 +21,8 @@ import {
 const NOMBRE_TIPO = { positivo: 'Positivo', negativo: 'Negativo', neutro: 'Neutro', sinDatos: 'Sin noticias' }
 
 ChartJS.register(CategoryScale, Filler, LinearScale, LineElement, PointElement, Tooltip)
-ChartJS.defaults.font.family = "'Montserrat', system-ui, sans-serif"
-ChartJS.defaults.color = '#557381'
+ChartJS.defaults.font.family = "'Public Sans', system-ui, sans-serif"
+ChartJS.defaults.color = '#4a5d7a'
 
 // Días que muestra el gráfico, hacia atrás desde el último día con datos.
 // Valor propuesto, a ratificar por el equipo.
@@ -82,15 +82,15 @@ export default function GraficoEvolucion({ primeraFecha, ultimaFecha, fechaElegi
       {
         label: 'Humor global',
         data: serie.map((dia) => dia.humor_promedio),
-        borderColor: '#173847',
+        borderColor: '#14213d',
         borderWidth: 2.5,
         tension: 0.35,
         spanGaps: true,
         // Área verde sobre el 0 y roja bajo el 0 (HU-DASH-005).
-        fill: { target: 'origin', above: 'rgba(46, 196, 160, 0.16)', below: 'rgba(255, 90, 95, 0.14)' },
+        fill: { target: 'origin', above: 'rgba(46, 158, 120, 0.16)', below: 'rgba(214, 69, 69, 0.13)' },
         pointRadius: serie.map((dia) => (dia.fecha === fechaElegida ? 7 : 4)),
         pointBackgroundColor: serie.map((dia) => COLORES_HUMOR[tipoHumor(dia.humor_promedio)]),
-        pointBorderColor: '#173847',
+        pointBorderColor: '#14213d',
         pointHoverRadius: 8,
         pointHoverBorderWidth: 3,
       },
@@ -124,7 +124,7 @@ export default function GraficoEvolucion({ primeraFecha, ultimaFecha, fechaElegi
     },
     plugins: {
       tooltip: {
-        backgroundColor: '#173847',
+        backgroundColor: '#14213d',
         padding: 10,
         cornerRadius: 8,
         displayColors: false,
