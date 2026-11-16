@@ -3,6 +3,8 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  /* Las bandas de borde a borde usan 100vw: se recorta el desborde de la barra de desplazamiento. */
+  overflow-x: clip;
 }
 
 .cabecera {
@@ -252,18 +254,36 @@
 
 .pantalla h2 {
   font-family: var(--letra-titulos);
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.015em;
-  line-height: 1.2;
-  margin-bottom: 6px;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 8px;
 }
 
-/* Encabezado común de las vistas: título, descripción y controles. */
+/* Banda superior de cada vista (revisión de diseño del 2026-11-16): azul
+   profundo de borde a borde, con el título en blanco y los controles encima.
+   Sale del contenedor central con márgenes negativos. */
 .encabezado-vista {
-  padding-bottom: 18px;
-  margin-bottom: 22px;
-  border-bottom: var(--borde);
+  margin: -32px calc(50% - 50vw) 28px;
+  padding: 34px calc(50vw - 50% + 0px) 30px;
+  color: #ffffff;
+  background: var(--banda);
+}
+
+.pantalla .encabezado-vista p {
+  max-width: 62ch;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.encabezado-vista .campo {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.encabezado-vista .campo select,
+.encabezado-vista .campo input {
+  border-color: transparent;
 }
 
 /* Tarjeta blanca de contenido. */

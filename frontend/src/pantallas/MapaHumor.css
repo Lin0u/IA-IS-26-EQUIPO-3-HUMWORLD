@@ -8,11 +8,12 @@
 
 .pantalla-mapa h2 {
   font-family: var(--letra-titulos);
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.015em;
-  line-height: 1.2;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
   margin-bottom: 8px;
+  color: #ffffff;
 }
 
 .pantalla-mapa p {
@@ -20,7 +21,8 @@
 }
 
 .mapa-titulo p {
-  font-size: 17px;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .mapa-encabezado {
@@ -29,10 +31,9 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px 24px;
-  padding: 20px 24px;
-  /* Celeste del mapa, translúcido, sobre el fondo de la página. */
-  background: rgba(170, 211, 223, 0.3);
-  border-bottom: var(--borde);
+  padding: 30px 24px 26px;
+  /* Banda azul profunda, igual que en las demás vistas (revisión de diseño del 2026-11-16). */
+  background: var(--banda);
 }
 
 /* Fila del título: título y descripción a la izquierda, fecha a la derecha. */
@@ -47,6 +48,14 @@
 
 .mapa-cabeza .campo-con-ayuda {
   align-items: center;
+}
+
+.mapa-cabeza .campo {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.mapa-cabeza .campo input {
+  border-color: transparent;
 }
 
 .mapa-cabeza .campo-con-ayuda .ayuda {
@@ -70,11 +79,11 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  padding: 14px 16px 14px 18px;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.9);
+  padding: 16px 18px 16px 20px;
+  background: #ffffff;
+  border: none;
   border-radius: var(--radio);
-  box-shadow: var(--sombra);
+  box-shadow: 0 6px 18px rgba(6, 28, 38, 0.25);
   overflow: hidden;
 }
 
@@ -104,7 +113,7 @@
 
 .kpi-valor {
   font-family: var(--letra-titulos);
-  font-size: 26px;
+  font-size: 32px;
   font-weight: 700;
   line-height: 1.15;
   letter-spacing: -0.01em;
@@ -129,7 +138,8 @@
 }
 
 .kpi-valor-chico {
-  font-size: 17px;
+  font-family: var(--letra-titulos);
+  font-size: 19px;
   font-weight: 700;
   color: var(--texto);
   overflow: hidden;
@@ -493,3 +503,9 @@
 .tramo-positivo { background: var(--humor-positivo); }
 .tramo-negativo { background: var(--humor-negativo); }
 .tramo-neutro { background: var(--humor-neutro); }
+
+/* Barra del continente dentro de su indicador. */
+.kpi-barra {
+  display: block;
+  margin-top: 6px;
+}

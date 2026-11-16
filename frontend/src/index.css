@@ -2,8 +2,10 @@
    del 2026-11-16): bordes finos, sombras suaves, esquinas moderadas y una escala
    tipográfica sobria. La mascota (planeta) y los colores del humor se mantienen.
    Los colores y medidas se definen una sola vez aquí arriba. */
-/* Tipografía: Montserrat en toda la interfaz (decisión de la PO del 2026-11-13). */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
+/* Tipografía: Montserrat para títulos y cifras (decisión de la PO del 2026-11-13)
+   e Inter para el texto y los controles, más legible en tamaños chicos
+   (revisión de diseño del 2026-11-16). */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap');
 
 :root {
   /* Paleta basada en el celeste del mar del mapa (#aad3df, el mismo de
@@ -44,8 +46,10 @@
   --foco: 0 0 0 3px rgba(42, 116, 145, 0.3);
   --radio: 12px;
   --radio-chico: 8px;
-  --letra-texto: 'Montserrat', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --letra-titulos: var(--letra-texto);
+  --letra-texto: 'Inter', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --letra-titulos: 'Montserrat', 'Inter', system-ui, sans-serif;
+  /* Banda superior de cada vista: azul profundo con degradado. */
+  --banda: linear-gradient(120deg, #0f3a4c 0%, #1b5f79 55%, #2a7c9b 100%);
 
   font-family: var(--letra-texto);
   font-size: 15px;

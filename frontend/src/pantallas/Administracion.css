@@ -415,14 +415,6 @@
   color: var(--texto);
 }
 
-/* El encabezado de Administración no lleva línea: la línea de las pestañas
-   cumple esa función. */
-.admin-encabezado.encabezado-vista {
-  padding-bottom: 0;
-  margin-bottom: 16px;
-  border-bottom: none;
-}
-
 /* HU-DASH-005: resumen visual de la cobertura (barra apilada y colores por
    categoría, iguales en la barra y en los indicadores). */
 .cobertura-resumen {
@@ -486,4 +478,37 @@
 
 .admin-cobertura > div::before {
   background: var(--color-cobertura, var(--linea-fuerte));
+}
+
+/* Revisión de diseño del 2026-11-16: en los formularios la etiqueta va sobre el
+   campo y los campos se ordenan en una grilla, sin espacios vacíos a la derecha. */
+.admin-formulario {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  align-items: end;
+  gap: 14px 18px;
+}
+
+.admin-formulario > :not(.campo) {
+  grid-column: 1 / -1;
+}
+
+.admin-formulario > button {
+  justify-self: start;
+}
+
+.admin-formulario .campo,
+.admin-fila-formulario .campo {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.admin-fila-formulario {
+  align-items: flex-end;
+}
+
+.admin-formulario .campo input,
+.admin-formulario .campo select {
+  width: 100%;
 }

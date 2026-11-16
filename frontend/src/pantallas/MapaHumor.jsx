@@ -108,11 +108,23 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
           <li className={`kpi kpi-${masPositivo ? tipoHumor(masPositivo.humor) : 'sinDatos'}`}>
             <span className="kpi-etiqueta">Más positivo</span>
             {masPositivo ? (
-              <span className="kpi-continente">
-                <Carita tipo={tipoHumor(masPositivo.humor)} tamano={26} />
-                <strong className="kpi-valor-chico">{masPositivo.nombre}</strong>
-                <span className={`texto-${tipoHumor(masPositivo.humor)}`}>{formatoHumor(masPositivo.humor)}</span>
-              </span>
+              <>
+                <span className="kpi-continente">
+                  <Carita tipo={tipoHumor(masPositivo.humor)} tamano={26} />
+                  <strong className="kpi-valor-chico">{masPositivo.nombre}</strong>
+                  <span className={`texto-${tipoHumor(masPositivo.humor)}`}>{formatoHumor(masPositivo.humor)}</span>
+                </span>
+                <span className="kpi-nota">{masPositivo.noticias} noticias</span>
+                <span className="continente-barra kpi-barra" aria-hidden="true">
+                  <span
+                    className={`continente-tramo tramo-${tipoHumor(masPositivo.humor)}`}
+                    style={{
+                      left: `${tramoEnEscala(masPositivo.humor).izquierda}%`,
+                      width: `${tramoEnEscala(masPositivo.humor).ancho}%`,
+                    }}
+                  />
+                </span>
+              </>
             ) : (
               <strong className="kpi-valor-chico">—</strong>
             )}
@@ -120,11 +132,23 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
           <li className={`kpi kpi-${masNegativo ? tipoHumor(masNegativo.humor) : 'sinDatos'}`}>
             <span className="kpi-etiqueta">Más negativo</span>
             {masNegativo ? (
-              <span className="kpi-continente">
-                <Carita tipo={tipoHumor(masNegativo.humor)} tamano={26} />
-                <strong className="kpi-valor-chico">{masNegativo.nombre}</strong>
-                <span className={`texto-${tipoHumor(masNegativo.humor)}`}>{formatoHumor(masNegativo.humor)}</span>
-              </span>
+              <>
+                <span className="kpi-continente">
+                  <Carita tipo={tipoHumor(masNegativo.humor)} tamano={26} />
+                  <strong className="kpi-valor-chico">{masNegativo.nombre}</strong>
+                  <span className={`texto-${tipoHumor(masNegativo.humor)}`}>{formatoHumor(masNegativo.humor)}</span>
+                </span>
+                <span className="kpi-nota">{masNegativo.noticias} noticias</span>
+                <span className="continente-barra kpi-barra" aria-hidden="true">
+                  <span
+                    className={`continente-tramo tramo-${tipoHumor(masNegativo.humor)}`}
+                    style={{
+                      left: `${tramoEnEscala(masNegativo.humor).izquierda}%`,
+                      width: `${tramoEnEscala(masNegativo.humor).ancho}%`,
+                    }}
+                  />
+                </span>
+              </>
             ) : (
               <strong className="kpi-valor-chico">—</strong>
             )}

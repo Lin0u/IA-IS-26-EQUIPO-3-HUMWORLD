@@ -97,3 +97,85 @@
 .pantalla .nube-detalle p {
   color: var(--texto);
 }
+
+/* HU-DASH-005: nube a la izquierda y ranking a la derecha, para aprovechar el ancho. */
+.nube-diseno {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 20px;
+  align-items: start;
+}
+
+.nube-ranking {
+  padding: 18px 20px;
+  background: var(--superficie);
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.nube-ranking h3 {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.nube-ranking ol {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+}
+
+.nube-ranking li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 8px;
+  font-size: 14px;
+}
+
+.ranking-palabra {
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.ranking-valor {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ranking-barra {
+  grid-column: 1 / -1;
+  height: 6px;
+  background: var(--papel-hondo);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.ranking-tramo {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--linea-fuerte);
+}
+
+.ranking-peso {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--texto-suave);
+}
+
+.tramo-positivo { background: var(--humor-positivo); }
+.tramo-negativo { background: var(--humor-negativo); }
+.tramo-neutro { background: var(--humor-neutro); }
+
+@media (max-width: 860px) {
+  .nube-diseno {
+    grid-template-columns: 1fr;
+  }
+}
