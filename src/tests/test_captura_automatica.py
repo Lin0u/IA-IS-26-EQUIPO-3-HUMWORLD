@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timedelta, timezone
 
 import httpx
@@ -19,7 +20,7 @@ from app.services.captura_service import (
 
 
 @pytest.fixture
-def database_session():
+def database_session(monkeypatch):
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
@@ -27,6 +28,12 @@ def database_session():
     )
     Base.metadata.create_all(bind=engine)
     session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    # R5: el cálculo de humor abre su propia sesión en un hilo con SessionLocal.
+    # En los tests se apunta a la misma BD SQLite en memoria (StaticPool comparte
+    # la única conexión), para no tocar la BD real.
+    monkeypatch.setattr(
+        "app.services.captura_service.SessionLocal", session_factory
+    )
     session = session_factory()
     try:
         yield session
@@ -431,6 +438,80 @@ async def test_exito_reinicia_contador_de_fallos(database_session):
 
     database_session.expire_all()
     assert database_session.get(FuenteRSS, 1).fallos_consecutivos == 0
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_calculo_humor_no_bloquea_el_event_loop(database_session, monkeypatch):
+    # R5: el cálculo de humor corre en un hilo; otra corrutina del mismo loop
+    # debe avanzar mientras el cálculo "tarda" 1 s.
+    import time
+
+    def humor_lento(db, noticias, *a, **k):
+        time.sleep(1.0)
+        return len(noticias)
+
+    monkeypatch.setattr(
+        "app.services.captura_service.procesar_noticias", humor_lento
+    )
+    url = "https://example.test/lento"
+    fuente = crear_fuente(database_session, 1, url)
+    respx.get(url).mock(
+        return_value=httpx.Response(
+            200,
+            content=feed_xml(
+                {"guid": "l-1", "title": "Noticia", "link": "https://example.test/l-1"}
+            ),
+            headers={"content-type": "application/rss+xml"},
+        )
+    )
+
+    async def medir_otra_corrutina():
+        inicio = time.perf_counter()
+        await asyncio.sleep(0.05)
+        return time.perf_counter() - inicio
+
+    resultado, transcurrido = await asyncio.gather(
+        ejecutar_captura(fuente.id, database_session),
+        medir_otra_corrutina(),
+    )
+
+    assert resultado.estado.value == "exitosa"
+    # Si el loop estuviera bloqueado, la otra corrutina tardaría ~1 s.
+    assert transcurrido < 0.5
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_fallo_del_calculo_de_humor_no_revierte_la_captura(
+    database_session, monkeypatch
+):
+    # R5: si procesar_noticias lanza, las noticias quedan guardadas (sin humor)
+    # y la captura sigue siendo exitosa.
+    def humor_falla(db, noticias, *a, **k):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(
+        "app.services.captura_service.procesar_noticias", humor_falla
+    )
+    url = "https://example.test/falla-humor"
+    fuente = crear_fuente(database_session, 1, url)
+    respx.get(url).mock(
+        return_value=httpx.Response(
+            200,
+            content=feed_xml(
+                {"guid": "f-1", "title": "Noticia", "link": "https://example.test/f-1"}
+            ),
+            headers={"content-type": "application/rss+xml"},
+        )
+    )
+
+    resultado = await ejecutar_captura(fuente.id, database_session)
+
+    assert resultado.estado.value == "exitosa"
+    assert resultado.noticias_nuevas == 1
+    noticia = database_session.execute(select(Noticia)).scalars().one()
+    assert noticia.metodo_calculo is None
 
 
 @pytest.mark.asyncio

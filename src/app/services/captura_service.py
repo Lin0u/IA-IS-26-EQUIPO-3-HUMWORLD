@@ -17,6 +17,7 @@ from app.exceptions import (
 )
 from app.models.fuente import EstadoCircuitBreaker, FuenteRSS
 from app.models.noticia import Noticia
+from app.database import SessionLocal
 from app.repositories.fuentes import FuenteRSSRepository
 from app.repositories.noticias import NoticiaRepository
 from app.schemas.captura import EstadoResultadoCaptura, ResultadoCaptura
@@ -146,11 +147,35 @@ async def _capturar_con_retries(
     return False, str(ultimo_error), []
 
 
+def _calcular_humor_en_hilo(noticia_ids: list[int], session_factory) -> None:
+    """Calcula el humor en un hilo, con una sesión propia (R5).
+
+    `ejecutar_captura_multiple` comparte una única Session entre corrutinas y la
+    Session de SQLAlchemy no es segura entre hilos. Por eso el hilo recibe solo
+    los IDs, abre su propia sesión, carga las noticias y la cierra siempre.
+    """
+    db = session_factory()
+    try:
+        noticias = (
+            db.query(Noticia).filter(Noticia.id.in_(noticia_ids)).all()
+            if noticia_ids
+            else []
+        )
+        procesar_noticias(db, noticias)
+    except Exception:  # noqa: BLE001
+        # Un fallo aquí no revierte la captura: las noticias quedan sin
+        # metodo_calculo y las retoma el barrido (procesar_pendientes).
+        logger.exception("Fallo del cálculo de humor (hilo) ids=%s", noticia_ids)
+    finally:
+        db.close()
+
+
 async def _persistir_captura(
     db: Session,
     fuente: FuenteRSS,
     entries: list[dict],
     fecha_registro: datetime,
+    session_factory=SessionLocal,
 ) -> tuple[int, bool]:
     noticias_repository = NoticiaRepository()
 
@@ -190,13 +215,13 @@ async def _persistir_captura(
         db.rollback()
         return 0, False
 
-    # HU-SENT-002-v2: cálculo síncrono del humor DESPUÉS de confirmar la
-    # captura, en transacciones propias. Un fallo aquí no revierte las
-    # noticias; quedan sin metodo_calculo y las retoma el barrido.
-    try:
-        procesar_noticias(db, noticias)
-    except Exception:  # noqa: BLE001
-        logger.exception("Fallo del cálculo de humor fuente_id=%s", fuente.id)
+    # HU-SENT-002-v2: cálculo del humor DESPUÉS de confirmar la captura.
+    # R5: se ejecuta en un hilo con sesión propia para no bloquear el event
+    # loop de FastAPI mientras lematiza o llama a Gemini. Se pasan solo los IDs
+    # porque la Session compartida no es segura entre hilos. Un fallo del
+    # cálculo no revierte las noticias ya confirmadas.
+    noticia_ids = [n.id for n in noticias]
+    await asyncio.to_thread(_calcular_humor_en_hilo, noticia_ids, session_factory)
     return len(noticias), True
 
 
@@ -230,12 +255,17 @@ def _registrar_fallo_circuito(
 
 
 async def ejecutar_captura(
-    fuente_id: int, db: Session, ahora: datetime | None = None
+    fuente_id: int,
+    db: Session,
+    ahora: datetime | None = None,
+    session_factory=SessionLocal,
 ) -> ResultadoCaptura:
     """Ejecuta una captura de una fuente activa y devuelve su resultado.
 
     `ahora` se inyecta en los tests para ejercitar la ventana de espera del
-    Circuit Breaker sin depender del reloj real ni de sleeps.
+    Circuit Breaker sin depender del reloj real ni de sleeps. `session_factory`
+    permite que el cálculo de humor en hilo (R5) use la misma BD en memoria que
+    los tests.
     """
     if ahora is None:
         ahora = datetime.now(timezone.utc)
@@ -285,7 +315,7 @@ async def ejecutar_captura(
             )
 
         noticias_nuevas, persistido = await _persistir_captura(
-            db, fuente, entries, ahora
+            db, fuente, entries, ahora, session_factory
         )
         if not persistido:
             return ResultadoCaptura(
