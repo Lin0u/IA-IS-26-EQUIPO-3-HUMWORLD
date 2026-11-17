@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import httpx
 import pytest
@@ -312,8 +312,133 @@ async def test_segunda_captura_del_feed_repetido_no_duplica(database_session):
 
 @pytest.mark.asyncio
 @respx.mock
+async def test_circuito_se_abre_tras_umbral_de_fallos(database_session, monkeypatch):
+    # R1: tras 5 fallos consecutivos (umbral) el circuito queda ABIERTO.
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "captura_max_reintentos", 0)
+    url = "https://example.test/cae"
+    fuente = crear_fuente(database_session, 1, url)
+    respx.get(url).mock(return_value=httpx.Response(500))
+
+    for _ in range(settings.circuit_breaker_umbral_fallos):
+        await ejecutar_captura(fuente.id, database_session)
+
+    database_session.expire_all()
+    fuente = database_session.get(FuenteRSS, 1)
+    assert fuente.estado_circuit_breaker == EstadoCircuitBreaker.ABIERTO
+    assert fuente.fallos_consecutivos == settings.circuit_breaker_umbral_fallos
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_circuito_abierto_dentro_de_la_espera_no_descarga(database_session):
+    # R1: ABIERTO y con la espera vigente -> no hay solicitud HTTP.
+    fuente = crear_fuente(
+        database_session, 1, "https://example.test/abierto", estado=EstadoCircuitBreaker.ABIERTO
+    )
+    fuente.circuito_abierto_desde = datetime.now(timezone.utc)
+    database_session.commit()
+
+    resultado = await ejecutar_captura(fuente.id, database_session)
+
+    assert resultado.estado.value == "fallida_circuito_abierto"
+    assert resultado.noticias_nuevas == 0
+    assert not respx.calls
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_semiabierto_un_intento_exitoso_cierra_circuito(database_session):
+    # R1: pasada la espera, un intento de prueba exitoso -> CERRADO, contador 0.
+    from app.core.config import settings
+
+    url = "https://example.test/recupera"
+    fuente = crear_fuente(database_session, 1, url, estado=EstadoCircuitBreaker.ABIERTO)
+    abierto_desde = datetime.now(timezone.utc) - timedelta(
+        minutes=settings.circuit_breaker_espera_minutos + 1
+    )
+    fuente.circuito_abierto_desde = abierto_desde
+    fuente.fallos_consecutivos = settings.circuit_breaker_umbral_fallos
+    database_session.commit()
+    respx.get(url).mock(
+        return_value=httpx.Response(
+            200,
+            content=feed_xml(
+                {"guid": "ok-1", "title": "Recuperada", "link": "https://example.test/ok-1"}
+            ),
+            headers={"content-type": "application/rss+xml"},
+        )
+    )
+
+    resultado = await ejecutar_captura(fuente.id, database_session)
+
+    assert resultado.estado.value == "exitosa"
+    assert len(respx.calls) == 1
+    database_session.expire_all()
+    fuente = database_session.get(FuenteRSS, 1)
+    assert fuente.estado_circuit_breaker == EstadoCircuitBreaker.CERRADO
+    assert fuente.fallos_consecutivos == 0
+    assert fuente.circuito_abierto_desde is None
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_semiabierto_un_intento_fallido_reabre_circuito(database_session):
+    # R1: pasada la espera, si el único intento de prueba falla -> ABIERTO,
+    # con una sola solicitud HTTP (sin reintentos) y la espera reiniciada.
+    from app.core.config import settings
+
+    url = "https://example.test/sigue-caida"
+    fuente = crear_fuente(database_session, 1, url, estado=EstadoCircuitBreaker.ABIERTO)
+    fuente.circuito_abierto_desde = datetime.now(timezone.utc) - timedelta(
+        minutes=settings.circuit_breaker_espera_minutos + 1
+    )
+    fuente.fallos_consecutivos = settings.circuit_breaker_umbral_fallos
+    database_session.commit()
+    respx.get(url).mock(return_value=httpx.Response(500))
+
+    ahora = datetime.now(timezone.utc)
+    resultado = await ejecutar_captura(fuente.id, database_session, ahora=ahora)
+
+    assert resultado.estado.value == "fallida_transitoria"
+    assert len(respx.calls) == 1
+    database_session.expire_all()
+    fuente = database_session.get(FuenteRSS, 1)
+    assert fuente.estado_circuit_breaker == EstadoCircuitBreaker.ABIERTO
+    assert fuente.circuito_abierto_desde == ahora.replace(tzinfo=None)
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_exito_reinicia_contador_de_fallos(database_session):
+    # R1: una captura exitosa reinicia el contador aunque venga de 3 fallos.
+    url = "https://example.test/reinicia"
+    fuente = crear_fuente(database_session, 1, url)
+    fuente.fallos_consecutivos = 3
+    database_session.commit()
+    respx.get(url).mock(
+        return_value=httpx.Response(
+            200,
+            content=feed_xml(
+                {"guid": "r-1", "title": "Noticia", "link": "https://example.test/r-1"}
+            ),
+            headers={"content-type": "application/rss+xml"},
+        )
+    )
+
+    await ejecutar_captura(fuente.id, database_session)
+
+    database_session.expire_all()
+    assert database_session.get(FuenteRSS, 1).fallos_consecutivos == 0
+
+
+@pytest.mark.asyncio
+@respx.mock
 async def test_circuit_breaker_abierto_omite_http(database_session):
     fuente = crear_fuente(database_session, 1, "https://example.test/closed", estado=EstadoCircuitBreaker.ABIERTO)
+    fuente.circuito_abierto_desde = datetime.now(timezone.utc)
+    database_session.commit()
 
     resultado = await ejecutar_captura(fuente.id, database_session)
 

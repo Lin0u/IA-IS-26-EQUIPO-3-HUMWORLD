@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import feedparser
 import httpx
@@ -23,6 +23,17 @@ from app.schemas.captura import EstadoResultadoCaptura, ResultadoCaptura
 from app.services.sentimiento_service import procesar_noticias
 
 logger = logging.getLogger(__name__)
+
+
+def _a_utc_naive(valor: datetime) -> datetime:
+    """Normaliza un datetime a UTC sin zona.
+
+    La columna DateTime de la BD se lee sin tzinfo; para comparar con `ahora`
+    (aware) sin TypeError, se convierte todo a UTC-naive.
+    """
+    if valor.tzinfo is not None:
+        valor = valor.astimezone(timezone.utc).replace(tzinfo=None)
+    return valor
 
 
 def _identificador_item(item: dict) -> str | None:
@@ -91,9 +102,13 @@ async def _descargar_feed(fuente: FuenteRSS) -> feedparser.FeedParserDict:
 
 async def _capturar_con_retries(
     fuente: FuenteRSS,
+    max_reintentos: int | None = None,
 ) -> tuple[bool, str | None, list[dict]]:
+    # R1: en SEMI_ABIERTO se hace un único intento de prueba (max_reintentos=0).
+    if max_reintentos is None:
+        max_reintentos = settings.captura_max_reintentos
     ultimo_error: Exception | None = None
-    for intento in range(settings.captura_max_reintentos + 1):
+    for intento in range(max_reintentos + 1):
         try:
             parsed = await _descargar_feed(fuente)
             # R2: un feed sin ítems es un error de CONTENIDO (no se reintenta).
@@ -118,7 +133,7 @@ async def _capturar_con_retries(
         except (httpx.HTTPError, TypeError) as exc:
             # Error transitorio: reintentar con backoff exponencial acotado.
             ultimo_error = exc
-            if intento >= settings.captura_max_reintentos:
+            if intento >= max_reintentos:
                 break
             delay = min(0.5 * (2**intento), 5.0)
             logger.warning(
@@ -162,7 +177,11 @@ async def _persistir_captura(
     try:
         noticias_repository.insertar_lote(db, noticias)
         fuente.fecha_ultima_captura_exitosa = fecha_registro
+        # R1: un éxito cierra el circuito y reinicia el contador de fallos,
+        # tanto desde CERRADO como desde el intento de prueba SEMI_ABIERTO.
         fuente.estado_circuit_breaker = EstadoCircuitBreaker.CERRADO
+        fuente.fallos_consecutivos = 0
+        fuente.circuito_abierto_desde = None
         db.commit()
     except IntegrityError:
         # Resguardo ante una carrera con otra captura de la misma fuente: no se
@@ -181,8 +200,45 @@ async def _persistir_captura(
     return len(noticias), True
 
 
-async def ejecutar_captura(fuente_id: int, db: Session) -> ResultadoCaptura:
-    """Ejecuta una captura de una fuente activa y devuelve su resultado."""
+def _registrar_fallo_circuito(
+    db: Session, fuente: FuenteRSS, desde_semiabierto: bool, ahora: datetime
+) -> None:
+    """Contabiliza un fallo y abre el circuito si corresponde (R1).
+
+    Antes, en una falla no se persistía nada: el contador nunca subía y el
+    circuito jamás se abría. Ahora cada fallo suma uno y, al alcanzar el umbral
+    —o si el fallo ocurre durante el intento de prueba SEMI_ABIERTO—, la fuente
+    pasa a ABIERTO y se registra el momento de apertura.
+    """
+    fuente.fallos_consecutivos = (fuente.fallos_consecutivos or 0) + 1
+    if (
+        desde_semiabierto
+        or fuente.fallos_consecutivos >= settings.circuit_breaker_umbral_fallos
+    ):
+        fuente.estado_circuit_breaker = EstadoCircuitBreaker.ABIERTO
+        fuente.circuito_abierto_desde = _a_utc_naive(ahora)
+        logger.warning(
+            "Circuito ABIERTO fuente_id=%s fallos=%s",
+            fuente.id,
+            fuente.fallos_consecutivos,
+        )
+    try:
+        db.commit()
+    except IntegrityError:
+        logger.exception("No se pudo persistir el estado del circuito fuente_id=%s", fuente.id)
+        db.rollback()
+
+
+async def ejecutar_captura(
+    fuente_id: int, db: Session, ahora: datetime | None = None
+) -> ResultadoCaptura:
+    """Ejecuta una captura de una fuente activa y devuelve su resultado.
+
+    `ahora` se inyecta en los tests para ejercitar la ventana de espera del
+    Circuit Breaker sin depender del reloj real ni de sleeps.
+    """
+    if ahora is None:
+        ahora = datetime.now(timezone.utc)
     fuente = FuenteRSSRepository().buscar_activa(db, fuente_id)
     if fuente is None:
         return ResultadoCaptura(
@@ -192,18 +248,35 @@ async def ejecutar_captura(fuente_id: int, db: Session) -> ResultadoCaptura:
             mensaje="La fuente no existe o está inactiva",
         )
 
+    # R1: con el circuito ABIERTO, mientras no termine la espera NO se descarga.
+    # Cuando la espera termina, se permite un único intento de prueba
+    # (SEMI_ABIERTO, sin reintentos).
+    semiabierto = False
     if fuente.estado_circuit_breaker == EstadoCircuitBreaker.ABIERTO:
-        return ResultadoCaptura(
-            fuente_id=fuente_id,
-            estado=EstadoResultadoCaptura.FALLIDA_CIRCUITO_ABIERTO,
-            noticias_nuevas=0,
-            mensaje="Circuit breaker abierto",
+        espera = timedelta(minutes=settings.circuit_breaker_espera_minutos)
+        abierto_desde = fuente.circuito_abierto_desde
+        # La BD devuelve el DateTime sin zona (naive); se comparan ambos en
+        # UTC-naive para evitar el TypeError entre aware y naive.
+        espera_terminada = (
+            abierto_desde is not None
+            and _a_utc_naive(ahora) - _a_utc_naive(abierto_desde) >= espera
         )
+        if not espera_terminada:
+            return ResultadoCaptura(
+                fuente_id=fuente_id,
+                estado=EstadoResultadoCaptura.FALLIDA_CIRCUITO_ABIERTO,
+                noticias_nuevas=0,
+                mensaje="Circuit breaker abierto",
+            )
+        fuente.estado_circuit_breaker = EstadoCircuitBreaker.SEMI_ABIERTO
+        semiabierto = True
 
     try:
-        capturado, error, entries = await _capturar_con_retries(fuente)
+        max_reintentos = 0 if semiabierto else None
+        capturado, error, entries = await _capturar_con_retries(fuente, max_reintentos)
         if not capturado:
             logger.error("Fallo de captura fuente_id=%s motivo=%s", fuente_id, error)
+            _registrar_fallo_circuito(db, fuente, semiabierto, ahora)
             return ResultadoCaptura(
                 fuente_id=fuente_id,
                 estado=EstadoResultadoCaptura.FALLIDA_TRANSITORIA,
@@ -212,7 +285,7 @@ async def ejecutar_captura(fuente_id: int, db: Session) -> ResultadoCaptura:
             )
 
         noticias_nuevas, persistido = await _persistir_captura(
-            db, fuente, entries, datetime.now(timezone.utc)
+            db, fuente, entries, ahora
         )
         if not persistido:
             return ResultadoCaptura(
