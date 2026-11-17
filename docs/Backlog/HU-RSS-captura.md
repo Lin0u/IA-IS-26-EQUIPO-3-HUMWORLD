@@ -35,6 +35,8 @@ El equipo decidió además paginar tanto el listado de Canales (HU-RSS-010) como
 | HU-RSS-009-v2 | v1 | 2026-10-18 | Creación. Historia Técnica/Enabler Story: carga inicial mediante script interno (`python -m scripts.seed`), con la lógica en la capa de Servicios para que un endpoint pueda agregarse más adelante sin rehacerla. Conserva los dos puntos ya confirmados de HU-RSS-009 (5 continentes; idempotencia por `nombre` de canal y `url` de fuente). Se propone un dataset de 20 fuentes verificadas en `Dataset-fuentes-RSS-seed-HU-RSS-009.md`, pendiente de aprobación del equipo. |
 | HU-RSS-009-v2, HU-RSS-003-v2, HU-RSS-010 | v1 (editorial) | 2026-10-18 | Decisión de equipo: los continentes se almacenan con tilde ("América", "Europa", "Asia", "África", "Oceanía"). Se cierra el punto pendiente de HU-RSS-009-v2. HU-RSS-003-v2 y HU-RSS-010 no se versionan: sus escenarios usan "America" como valor de consulta, y el filtro implementado no distingue mayúsculas ni tildes, por lo que su comportamiento no cambia. |
 | HU-RSS-009-v2 | v1 (editorial) | 2026-10-18 | Decisión de equipo: el dataset usa solo feeds de sección, para que cada fuente tenga una categoría IPTC de primer nivel exacta sin modificar HU-RSS-002 ni su validación. Se actualiza la referencia al dataset (v2.0: 20 fuentes en 11 canales). Sin cambios en los criterios de aceptación. |
+| HU-RSS-006 | v1 → **Deprecada** | 2026-11-17 | Se depreca en favor de **HU-RSS-006-v2**. Motivo (decisión de la PO del 2026-11-17, a partir del hallazgo R4 del QA de captura RSS): el escenario "Noticia duplicada" trataba el identificador del ítem como único **global**, por lo que el mismo `guid` publicado por dos fuentes distintas descartaba en silencio la noticia de la segunda. Varios canales tienen más de un feed de sección, así que la deduplicación pasa a ser **por canal**: una noticia es duplicada si ya existe otra del mismo CanalNoticias con el mismo identificador. En la base, el índice único global se reemplaza por una restricción única `(fuente_rss_id, identificador_item_rss)` (migración `d4b8e1f6a2c9`), y la regla por canal se aplica en el servicio de captura. La v1 se conserva íntegra más abajo. Se actualiza `docs/architecture.md` §5. |
+| HU-RSS-006-v2 | v1 | 2026-11-17 | Creación. Reemplaza el escenario "Noticia duplicada" de la v1 por tres escenarios explícitos (mismo identificador en dos canales distintos → se guardan ambas; en dos fuentes del mismo canal → una sola; repetido en el mismo feed → una sola), conservando los otros dos escenarios de la v1 sin cambios. Incorpora además el hallazgo **R7**: si un ítem no trae `guid`/`id`, se usa el enlace (`link`) como identificador en vez de descartarlo; solo se descarta si tampoco tiene enlace o título. Decisión de la PO del 2026-11-17. |
  
 ---
  
@@ -339,7 +341,12 @@ Escenario: Eliminación de fuente inexistente
  
 ---
  
-## HU-RSS-006 — Cron automático de captura de noticias
+## HU-RSS-006 — Cron automático de captura de noticias — **DEPRECADA (2026-11-17, ver HU-RSS-006-v2)**
+ 
+> **Deprecada** en favor de **HU-RSS-006-v2** (decisión de la PO del 2026-11-17).
+> Se conserva íntegra por trazabilidad. El único cambio sustantivo está en el
+> escenario "Noticia duplicada" (dedup global → dedup por canal) y en el manejo
+> de ítems sin `guid` (R7). Para la versión vigente, ver HU-RSS-006-v2 más abajo.
  
 **Tipo:** Historia Técnica / Enabler Story *(el actor es el propio sistema, según sección 4, Historias de Usuario, de las instrucciones del proyecto)*
 **Como** sistema HumWorld,
@@ -380,6 +387,92 @@ Escenario: Noticia duplicada
 - Además del bloque general DoD (sección 14):
 - Pruebas unitarias que simulan (mock) fuentes RSS caídas, lentas y con contenido malformado, sin llamadas reales a servicios externos.
 - Prueba de integración que verifica que un fallo aislado de una fuente no interrumpe el procesamiento del resto (ver Escenario 2).
+---
+ 
+## HU-RSS-006-v2 — Cron automático de captura de noticias (deduplicación por canal)
+ 
+**Tipo:** Historia Técnica / Enabler Story *(el actor es el propio sistema)*
+**Versión vigente** (reemplaza a HU-RSS-006 v1, deprecada el 2026-11-17).
+**Como** sistema HumWorld,
+**quiero** recorrer automáticamente, de forma periódica, todas las fuentes RSS activas y almacenar las noticias nuevas encontradas, deduplicándolas por canal,
+**para** mantener actualizado el conjunto de datos del humor mundial sin perder noticias legítimas ni contar dos veces un mismo artículo dentro de un canal.
+ 
+**Prioridad:** Alta
+**Estimación relativa:** L *(orientativo, sujeto a Planning Poker)*
+**Depende de contrato de API:** No expone endpoint propio (scheduler interno); consume el modelo de HU-RSS-001 y HU-RSS-002.
+ 
+**Qué cambia respecto a la v1:** solo el escenario "Noticia duplicada" (que se
+reemplaza por tres escenarios explícitos de deduplicación **por canal**) y la
+identificación de ítems sin `guid` (**R7**). Los escenarios "Ejecución del cron
+sobre fuentes activas" y "Fuente RSS temporalmente inaccesible" se conservan sin
+cambios.
+ 
+**Regla de deduplicación (decisión de la PO del 2026-11-17):** una noticia es
+duplicada si ya existe otra del **mismo canal** (CanalNoticias) con el mismo
+identificador de ítem. En la base, la unicidad es `(fuente_rss_id,
+identificador_item_rss)`; la exclusión por canal se resuelve en el servicio de
+captura (una consulta que une noticias con sus fuentes por `canal_id`). Ante un
+duplicado entre secciones del mismo canal se conserva la **primera** noticia
+guardada (su categoría IPTC no cambia).
+ 
+**Identificador del ítem (R7):** se usa `guid` o `id`; si ninguno está presente,
+se usa el enlace (`link`). El ítem solo se descarta si no tiene identificador ni
+enlace, o si le falta el título.
+ 
+### Criterios de aceptación (Gherkin)
+ 
+```gherkin
+Escenario: Ejecución del cron sobre fuentes activas
+  Dado que existen fuentes RSS con "activo"=verdadero
+  Cuando se dispara la ejecución programada del cron
+  Entonces el sistema intenta consultar el 100% de las fuentes con "activo"=verdadero
+  Y para cada noticia nueva (no existente previamente en el canal por su identificador) se crea exactamente 1 registro en la tabla de noticias
+  Y cada registro de noticia creado incluye fecha y hora de registro (timestamp de captura)
+ 
+Escenario: Fuente RSS temporalmente inaccesible
+  Dado que una fuente RSS activa no responde o responde con error
+  Cuando el cron intenta consultarla
+  Entonces el fallo de esa fuente no impide que el cron continúe procesando el resto de fuentes activas
+  Y el incidente queda registrado en el log del sistema con la fuente afectada y el motivo del fallo
+ 
+Escenario: Mismo identificador en dos canales distintos
+  Dado que dos fuentes de canales distintos publican un ítem con el mismo identificador y contenido distinto
+  Cuando el cron captura ambas fuentes
+  Entonces el sistema guarda las dos noticias (una por canal)
+ 
+Escenario: Mismo identificador en dos fuentes del mismo canal
+  Dado que dos fuentes del mismo canal publican un ítem con el mismo identificador
+  Cuando el cron captura ambas fuentes
+  Entonces el sistema guarda una sola noticia (la primera capturada) y descarta la segunda como duplicada
+ 
+Escenario: Mismo identificador repetido dentro del mismo feed
+  Dado que un feed trae el mismo identificador en dos de sus ítems
+  Cuando el cron captura esa fuente
+  Entonces el sistema guarda una sola noticia para ese identificador
+ 
+Escenario: Ítem sin guid ni id
+  Dado un ítem de feed sin "guid" ni "id" pero con enlace y título
+  Cuando el cron captura esa fuente
+  Entonces el sistema usa el enlace como identificador y guarda la noticia
+ 
+Escenario: Ítem sin identificador utilizable
+  Dado un ítem de feed sin "guid", sin "id" y sin enlace (o sin título)
+  Cuando el cron captura esa fuente
+  Entonces el sistema descarta ese ítem y registra la omisión en el log
+```
+ 
+**Nota (grounding — resiliencia):** se apoya en los patrones de resiliencia
+(Circuit Breaker por fuente, Timeout explícito, Retry con backoff exponencial
+acotado) documentados en **`docs/architecture.md`, sección 8**.
+ 
+**Nota (grounding — periodicidad):** sin cambios respecto a la v1 (valor
+propuesto de 30 minutos, configurable; ver HU-RSS-007).
+ 
+### Definition of Done
+- Además del bloque general DoD (sección 14):
+- Pruebas unitarias con `respx` que cubren los tres escenarios de deduplicación y los dos de identificación por enlace (R7), sin llamadas reales a servicios externos.
+- Migración Alembic con `upgrade()` y `downgrade()` para la unicidad compuesta `(fuente_rss_id, identificador_item_rss)`.
+- `docs/architecture.md` §5 actualizado con la regla de deduplicación por canal.
 ---
  
 ## HU-RSS-007 — Configuración de periodicidad del cron de captura

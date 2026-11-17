@@ -86,7 +86,7 @@ Entidades implementadas (`src/app/models/`), con sus migraciones en
 - **FuenteRSS** (EPIC-RSS): id, canal_id (FK), url, categoria_iptc, activo,
   fecha_ultima_captura_exitosa, estado_circuit_breaker.
 - **Noticia** (EPIC-RSS + EPIC-SENT): id, fuente_rss_id (FK),
-  identificador_item_rss (dedup), titulo, contenido, enlace_original,
+  identificador_item_rss (dedup por canal, ver nota abajo), titulo, contenido, enlace_original,
   fecha_publicacion, fecha_registro, idioma_detectado, categoria_iptc y los
   campos de humor poblados por EPIC-SENT: valor_humor, metodo_calculo
   ("diccionario" | "ml" | NULL), cantidad_terminos_evaluados,
@@ -104,6 +104,18 @@ Relaciones UML: CanalNoticias ◆── FuenteRSS (composición); FuenteRSS ─�
 TerminoDiccionario ──< CoincidenciaTermino (referencia); ModeloSentimiento ──o
 Noticia (agregación). Detalle del modelo de datos completo en
 `docs/UML/diagrama-clases.md`.
+
+**Regla de deduplicación de noticias (HU-RSS-006-v2, decisión de la PO del
+2026-11-17).** El identificador de un ítem RSS (`guid`/`id`; si faltan, el
+enlace — R7) solo es único dentro de un feed, no entre medios distintos. Por eso
+la deduplicación es **por canal**: una noticia es duplicada si ya existe otra del
+mismo `CanalNoticias` con el mismo `identificador_item_rss`. En la base, la
+unicidad es compuesta `(fuente_rss_id, identificador_item_rss)` (migración
+`d4b8e1f6a2c9`, reemplaza al índice único global anterior); la exclusión por
+canal se aplica en el servicio de captura, uniendo `noticias` con `fuentes_rss`
+por `canal_id`. Consecuencia aceptada: un mismo artículo que un canal publica en
+dos de sus feeds de sección se guarda una sola vez (se conserva el primero
+capturado); el mismo identificador en canales distintos se guarda en ambos.
 
 ## 6. API (bajo `/api/v1`)
 

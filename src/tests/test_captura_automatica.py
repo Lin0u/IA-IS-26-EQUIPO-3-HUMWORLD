@@ -42,17 +42,24 @@ def database_session(monkeypatch):
         Base.metadata.drop_all(bind=engine)
 
 
-def crear_fuente(database_session, fuente_id, url, activo=True, estado=EstadoCircuitBreaker.CERRADO):
+def crear_fuente(
+    database_session,
+    fuente_id,
+    url,
+    activo=True,
+    estado=EstadoCircuitBreaker.CERRADO,
+    canal_id=100,
+):
     canal = CanalNoticias(
-        id=100,
-        nombre="Canal de pruebas",
+        id=canal_id,
+        nombre=f"Canal de pruebas {canal_id}",
         continente="Europa",
     )
     database_session.merge(canal)
     database_session.flush()
     fuente = FuenteRSS(
         id=fuente_id,
-        canal_id=canal.id,
+        canal_id=canal_id,
         url=url,
         categoria_iptc="07000000",
         activo=activo,
@@ -191,18 +198,18 @@ async def test_timeout_agota_en_cuatro_intentos(database_session, monkeypatch):
 @pytest.mark.asyncio
 @respx.mock
 async def test_captura_omite_feed_malformado_y_registra_item_invalido(database_session):
+    # R7: un ítem sin guid pero con enlace ya NO se descarta (usa el enlace).
+    # El ítem que se omite es el que no tiene guid/id NI enlace.
     url = "https://example.test/malformed"
     fuente = crear_fuente(database_session, 1, url)
-    respx.get(url).mock(
-        return_value=httpx.Response(
-            200,
-            content=feed_xml(
-                {"guid": "item-1", "title": "Válido", "link": "https://example.test/1"},
-                {"guid": "", "title": "Inválido", "link": "https://example.test/2"},
-            ),
-            headers={"content-type": "application/rss+xml"},
-        )
-    )
+    contenido = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<rss version="2.0"><channel><title>T</title><link>https://example.test/</link>'
+        '<item><guid>item-1</guid><title>Valido</title><link>https://example.test/1</link><description>d</description></item>'
+        '<item><title>Sin enlace ni guid</title><description>d</description></item>'
+        '</channel></rss>'
+    ).encode()
+    respx.get(url).mock(return_value=httpx.Response(200, content=contenido))
 
     resultado = await ejecutar_captura(fuente.id, database_session)
 
@@ -315,6 +322,112 @@ async def test_segunda_captura_del_feed_repetido_no_duplica(database_session):
     assert segunda.estado.value == "exitosa"
     assert segunda.noticias_nuevas == 0
     assert database_session.execute(select(Noticia)).scalars().all().__len__() == 2
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_mismo_identificador_en_dos_canales_distintos_guarda_ambas(database_session):
+    # HU-RSS-006-v2 (R4): el mismo guid en fuentes de CANALES distintos -> 2.
+    f1 = crear_fuente(database_session, 1, "https://example.test/c1", canal_id=100)
+    f2 = crear_fuente(database_session, 2, "https://example.test/c2", canal_id=200)
+    respx.get(f1.url).mock(
+        return_value=httpx.Response(
+            200,
+            content=feed_xml({"guid": "123", "title": "Noticia A", "link": "https://example.test/a"}),
+            headers={"content-type": "application/rss+xml"},
+        )
+    )
+    respx.get(f2.url).mock(
+        return_value=httpx.Response(
+            200,
+            content=feed_xml({"guid": "123", "title": "Noticia B distinta", "link": "https://example.test/b"}),
+            headers={"content-type": "application/rss+xml"},
+        )
+    )
+
+    await ejecutar_captura(f1.id, database_session)
+    await ejecutar_captura(f2.id, database_session)
+
+    assert database_session.execute(select(Noticia)).scalars().all().__len__() == 2
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_mismo_identificador_en_dos_fuentes_del_mismo_canal_guarda_una(database_session):
+    # HU-RSS-006-v2 (R4): el mismo guid en dos fuentes del MISMO canal -> 1.
+    # Se conserva la primera noticia guardada.
+    f1 = crear_fuente(database_session, 1, "https://example.test/s1", canal_id=100)
+    f2 = crear_fuente(database_session, 2, "https://example.test/s2", canal_id=100)
+    respx.get(f1.url).mock(
+        return_value=httpx.Response(
+            200,
+            content=feed_xml({"guid": "123", "title": "Primera (seccion A)", "link": "https://example.test/a"}),
+            headers={"content-type": "application/rss+xml"},
+        )
+    )
+    respx.get(f2.url).mock(
+        return_value=httpx.Response(
+            200,
+            content=feed_xml({"guid": "123", "title": "Segunda (seccion B)", "link": "https://example.test/b"}),
+            headers={"content-type": "application/rss+xml"},
+        )
+    )
+
+    r1 = await ejecutar_captura(f1.id, database_session)
+    r2 = await ejecutar_captura(f2.id, database_session)
+
+    assert r1.noticias_nuevas == 1
+    assert r2.noticias_nuevas == 0
+    noticias = database_session.execute(select(Noticia)).scalars().all()
+    assert len(noticias) == 1
+    # Se conserva la primera (la de la fuente 1).
+    assert noticias[0].titulo == "Primera (seccion A)"
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_item_sin_guid_usa_el_enlace_como_identificador(database_session):
+    # R7: un ítem sin guid/id se identifica por su enlace en vez de descartarse.
+    url = "https://example.test/sin-guid"
+    fuente = crear_fuente(database_session, 1, url)
+    contenido = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<rss version="2.0"><channel><title>T</title><link>https://example.test/</link>'
+        '<item><title>Sin guid</title><link>https://example.test/noticia-x</link>'
+        '<description>d</description></item>'
+        '</channel></rss>'
+    ).encode()
+    respx.get(url).mock(return_value=httpx.Response(200, content=contenido))
+
+    resultado = await ejecutar_captura(fuente.id, database_session)
+
+    assert resultado.estado.value == "exitosa"
+    assert resultado.noticias_nuevas == 1
+    noticia = database_session.execute(select(Noticia)).scalars().one()
+    assert noticia.identificador_item_rss == "https://example.test/noticia-x"
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_item_sin_guid_ni_enlace_se_descarta(database_session):
+    # R7: sin guid/id y sin enlace (o sin título) sí se descarta.
+    url = "https://example.test/sin-nada"
+    fuente = crear_fuente(database_session, 1, url)
+    contenido = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<rss version="2.0"><channel><title>T</title><link>https://example.test/</link>'
+        '<item><title>Sin enlace</title><description>d</description></item>'
+        '<item><guid>ok</guid><title>Valida</title><link>https://example.test/ok</link><description>d</description></item>'
+        '</channel></rss>'
+    ).encode()
+    respx.get(url).mock(return_value=httpx.Response(200, content=contenido))
+
+    resultado = await ejecutar_captura(fuente.id, database_session)
+
+    assert resultado.estado.value == "exitosa"
+    assert resultado.noticias_nuevas == 1
+    noticia = database_session.execute(select(Noticia)).scalars().one()
+    assert noticia.identificador_item_rss == "ok"
 
 
 @pytest.mark.asyncio

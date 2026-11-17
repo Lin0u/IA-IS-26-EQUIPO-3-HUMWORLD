@@ -12,7 +12,16 @@ sección "Consecuencias" — punto abierto a validar por el equipo).
 Nota de alcance: el campo `valor_humor` es poblado por el módulo de Análisis
 de Sentimiento (EPIC-SENT, fuera de alcance de este scaffold de Sprint 1).
 """
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -20,13 +29,26 @@ from app.database import Base
 
 class Noticia(Base):
     __tablename__ = "noticias"
+    # HU-RSS-006-v2 (decisión PO 2026-11-17): la unicidad del identificador deja
+    # de ser global y pasa a ser por fuente. La regla de deduplicación por canal
+    # se aplica en el servicio de captura; esta restricción solo evita el mismo
+    # ítem repetido en la misma fuente. Se conserva un índice no único sobre
+    # identificador_item_rss para que las búsquedas sigan siendo rápidas.
+    __table_args__ = (
+        UniqueConstraint(
+            "fuente_rss_id",
+            "identificador_item_rss",
+            name="uq_noticias_fuente_identificador",
+        ),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     fuente_rss_id = Column(Integer, ForeignKey("fuentes_rss.id"), nullable=False, index=True)
 
-    # Identificador único del ítem RSS (guid o hash de enlace+título), usado
-    # para deduplicación — ver ADR-002 y HU-RSS-006, escenario "Noticia duplicada".
-    identificador_item_rss = Column(String(255), nullable=False, unique=True, index=True)
+    # Identificador del ítem RSS (guid/id; si falta, el enlace — R7), usado para
+    # deduplicación. Ver ADR-002 y HU-RSS-006-v2, escenarios de "Noticia
+    # duplicada". Índice no único: la unicidad es compuesta (ver __table_args__).
+    identificador_item_rss = Column(String(255), nullable=False, index=True)
 
     titulo = Column(String(500), nullable=False)
     contenido = Column(Text, nullable=True)

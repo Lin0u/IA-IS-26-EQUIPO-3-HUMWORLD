@@ -38,7 +38,10 @@ def _a_utc_naive(valor: datetime) -> datetime:
 
 
 def _identificador_item(item: dict) -> str | None:
-    identificador = item.get("guid") or item.get("id")
+    # R7 (decisión PO 2026-11-17): si el ítem no trae guid/id, se usa el enlace
+    # como identificador en vez de descartarlo. Solo se descarta (en _mapear_item)
+    # si tampoco hay enlace o título.
+    identificador = item.get("guid") or item.get("id") or item.get("link")
     if not identificador:
         return None
     return str(identificador).strip() or None
@@ -197,8 +200,13 @@ async def _persistir_captura(
         vistos.add(noticia.identificador_item_rss)
         mapeadas.append(noticia)
 
-    # R6: una sola consulta de existentes para todo el lote (antes era N+1).
-    existentes = noticias_repository.identificadores_existentes(db, list(vistos))
+    # R6 + dedup por canal (HU-RSS-006-v2): una sola consulta que excluye los
+    # identificadores ya presentes en cualquier fuente del mismo canal. Así, el
+    # mismo ítem publicado por dos fuentes de secciones distintas del mismo canal
+    # se guarda una sola vez (se conserva la primera noticia guardada).
+    existentes = noticias_repository.identificadores_existentes_en_canal(
+        db, fuente.canal_id, list(vistos)
+    )
     noticias = [n for n in mapeadas if n.identificador_item_rss not in existentes]
 
     try:
