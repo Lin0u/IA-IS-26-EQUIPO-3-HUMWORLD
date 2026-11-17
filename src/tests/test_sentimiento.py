@@ -40,12 +40,19 @@ def _t(palabra: str, valor: int, idioma: str = "es") -> TerminoDiccionario:
 
 
 @pytest.fixture()
-def db():
+def db(monkeypatch):
     engine = create_engine(
         "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
     )
     Base.metadata.create_all(bind=engine)
-    session = sessionmaker(bind=engine, autoflush=False, autocommit=False)()
+    session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    # R5: el cálculo de humor de la captura abre su propia sesión en un hilo con
+    # SessionLocal. En los tests se apunta a la misma BD en memoria (StaticPool
+    # comparte la conexión) para que el resultado sea visible y no toque MySQL.
+    monkeypatch.setattr(
+        "app.services.captura_service.SessionLocal", session_factory
+    )
+    session = session_factory()
     try:
         yield session
     finally:
@@ -282,6 +289,9 @@ async def test_captura_calcula_humor_de_noticias_nuevas(db, fuente):
     resultado = await ejecutar_captura(fuente.id, db)
 
     assert resultado.noticias_nuevas == 2
+    # R5: el humor se calcula en un hilo con sesión propia; se refresca la
+    # sesión del test para ver lo que aquel confirmó.
+    db.expire_all()
     valores = {
         n.identificador_item_rss: (n.valor_humor, n.metodo_calculo)
         for n in db.scalars(select(Noticia))

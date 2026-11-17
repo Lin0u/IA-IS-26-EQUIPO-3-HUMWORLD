@@ -175,8 +175,10 @@ async def _persistir_captura(
     fuente: FuenteRSS,
     entries: list[dict],
     fecha_registro: datetime,
-    session_factory=SessionLocal,
+    session_factory=None,
 ) -> tuple[int, bool]:
+    if session_factory is None:
+        session_factory = SessionLocal
     noticias_repository = NoticiaRepository()
 
     # R3: deduplicar DENTRO del lote. Un feed puede repetir el mismo guid
@@ -258,7 +260,7 @@ async def ejecutar_captura(
     fuente_id: int,
     db: Session,
     ahora: datetime | None = None,
-    session_factory=SessionLocal,
+    session_factory=None,
 ) -> ResultadoCaptura:
     """Ejecuta una captura de una fuente activa y devuelve su resultado.
 
@@ -269,6 +271,10 @@ async def ejecutar_captura(
     """
     if ahora is None:
         ahora = datetime.now(timezone.utc)
+    # Se resuelve en cada llamada (no como default del parámetro) para que los
+    # tests puedan sustituir captura_service.SessionLocal (R5).
+    if session_factory is None:
+        session_factory = SessionLocal
     fuente = FuenteRSSRepository().buscar_activa(db, fuente_id)
     if fuente is None:
         return ResultadoCaptura(
