@@ -18,6 +18,24 @@ class NoticiaRepository:
             )
         ).scalar_one_or_none()
 
+    def identificadores_existentes(
+        self, db: Session, identificadores: list[str]
+    ) -> set[str]:
+        """Devuelve, en UNA sola consulta, cuáles identificadores ya existen.
+
+        Reemplaza la consulta por ítem (N+1, R6) de la captura: se pasa el lote
+        completo de identificadores y se obtiene el subconjunto ya persistido
+        para filtrarlo antes de insertar (HU-RSS-006, deduplicación; R3).
+        """
+        if not identificadores:
+            return set()
+        filas = db.execute(
+            select(Noticia.identificador_item_rss).where(
+                Noticia.identificador_item_rss.in_(identificadores)
+            )
+        ).scalars().all()
+        return set(filas)
+
     def insertar(
         self,
         db: Session,

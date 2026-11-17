@@ -18,6 +18,16 @@ class FuenteRSSInactiveError(Exception):
     """Indica que la FuenteRSS existe, pero está inactiva."""
 
 
+class FeedInvalidoError(Exception):
+    """El contenido descargado no es un feed con ítems (HU-RSS-006, R2).
+
+    Error de CONTENIDO, no transitorio: no debe reintentarse, a diferencia de
+    los errores HTTP. feedparser puede marcar bozo=1 ante detalles de formato
+    (entidades HTML, codificación declarada, Content-Type) sin que el feed deje
+    de traer ítems válidos; en ese caso NO se lanza esta excepción.
+    """
+
+
 class TerminoDiccionarioNotFoundError(Exception):
     """Indica que el término solicitado no existe."""
 

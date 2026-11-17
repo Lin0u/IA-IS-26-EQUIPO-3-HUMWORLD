@@ -206,6 +206,112 @@ async def test_captura_omite_feed_malformado_y_registra_item_invalido(database_s
 
 @pytest.mark.asyncio
 @respx.mock
+async def test_feed_con_bozo_pero_con_items_se_captura(database_session):
+    # R2: feedparser marca bozo=1 por una entidad HTML en el título, pero el
+    # feed trae 2 ítems válidos -> captura exitosa con 2 noticias.
+    url = "https://example.test/bozo"
+    fuente = crear_fuente(database_session, 1, url)
+    contenido = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<rss version="2.0"><channel><title>T</title>'
+        '<link>https://example.test/</link>'
+        '<item><guid>a1</guid><title>Caf&eacute; &nbsp; matutino</title>'
+        '<link>https://example.test/a1</link><description>d</description></item>'
+        '<item><guid>a2</guid><title>Segunda</title>'
+        '<link>https://example.test/a2</link><description>d</description></item>'
+        '</channel></rss>'
+    )
+    respx.get(url).mock(return_value=httpx.Response(200, content=contenido.encode()))
+
+    resultado = await ejecutar_captura(fuente.id, database_session)
+
+    assert resultado.estado.value == "exitosa"
+    assert resultado.noticias_nuevas == 2
+    assert database_session.execute(
+        select(Noticia).where(Noticia.fuente_rss_id == fuente.id)
+    ).scalars().all().__len__() == 2
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_feed_sin_items_falla_sin_reintentar(database_session, monkeypatch):
+    # R2: un 200 cuyo contenido no es un feed con ítems es error de contenido:
+    # una sola solicitud HTTP, sin reintentos.
+    url = "https://example.test/vacio"
+    fuente = crear_fuente(database_session, 1, url)
+    respx.get(url).mock(
+        return_value=httpx.Response(200, content=b"<html><body>no soy un feed</body></html>")
+    )
+
+    async def no_sleep(_delay):
+        return None
+
+    monkeypatch.setattr("app.services.captura_service.asyncio.sleep", no_sleep)
+    resultado = await ejecutar_captura(fuente.id, database_session)
+
+    assert resultado.estado.value == "fallida_transitoria"
+    assert resultado.noticias_nuevas == 0
+    assert len(respx.calls) == 1
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_guid_repetido_en_el_mismo_feed_no_pierde_el_lote(database_session):
+    # R3: el feed trae b1, b2, b1 -> se guardan exactamente 2 (b1 y b2).
+    url = "https://example.test/repetido"
+    fuente = crear_fuente(database_session, 1, url)
+    respx.get(url).mock(
+        return_value=httpx.Response(
+            200,
+            content=feed_xml(
+                {"guid": "b1", "title": "Primera", "link": "https://example.test/b1"},
+                {"guid": "b2", "title": "Segunda", "link": "https://example.test/b2"},
+                {"guid": "b1", "title": "Repetida", "link": "https://example.test/b1"},
+            ),
+            headers={"content-type": "application/rss+xml"},
+        )
+    )
+
+    resultado = await ejecutar_captura(fuente.id, database_session)
+
+    assert resultado.estado.value == "exitosa"
+    assert resultado.noticias_nuevas == 2
+    ids = sorted(
+        n.identificador_item_rss
+        for n in database_session.execute(select(Noticia)).scalars().all()
+    )
+    assert ids == ["b1", "b2"]
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_segunda_captura_del_feed_repetido_no_duplica(database_session):
+    # R3: tras guardar b1 y b2, recapturar el mismo feed no agrega noticias.
+    url = "https://example.test/repetido2"
+    fuente = crear_fuente(database_session, 1, url)
+    respx.get(url).mock(
+        return_value=httpx.Response(
+            200,
+            content=feed_xml(
+                {"guid": "b1", "title": "Primera", "link": "https://example.test/b1"},
+                {"guid": "b2", "title": "Segunda", "link": "https://example.test/b2"},
+                {"guid": "b1", "title": "Repetida", "link": "https://example.test/b1"},
+            ),
+            headers={"content-type": "application/rss+xml"},
+        )
+    )
+
+    primera = await ejecutar_captura(fuente.id, database_session)
+    segunda = await ejecutar_captura(fuente.id, database_session)
+
+    assert primera.noticias_nuevas == 2
+    assert segunda.estado.value == "exitosa"
+    assert segunda.noticias_nuevas == 0
+    assert database_session.execute(select(Noticia)).scalars().all().__len__() == 2
+
+
+@pytest.mark.asyncio
+@respx.mock
 async def test_circuit_breaker_abierto_omite_http(database_session):
     fuente = crear_fuente(database_session, 1, "https://example.test/closed", estado=EstadoCircuitBreaker.ABIERTO)
 

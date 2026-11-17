@@ -10,7 +10,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.exceptions import FuenteRSSInactiveError, FuenteRSSNotFoundError
+from app.exceptions import (
+    FeedInvalidoError,
+    FuenteRSSInactiveError,
+    FuenteRSSNotFoundError,
+)
 from app.models.fuente import EstadoCircuitBreaker, FuenteRSS
 from app.models.noticia import Noticia
 from app.repositories.fuentes import FuenteRSSRepository
@@ -92,10 +96,27 @@ async def _capturar_con_retries(
     for intento in range(settings.captura_max_reintentos + 1):
         try:
             parsed = await _descargar_feed(fuente)
-            if parsed.bozo or not parsed.feed and not parsed.entries:
-                raise ValueError("El feed no contiene contenido válido")
+            # R2: un feed sin ítems es un error de CONTENIDO (no se reintenta).
+            # bozo=1 por sí solo NO invalida el feed: feedparser lo marca ante
+            # detalles de formato comunes (entidades HTML, codificación,
+            # Content-Type) que no impiden entregar los ítems.
+            if not parsed.entries:
+                raise FeedInvalidoError("El feed no contiene ítems")
+            if parsed.bozo:
+                logger.warning(
+                    "Feed con bozo=1 pero con ítems fuente_id=%s tipo=%s",
+                    fuente.id,
+                    type(parsed.get("bozo_exception")).__name__,
+                )
             return True, None, list(parsed.entries)
-        except (httpx.HTTPError, ValueError, TypeError) as exc:
+        except FeedInvalidoError as exc:
+            # Error de contenido: fallar de inmediato, sin reintentos.
+            logger.error(
+                "Feed inválido fuente_id=%s motivo=%s", fuente.id, exc
+            )
+            return False, str(exc), []
+        except (httpx.HTTPError, TypeError) as exc:
+            # Error transitorio: reintentar con backoff exponencial acotado.
             ultimo_error = exc
             if intento >= settings.captura_max_reintentos:
                 break
@@ -116,16 +137,27 @@ async def _persistir_captura(
     entries: list[dict],
     fecha_registro: datetime,
 ) -> tuple[int, bool]:
-    noticias: list[Noticia] = []
     noticias_repository = NoticiaRepository()
+
+    # R3: deduplicar DENTRO del lote. Un feed puede repetir el mismo guid
+    # (medios que republican); sin esto, dos ítems idénticos pasan el filtro y
+    # chocan con el índice único al insertar, lo que revertía TODO el lote.
+    # Se conserva el primer ítem de cada identificador.
+    mapeadas: list[Noticia] = []
+    vistos: set[str] = set()
     for entry in entries:
         noticia = _mapear_item(entry, fuente, fecha_registro)
         if noticia is None:
             logger.warning("Omitido ítem inválido fuente_id=%s", fuente.id)
             continue
-        if noticias_repository.buscar_por_identificador(db, noticia.identificador_item_rss):
+        if noticia.identificador_item_rss in vistos:
             continue
-        noticias.append(noticia)
+        vistos.add(noticia.identificador_item_rss)
+        mapeadas.append(noticia)
+
+    # R6: una sola consulta de existentes para todo el lote (antes era N+1).
+    existentes = noticias_repository.identificadores_existentes(db, list(vistos))
+    noticias = [n for n in mapeadas if n.identificador_item_rss not in existentes]
 
     try:
         noticias_repository.insertar_lote(db, noticias)
@@ -133,6 +165,9 @@ async def _persistir_captura(
         fuente.estado_circuit_breaker = EstadoCircuitBreaker.CERRADO
         db.commit()
     except IntegrityError:
+        # Resguardo ante una carrera con otra captura de la misma fuente: no se
+        # silencia (se registra) y se reporta como fallo de persistencia.
+        logger.exception("IntegrityError al insertar lote fuente_id=%s", fuente.id)
         db.rollback()
         return 0, False
 
