@@ -3,7 +3,7 @@
 // "tipo" puede ser: positivo, negativo, neutro o sinDatos (ver utilidades/humor.js).
 import { BOCAS_CARITA, COLORES_HUMOR } from '../utilidades/humor.js'
 
-const TINTA = '#2b2350'
+const TINTA = '#2a3a44'
 
 export default function Carita({ tipo = 'neutro', tamano = 32 }) {
   return (

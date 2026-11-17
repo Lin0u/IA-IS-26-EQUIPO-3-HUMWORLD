@@ -5,7 +5,6 @@
   justify-content: space-between;
   align-items: flex-end;
   gap: 16px;
-  margin-bottom: 18px;
 }
 
 .filtros {
@@ -13,67 +12,181 @@
   gap: 8px;
 }
 
+/* Botones compartidos por todas las vistas (HU-DASH-005-v2). .filtro: secundario
+   (blanco con filete). .filtro.activo: principal (azul atlas plano). .peligro:
+   acciones que borran o desactivan. */
 .filtro {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
   font: inherit;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
+  letter-spacing: 0.005em;
   color: var(--texto);
   background: var(--superficie);
-  border: var(--borde);
-  border-radius: 999px;
-  padding: 5px 14px;
+  border: 1px solid var(--linea-fuerte);
+  border-radius: var(--radio);
+  padding: 8px 16px;
+  box-shadow: none;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    box-shadow 0.15s,
+    transform 0.1s;
 }
 
 .filtro:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 2px 2px 0 var(--tinta);
+  background: var(--globo);
+  border-color: var(--acento);
+  box-shadow: none;
+}
+
+.filtro:active {
+  transform: translateY(1px);
+  box-shadow: none;
 }
 
 .filtro:focus-visible {
-  outline: 3px solid var(--acento);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--foco);
 }
 
 .filtro.activo {
-  background: var(--amarillo);
-  box-shadow: 2px 2px 0 var(--tinta);
+  color: #ffffff;
+  background: var(--acento);
+  border-color: var(--acento);
+  box-shadow: none;
+}
+
+.filtro.activo:hover {
+  background: #335c6b;
+  box-shadow: none;
+}
+
+/* Acciones destructivas. */
+.filtro.peligro {
+  color: var(--texto-negativo);
+  border-color: #e3b5b5;
+}
+
+.filtro.peligro:hover {
+  background: #fbeeee;
+  border-color: var(--texto-negativo);
+}
+
+.filtro.activo.peligro {
+  color: #ffffff;
+  background: var(--texto-negativo);
+  border-color: var(--texto-negativo);
+}
+
+.filtro.activo.peligro:hover {
+  background: #922626;
+  box-shadow: none;
+}
+
+/* Grupo de filtros como control segmentado. */
+.filtros {
+  display: inline-flex;
+  gap: 2px;
+  padding: 4px;
+  background: var(--papel-hondo);
+  border: var(--borde);
+  border-radius: var(--radio);
+}
+
+.filtros .filtro {
+  min-height: 32px;
+  padding: 6px 16px;
+  color: var(--texto-suave);
+  background: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.filtros .filtro:hover {
+  color: var(--tinta);
+  background: rgba(255, 255, 255, 0.55);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.filtros .filtro.activo,
+.filtros .filtro.activo:hover {
+  color: var(--tinta);
+  background: var(--superficie);
+  border-color: transparent;
+  box-shadow: 0 1px 3px rgba(42, 58, 68, 0.14);
 }
 
 .noticias-lista {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
   margin: 0;
   padding: 0;
+  background: var(--superficie);
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  overflow: hidden;
 }
 
 .noticia {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  border: var(--borde);
-  border-radius: var(--radio);
-  padding: 12px 16px;
+  align-items: flex-start;
+  gap: 20px;
+  background: var(--superficie);
+  border: none;
+  border-top: var(--borde);
+  padding: 18px 24px 18px 20px;
   animation: entrar 0.35s ease-out both;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: background-color 0.15s;
+}
+
+.noticia:first-child {
+  border-top: none;
 }
 
 .noticia:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: var(--sombra);
+  background: var(--globo);
 }
 
+/* Franja de color a la izquierda según el humor (HU-DASH-005, se mantiene). */
+.noticia {
+  border-left: 4px solid var(--linea-fuerte);
+}
+
+.noticia-positivo {
+  border-left-color: var(--humor-positivo);
+}
+.noticia-negativo {
+  border-left-color: var(--humor-negativo);
+}
+.noticia-neutro {
+  border-left-color: var(--humor-neutro);
+}
+
+/* Humor de la noticia: su carita como astro, la cifra y el tipo. */
 .noticia-humor {
   flex: none;
-  width: 56px;
+  width: 72px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: 15px;
-  font-variant-numeric: tabular-nums;
+  gap: 2px;
+  padding: 2px 0;
+  font-size: 20px;
+  font-weight: 800;
+  border-right: var(--borde);
+  padding-right: 18px;
+  box-sizing: content-box;
 }
 
 .noticia-cuerpo {
@@ -83,8 +196,10 @@
 .noticia-titulo {
   font-size: 17px;
   font-weight: 700;
+  line-height: 1.4;
   color: var(--texto);
   text-decoration: none;
+  text-wrap: pretty;
 }
 
 .noticia-titulo:hover {
@@ -95,14 +210,25 @@
 .noticia-datos {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 16px;
-  margin-top: 2px;
+  align-items: baseline;
+  gap: 4px 14px;
+  margin-top: 6px;
   font-size: 13px;
   color: var(--texto-suave);
 }
 
+.noticia-datos > * + *::before {
+  content: '·';
+  margin-right: 14px;
+  color: var(--linea-fuerte);
+}
+
+/* Como módulo: puede quedar montado sobre la banda. */
 .noticias-vacio {
-  padding: 24px 0;
+  padding: 24px;
+  background: var(--superficie);
+  border: var(--borde);
+  border-radius: var(--radio);
 }
 
 /* Filtro por continente junto a los botones de signo (HU-DASH-002-v2). */
@@ -119,7 +245,8 @@
   justify-content: center;
   align-items: center;
   gap: 14px;
-  margin-top: 16px;
+  margin-top: 20px;
+  font-size: 14px;
   color: var(--texto-suave);
 }
 
@@ -130,37 +257,62 @@
 
 /* HU-DASH-002-v3 y HU-DASH-004: explicación del valor de humor. */
 .explicacion-boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font: inherit;
   font-size: 13px;
-  font-weight: 700;
-  color: var(--texto);
-  background: var(--amarillo);
-  border: var(--borde);
-  border-radius: 999px;
-  padding: 3px 12px;
-  margin-top: 8px;
+  font-weight: 600;
+  color: var(--acento);
+  background: var(--activo);
+  border: 1px solid transparent;
+  border-radius: var(--radio-chico);
+  padding: 4px 10px;
+  margin-top: 10px;
   cursor: pointer;
-  box-shadow: 2px 2px 0 var(--tinta);
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.explicacion-boton:hover {
+  border-color: var(--acento);
+}
+
+/* Flecha que indica que se despliega. */
+.explicacion-boton::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 0.15s;
+}
+
+.explicacion-boton[aria-expanded='true']::after {
+  transform: rotate(-135deg) translateY(-1px);
 }
 
 .explicacion-boton[aria-expanded='true'] {
   background: var(--superficie);
+  border-color: var(--linea-fuerte);
 }
 
 .explicacion-boton:focus-visible {
-  outline: 3px solid var(--acento);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--foco);
 }
 
 .explicacion {
   list-style: none;
   counter-reset: paso;
   margin: 10px 0 0;
-  padding: 12px 14px;
+  padding: 14px 16px;
   font-size: 14px;
   background: var(--papel);
   border: var(--borde);
-  border-radius: 12px;
+  border-radius: var(--radio);
 }
 
 .explicacion-paso {
@@ -172,7 +324,7 @@
 }
 
 .explicacion-paso + .explicacion-paso {
-  border-top: 1px dashed var(--texto-suave);
+  border-top: var(--borde);
 }
 
 .explicacion-titulo {
@@ -205,23 +357,29 @@
 
 .termino {
   border: var(--borde);
-  border-radius: 999px;
-  padding: 2px 10px;
+  border-radius: var(--radio-chico);
+  padding: 2px 8px;
+  font-weight: 600;
   font-size: 13px;
   background: var(--superficie);
 }
 
 .termino-positivo {
-  background: #d9f6ee;
+  color: var(--texto-positivo);
+  background: #e6f3ee;
+  border-color: #b9dccd;
 }
 
 .termino-negativo {
-  background: #ffe1e2;
+  color: var(--texto-negativo);
+  background: #fbeeee;
+  border-color: #efc6c6;
 }
 
 .noticia-tipo {
   font-size: 11px;
   font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--texto-suave);
 }
@@ -242,5 +400,19 @@
     width: auto;
     flex-direction: row;
     gap: 8px;
+    padding-right: 0;
+    padding-bottom: 8px;
+    border-right: none;
+    border-bottom: var(--borde);
   }
+
+  .noticia {
+    padding: 16px;
+  }
+}
+
+/* Nombre del medio en itálica de atlas (HU-DASH-005-v2). */
+.noticia-medio {
+  font-size: 15px;
+  color: var(--texto);
 }

@@ -5,10 +5,10 @@
 // Mismos colores que las variables --humor-* de index.css. Se repiten aquí para
 // las piezas que necesitan el código del color y no el nombre de la variable.
 export const COLORES_HUMOR = {
-  positivo: '#2ec4a0',
-  negativo: '#ff5a5f',
-  neutro: '#ffc93c',
-  sinDatos: '#d9d4ea',
+  positivo: '#8fc2a7',
+  negativo: '#d98a7d',
+  neutro: '#e3c27d',
+  sinDatos: '#cfd7d4',
 }
 
 // Rango neutro: valores entre -0,5 y +0,5 (sin incluir los extremos) se muestran
@@ -51,7 +51,7 @@ export const BOCAS_CARITA = {
 // dibujo de sus marcadores como texto. El resto de la página usa el componente
 // Carita.jsx, que dibuja lo mismo.
 export function caritaComoTexto(tipo, tamano) {
-  const tinta = '#2b2350'
+  const tinta = '#2a3a44'
   return (
     `<svg class="carita" viewBox="0 0 40 40" width="${tamano}" height="${tamano}" aria-hidden="true">` +
     `<circle cx="20" cy="20" r="17" fill="${COLORES_HUMOR[tipo]}" stroke="${tinta}" stroke-width="2.5"/>` +
@@ -67,4 +67,71 @@ export function caritaComoTexto(tipo, tamano) {
 export function posicionEnEscala(valor) {
   const acotado = Math.min(10, Math.max(-10, valor))
   return ((acotado + 10) / 20) * 100
+}
+
+// Día que muestra el planeta junto al gráfico de evolución (HU-DASH-005): el que
+// está bajo el mouse; si no hay ninguno, el día elegido en el mapa y, si ese no
+// está en la serie, el último día con humor. null si la serie está vacía.
+export function diaDestacado(serie, indiceActivo, fechaElegida) {
+  if (!serie || serie.length === 0) return null
+  if (indiceActivo !== null && indiceActivo !== undefined && serie[indiceActivo]) {
+    return { ...serie[indiceActivo], bajoElMouse: true }
+  }
+  const elegido = serie.find((dia) => dia.fecha === fechaElegida)
+  const conHumor = [...serie].reverse().find((dia) => dia.humor_promedio !== null && dia.humor_promedio !== undefined)
+  const dia = elegido ?? conHumor ?? serie[serie.length - 1]
+  return { ...dia, bajoElMouse: false }
+}
+
+// "2026-10-27" → "27 oct 2026", sin pasar por la zona horaria local.
+export function fechaLegible(fecha) {
+  const [anio, mes, dia] = fecha.split('-').map(Number)
+  return new Date(Date.UTC(anio, mes - 1, dia)).toLocaleDateString('es-CL', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+}
+
+// Continentes con el humor más alto y más bajo del día (HU-DASH-005: tarjetas del
+// encabezado del mapa). Ignora los continentes sin datos; null si no hay ninguno.
+export function extremosContinentes(continentes) {
+  const conDatos = (continentes ?? []).filter((c) => c.humor !== null && c.humor !== undefined)
+  if (conDatos.length === 0) return { masPositivo: null, masNegativo: null }
+  const ordenados = [...conDatos].sort((a, b) => b.humor - a.humor)
+  return { masPositivo: ordenados[0], masNegativo: ordenados[ordenados.length - 1] }
+}
+
+// Tramo de una barra centrada en 0 que va desde el 0 hasta el valor, en % del
+// ancho de la escala -10..+10 (HU-DASH-005: barras de los continentes).
+export function tramoEnEscala(valor) {
+  if (valor === null || valor === undefined) return { izquierda: 50, ancho: 0 }
+  const posicion = posicionEnEscala(valor)
+  return posicion >= 50 ? { izquierda: 50, ancho: posicion - 50 } : { izquierda: posicion, ancho: 50 - posicion }
+}
+
+// Eje vertical del gráfico de evolución (HU-DASH-001-v4, decisión de la PO del
+// 2026-11-16): se adapta a los datos, siempre incluye el 0 y cubre como mínimo de
+// -3 a +3, sin salirse de la escala de -10 a +10. Los días sin humor no cuentan.
+export const RANGO_MINIMO_EJE = 3
+
+export function rangoEjeHumor(valores) {
+  const conDatos = (valores ?? []).filter((valor) => valor !== null && valor !== undefined)
+  const menor = Math.min(-RANGO_MINIMO_EJE, ...conDatos)
+  const mayor = Math.max(RANGO_MINIMO_EJE, ...conDatos)
+  return { min: Math.max(-10, Math.floor(menor)), max: Math.min(10, Math.ceil(mayor)) }
+}
+
+// Frase llana junto a "Humor global" (HU-DASH-005, decisión 12 de la PO del
+// 2026-11-16). Usa la misma clasificación que las caritas (tipoHumor).
+const FRASES_MUNDO = {
+  positivo: 'El mundo está de buen humor',
+  neutro: 'El mundo está neutro',
+  negativo: 'El mundo está de mal humor',
+  sinDatos: 'Sin noticias evaluadas ese día',
+}
+
+export function fraseHumorMundo(valor) {
+  return FRASES_MUNDO[tipoHumor(valor)]
 }

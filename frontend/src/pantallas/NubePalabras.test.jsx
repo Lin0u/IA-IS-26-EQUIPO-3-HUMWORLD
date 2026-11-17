@@ -22,7 +22,7 @@ describe('NubePalabras', () => {
   it('muestra las palabras en orden alfabético, con tamaño según su peso', async () => {
     render(<NubePalabras />)
 
-    await screen.findByText('guerra')
+    await screen.findByRole('button', { name: 'guerra' })
     const nube = screen.getAllByRole('listitem').filter((li) => li.classList.contains('palabra'))
     expect(nube.map((li) => li.textContent)).toEqual(['amor', 'guerra'])
     expect(nube[1]).toHaveStyle({ fontSize: '50px' })
@@ -32,7 +32,7 @@ describe('NubePalabras', () => {
 
   it('filtra por continente y luego por país, y el continente borra el país', async () => {
     render(<NubePalabras />)
-    await screen.findByText('guerra')
+    await screen.findByRole('button', { name: 'guerra' })
 
     await userEvent.selectOptions(screen.getByLabelText('Continente'), 'América')
     expect(obtenerNubePalabras).toHaveBeenLastCalledWith('América', '')
@@ -85,5 +85,15 @@ describe('NubePalabras', () => {
     obtenerNubePalabras.mockRejectedValue(new Error('No se pudo conectar con el servidor.'))
     render(<NubePalabras />)
     expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo conectar con el servidor.')
+  })
+
+  it('muestra al costado las palabras más frecuentes (HU-DASH-005)', async () => {
+    render(<NubePalabras />)
+    const ranking = await screen.findByRole('complementary', { name: 'Más frecuentes' })
+    expect(
+      within(ranking)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual(['guerra-810 noticias', 'amor+65 noticias'])
   })
 })

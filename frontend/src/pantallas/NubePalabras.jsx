@@ -85,6 +85,7 @@ export default function NubePalabras() {
   const lista = palabras ?? []
   const pesoMaximo = Math.max(...lista.map((p) => p.peso), 1)
   const tamano = (peso) => TAMANO_MINIMO + (TAMANO_MAXIMO - TAMANO_MINIMO) * (peso / pesoMaximo)
+  const masFrecuentes = [...lista].sort((a, b) => b.peso - a.peso).slice(0, 8)
 
   let contenido
   if (error) {
@@ -124,7 +125,7 @@ export default function NubePalabras() {
 
   return (
     <section className="pantalla">
-      <div className="nube-encabezado">
+      <div className="nube-encabezado encabezado-vista">
         <div>
           <div className="titulo-con-ayuda">
             <h2>Nube de palabras</h2>
@@ -150,19 +151,45 @@ export default function NubePalabras() {
         </div>
       </div>
 
-      {contenido}
+      <div className="nube-diseno">
+        <div className="nube-principal">
+          {contenido}
 
-      {elegida && (
-        <div className="nube-detalle" role="status">
-          <p>
-            <strong className={`texto-${tipoHumor(elegida.valor)}`}>{elegida.palabra}</strong> vale{' '}
-            <strong>{formatoValor(elegida.valor)}</strong> en el diccionario (
-            {IDIOMAS[elegida.idioma] ?? elegida.idioma}) y aparece en <strong>{elegida.peso}</strong>{' '}
-            {elegida.peso === 1 ? 'noticia' : 'noticias'}.
-          </p>
-          <EscalaHumor valor={elegida.valor} etiqueta={elegida.palabra} />
+          {elegida && (
+            <div className="nube-detalle" role="status">
+              <p>
+                <strong className={`texto-${tipoHumor(elegida.valor)}`}>{elegida.palabra}</strong> vale{' '}
+                <strong>{formatoValor(elegida.valor)}</strong> en el diccionario (
+                {IDIOMAS[elegida.idioma] ?? elegida.idioma}) y aparece en <strong>{elegida.peso}</strong>{' '}
+                {elegida.peso === 1 ? 'noticia' : 'noticias'}.
+              </p>
+              <EscalaHumor valor={elegida.valor} etiqueta={elegida.palabra} />
+            </div>
+          )}
         </div>
-      )}
+
+        {/* HU-DASH-005: ranking de las palabras más frecuentes, al costado de la nube. */}
+        {masFrecuentes.length > 0 && (
+          <aside className="nube-ranking" aria-labelledby="titulo-ranking">
+            <h3 id="titulo-ranking">Más frecuentes</h3>
+            <ol>
+              {masFrecuentes.map((item) => (
+                <li key={item.termino_id}>
+                  <span className="ranking-palabra">{item.palabra}</span>
+                  <span className={`ranking-valor texto-${tipoHumor(item.valor)}`}>{formatoValor(item.valor)}</span>
+                  <span className="ranking-barra" aria-hidden="true">
+                    <span
+                      className={`ranking-tramo tramo-${tipoHumor(item.valor)}`}
+                      style={{ width: `${(item.peso / pesoMaximo) * 100}%` }}
+                    />
+                  </span>
+                  <span className="ranking-peso">{item.peso} noticias</span>
+                </li>
+              ))}
+            </ol>
+          </aside>
+        )}
+      </div>
 
       <ul className="leyenda" aria-label="Significado de los colores">
         <li>

@@ -38,8 +38,12 @@ const PASOS_AYUDA = [
     texto: 'Se ordenan por influencia: mientras más lejos de 0 está su humor, más arriba aparece.',
   },
   {
+    titulo: 'El lugar es el del medio',
+    texto: 'El país y el continente son los del medio que publica la noticia, no los del lugar donde ocurrió.',
+  },
+  {
     titulo: 'Mira por qué tiene ese número',
-    texto: 'El botón amarillo muestra qué palabras del diccionario encontró el sistema y cómo calculó el promedio.',
+    texto: 'El botón celeste muestra qué palabras del diccionario encontró el sistema y cómo calculó el promedio.',
   },
 ]
 
@@ -122,7 +126,11 @@ export default function ListadoNoticias() {
       // La "key" cambia con los filtros para que la animación se repita.
       <ul className="noticias-lista" key={`${filtro}-${continente}-${pais}-${pagina}`}>
         {noticias.map((noticia, posicion) => (
-          <li key={noticia.id} className="noticia" style={{ animationDelay: `${posicion * 50}ms` }}>
+          <li
+            key={noticia.id}
+            className={`noticia noticia-${tipoHumor(noticia.valor_humor)}`}
+            style={{ animationDelay: `${posicion * 50}ms` }}
+          >
             <div className="noticia-humor">
               <Carita tipo={tipoHumor(noticia.valor_humor)} tamano={38} />
               <strong className={`texto-${tipoHumor(noticia.valor_humor)}`}>{formatoHumor(noticia.valor_humor)}</strong>
@@ -133,8 +141,11 @@ export default function ListadoNoticias() {
                 {noticia.titulo}
               </a>
               <div className="noticia-datos">
-                <span>{noticia.canal}</span>
-                <span>{noticia.pais ? `${noticia.pais}, ${noticia.continente}` : noticia.continente}</span>
+                <span className="nombre-astro noticia-medio">{noticia.canal}</span>
+                {/* Opción A de la PO (2026-11-16): el lugar es el del medio, no el del hecho (ADR-002). */}
+                <span title="País y continente del medio que publica la noticia">
+                  {`Medio de ${noticia.pais ? `${noticia.pais}, ${noticia.continente}` : noticia.continente}`}
+                </span>
                 {noticia.categoria_iptc && <span>{nombreCategoria(noticia.categoria_iptc)}</span>}
                 <span>{formatoFecha(noticia.fecha_publicacion ?? noticia.fecha_registro)}</span>
               </div>
@@ -156,7 +167,7 @@ export default function ListadoNoticias() {
 
   return (
     <section className="pantalla">
-      <div className="noticias-encabezado">
+      <div className="noticias-encabezado encabezado-vista">
         <div>
           <div className="titulo-con-ayuda">
             <h2>Noticias</h2>

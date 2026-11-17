@@ -3,105 +3,310 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  /* Las bandas de borde a borde usan 100vw: se recorta el desborde de la barra de desplazamiento. */
+  overflow-x: clip;
 }
 
 .cabecera {
-  background: var(--acento);
-  color: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 1200;
+  /* Cabecera clara sobre el escritorio, con un filete fino abajo (HU-DASH-005-v3). */
+  background: rgba(247, 249, 248, 0.96);
   border-bottom: var(--borde);
-  padding: 14px 24px;
+  color: var(--tinta);
+  padding: 8px 24px;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 14px 28px;
+  justify-content: space-between;
+  gap: 16px;
 }
 
+/* Texto solo para lectores de pantalla. */
+.solo-lector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Logo: mascota + nombre + humor del mundo. Lleva al mapa. */
 .marca {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-right: auto;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.marca-textos {
+  display: flex;
+  flex-direction: column;
 }
 
 .marca-nombre {
   font-family: var(--letra-titulos);
-  font-size: 26px;
-  font-weight: 600;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   line-height: 1.1;
 }
 
 .marca-frase {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.92);
+  font-size: 13px;
+  color: var(--texto-suave);
 }
 
 .marca-frase strong {
-  background: #ffffff;
-  border-radius: 999px;
-  padding: 1px 8px;
+  background: var(--superficie);
+  border: var(--borde);
+  border-radius: var(--radio-chico);
+  padding: 0 7px;
   margin-left: 4px;
   font-variant-numeric: tabular-nums;
 }
 
-.menu {
+.marca:focus-visible,
+.boton-menu:focus-visible {
+  outline: 2px solid var(--laton);
+  outline-offset: 4px;
+  border-radius: var(--radio);
+}
+
+/* Botón ☰ (tres rayas). */
+.boton-menu {
+  width: 42px;
+  height: 42px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  background: var(--papel-hondo);
+  border: 1px solid #2c3f63;
+  border-radius: var(--radio-chico);
+  cursor: pointer;
+}
+
+.boton-menu span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--tinta);
+}
+
+.boton-menu:hover {
+  background: var(--globo);
+}
+
+/* Menú lateral que entra por la derecha. */
+.menu-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  background: rgba(15, 27, 51, 0.45);
+  animation: aparecer-fondo 0.2s ease-out;
+}
+
+.menu-lateral {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1400;
+  width: min(300px, 86vw);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 16px;
+  color: var(--tinta);
+  background: var(--superficie);
+  border-left: var(--borde);
+  box-shadow: var(--sombra-elevada);
+  animation: entrar-menu 0.22s ease-out;
+}
+
+.menu-lateral-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px 12px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--papel-hondo);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.menu-cerrar {
+  width: 34px;
+  height: 34px;
+  font: inherit;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--tinta);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radio-chico);
+  cursor: pointer;
+}
+
+.menu-cerrar:hover {
+  background: var(--papel-hondo);
+}
+
+.menu-vistas {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Administración queda al pie del menú, separada de las vistas. */
+.menu-pie {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--papel-hondo);
 }
 
 .menu-boton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font: inherit;
   font-size: 15px;
-  font-weight: 700;
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.16);
-  border: 2px solid transparent;
-  border-radius: 999px;
-  padding: 7px 16px;
+  font-weight: 600;
+  text-align: left;
+  color: var(--texto-suave);
+  background: none;
+  border: none;
+  border-radius: var(--radio-chico);
+  padding: 10px 12px;
   cursor: pointer;
-  transition: background 0.15s, transform 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .menu-boton:hover {
-  background: rgba(255, 255, 255, 0.28);
-  transform: translateY(-1px);
+  color: var(--tinta);
+  background: var(--globo);
 }
 
-.menu-boton:focus-visible {
-  outline: 3px solid var(--amarillo);
-  outline-offset: 2px;
+.menu-boton:focus-visible,
+.menu-cerrar:focus-visible {
+  outline: none;
+  box-shadow: var(--foco);
 }
 
+/* Vista actual: filete de latón (selección). */
 .menu-boton.activo {
   color: var(--tinta);
-  background: var(--amarillo);
-  border-color: var(--tinta);
-  box-shadow: 2px 2px 0 var(--tinta);
+  background: var(--activo);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--laton);
+}
+
+.icono-usuario {
+  flex: none;
+}
+
+@keyframes entrar-menu {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes aparecer-fondo {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* HU-DASH-005: el mapa va de borde a borde, sin tarjeta. */
+.contenido.contenido-ancho {
+  max-width: none;
+  padding: 0;
 }
 
 .contenido {
   flex: 1;
   width: 100%;
-  max-width: 1100px;
+  max-width: 1160px;
   margin: 0 auto;
-  padding: 28px 24px 40px;
+  padding: 32px 24px 48px;
 }
 
+/* Vistas en el contenedor central: el encabezado va sobre el fondo y el
+   contenido en tarjetas blancas (cada vista define las suyas). */
 .pantalla {
-  background: var(--superficie);
-  border: var(--borde);
-  border-radius: var(--radio);
-  box-shadow: var(--sombra);
-  padding: 24px;
   /* backwards: al terminar no deja un transform, que rompería las ayudas fijas del celular. */
   animation: entrar 0.35s ease-out backwards;
 }
 
 .pantalla h2 {
   font-family: var(--letra-titulos);
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 4px;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 8px;
+}
+
+/* Encabezado de cada vista (HU-DASH-005-v3): título en serif sobre la luz del
+   escritorio, sin banda de color, con sus controles al lado. */
+.encabezado-vista {
+  margin: 0 0 24px;
+  padding: 8px 0 0;
+  color: var(--tinta);
+}
+
+/* El primer bloque de contenido se monta sobre el borde de la banda, así banda
+   y cuerpo quedan unidos sin difuminar. */
+.encabezado-vista + .noticias-lista,
+.encabezado-vista + .noticias-vacio,
+.encabezado-vista + .nube-diseno {
+  position: relative;
+  margin-top: calc(-1 * var(--montaje));
+}
+
+.pantalla .encabezado-vista p {
+  max-width: 62ch;
+  font-size: 16px;
+  color: var(--texto-suave);
+}
+
+.encabezado-vista .campo {
+  color: var(--texto-suave);
+}
+
+.encabezado-vista .campo select,
+.encabezado-vista .campo input {
+  border-color: transparent;
+}
+
+/* Tarjeta blanca de contenido. */
+.tarjeta {
+  background: var(--superficie);
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
 }
 
 .pantalla p {
@@ -113,26 +318,37 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--texto);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texto-suave);
 }
 
 .campo input,
 .campo select {
   font: inherit;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--texto);
   background: var(--superficie);
-  border: var(--borde);
-  border-radius: 10px;
-  padding: 6px 10px;
+  border: 1px solid var(--linea-fuerte);
+  border-radius: var(--radio-chico);
+  padding: 7px 10px;
+  min-height: 36px;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.campo input:hover,
+.campo select:hover {
+  border-color: var(--acento);
 }
 
 .campo input:focus-visible,
 .campo select:focus-visible {
-  outline: 3px solid var(--acento);
-  outline-offset: 2px;
+  outline: none;
+  border-color: var(--acento);
+  box-shadow: var(--foco);
 }
 
 /* Leyendas de colores compartidas. */

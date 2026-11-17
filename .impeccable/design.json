@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-16T00:00:00Z",
+  "title": "Design System: HumWorld",
+  "extensions": {
+    "colorMeta": {
+      "acento": { "role": "primary", "displayName": "Azul petróleo" },
+      "laton": { "role": "primary", "displayName": "Latón" },
+      "papel": { "role": "neutral", "displayName": "Escritorio" },
+      "tinta": { "role": "neutral", "displayName": "Tinta" },
+      "humor-negativo": { "role": "tertiary", "displayName": "Terracota" },
+      "humor-neutro": { "role": "tertiary", "displayName": "Arena" },
+      "humor-positivo": { "role": "tertiary", "displayName": "Salvia" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "El humor del mundo." },
+      "nombre": { "displayName": "Nombre", "purpose": "Continentes, palabras de la nube y medios." }
+    },
+    "shadows": [
+      { "name": "modulo", "value": "0 1px 2px rgba(42, 58, 68, 0.05), 0 6px 18px rgba(42, 58, 68, 0.07)", "purpose": "Módulos sobre el escritorio." },
+      { "name": "etiqueta-globo", "value": "0 4px 12px rgba(42, 58, 68, 0.14)", "purpose": "Etiquetas de continentes sobre el globo." },
+      { "name": "elevado", "value": "0 18px 40px rgba(42, 58, 68, 0.18)", "purpose": "Menú lateral y globos de ayuda." }
+    ],
+    "motion": [
+      { "name": "giro-globo", "value": "900ms ease-out cúbica", "purpose": "Giro del globo hacia el continente elegido." },
+      { "name": "atenuar", "value": "opacity 0.3s ease-out", "purpose": "Atenuar los demás continentes." }
+    ],
+    "breakpoints": [
+      { "name": "angosto", "value": "760px" },
+      { "name": "medio", "value": "1100px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botón principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción principal.",
+      "html": "<button class=\"ds-btn\">Agregar canal</button>",
+      "css": ".ds-btn { background: #3f6f80; color: #fff; border: 1px solid #3f6f80; border-radius: 12px; height: 38px; padding: 0 16px; font: 600 15px 'Figtree', sans-serif; } .ds-btn:hover { background: #335c6b; } .ds-btn:focus-visible { outline: 2px solid #b8975a; outline-offset: 2px; }"
+    },
+    {
+      "name": "Etiqueta del globo",
+      "kind": "chip",
+      "refersTo": "globe-label",
+      "description": "Continente sobre el globo, con su humor.",
+      "html": "<button class=\"ds-etq\"><span>Europa</span><strong>-0.9</strong></button>",
+      "css": ".ds-etq { display: inline-flex; gap: 6px; align-items: baseline; padding: 5px 10px; background: #fff; border: 1px solid #d6dedb; border-radius: 999px; box-shadow: 0 4px 12px rgba(42,58,68,.14); font: 14px 'Figtree', sans-serif; color: #2a3a44; } .ds-etq span { font-family: 'Young Serif', serif; } .ds-etq strong { color: #a8503f; font-weight: 800; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "El globo de escritorio",
+    "keyCharacteristics": [
+      "Luz de lámpara: un brillo suave arriba sobre el escritorio claro.",
+      "Globo con contornos reales, meridiano de latón y etiquetas que giran con él.",
+      "Colores del humor apagados, con versiones oscuras para las cifras.",
+      "Young Serif para lo que se lee como nombre; Figtree para cifras y controles.",
+      "Latón para foco y selección."
+    ],
+    "rules": [
+      { "name": "The Muted-Mood Rule", "body": "El humor se pinta en terracota, arena y salvia; nunca en rojo o verde puros.", "section": "colors" },
+      { "name": "The Brass-Is-Focus Rule", "body": "El latón marca foco o selección, o es el metal del globo; nada más.", "section": "colors" },
+      { "name": "The No-Fake-Weights Rule", "body": "Young Serif tiene un solo peso y no tiene itálica: font-synthesis: none impide que el navegador los invente.", "section": "typography" }
+    ],
+    "dos": [
+      "Do pintar el humor en terracota, arena y salvia.",
+      "Do usar Young Serif solo en su peso regular.",
+      "Do dar a cada módulo filete fino y sombra suave."
+    ],
+    "donts": [
+      "Don't usar bandas oscuras ni azul noche (reemplazados en HU-DASH-005-v3).",
+      "Don't usar rojo o verde saturados para el humor.",
+      "Don't usar el latón para algo que no sea foco, selección o el metal del globo."
+    ]
+  }
+}

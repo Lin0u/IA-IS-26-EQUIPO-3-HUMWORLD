@@ -5,7 +5,6 @@
   justify-content: space-between;
   align-items: flex-end;
   gap: 16px;
-  margin-bottom: 16px;
 }
 
 .nube {
@@ -15,31 +14,32 @@
   justify-content: center;
   align-items: center;
   gap: 4px 24px;
-  min-height: 320px;
+  min-height: 360px;
   margin: 0;
-  padding: 32px 16px;
-  background: var(--papel);
+  padding: 40px 28px;
+  background: var(--superficie);
   border: var(--borde);
   border-radius: var(--radio);
+  box-shadow: var(--sombra);
 }
 
 .palabra {
-  font-family: var(--letra-titulos);
+  font-family: var(--letra-astro);
   line-height: 1.15;
   font-weight: 600;
-  animation: saltar 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: saltar 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
   transition: transform 0.15s;
 }
 
 .palabra:hover {
-  transform: scale(1.12) rotate(-2deg);
+  transform: scale(1.06);
 }
 
-/* Cada palabra aparece con un pequeño rebote. */
+/* Cada palabra aparece como una estrella que se enciende. */
 @keyframes saltar {
   from {
     opacity: 0;
-    transform: scale(0.6);
+    transform: scale(0.85);
   }
   to {
     opacity: 1;
@@ -47,8 +47,13 @@
   }
 }
 
+/* Como módulo: puede quedar montado sobre la banda. */
 .nube-vacia {
-  padding: 24px 0;
+  padding: 24px;
+  background: var(--superficie);
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
 }
 
 .filtros-lugar {
@@ -67,24 +72,128 @@
   cursor: pointer;
 }
 
+.palabra-boton {
+  border-radius: var(--radio-chico);
+  padding: 0 4px;
+}
+
+/* Palabra elegida: anillo de oro estelar (selección). */
 .palabra-boton[aria-pressed='true'] {
-  text-decoration: underline;
-  text-decoration-thickness: 3px;
+  background: var(--superficie);
+  box-shadow: 0 0 0 2px var(--laton);
 }
 
 .palabra-boton:focus-visible {
-  outline: 3px solid var(--acento);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--foco);
 }
 
 .nube-detalle {
   margin-top: 14px;
-  padding: 12px 16px;
+  padding: 16px 20px;
   border: var(--borde);
   border-radius: var(--radio);
   background: var(--superficie);
+  box-shadow: var(--sombra);
 }
 
 .pantalla .nube-detalle p {
   color: var(--texto);
+}
+
+/* HU-DASH-005: nube a la izquierda y ranking a la derecha, para aprovechar el ancho. */
+.nube-diseno {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 20px;
+  align-items: start;
+}
+
+.nube-ranking {
+  padding: 18px 20px;
+  background: var(--superficie);
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.nube-ranking h3 {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.nube-ranking ol {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.nube-ranking li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 8px;
+  padding: 10px 0;
+  border-top: var(--borde);
+  font-size: 14px;
+}
+
+.nube-ranking li:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.ranking-palabra {
+  font-family: var(--letra-astro);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.ranking-valor {
+  font-weight: 800;
+}
+
+.ranking-barra {
+  grid-column: 1 / -1;
+  height: 4px;
+  background: var(--papel-hondo);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ranking-tramo {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--linea-fuerte);
+}
+
+.ranking-peso {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--texto-suave);
+}
+
+@media (max-width: 860px) {
+  .nube-diseno {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Barras del ranking con el color del humor de cada palabra. */
+.ranking-tramo.tramo-positivo {
+  background: var(--humor-positivo);
+}
+.ranking-tramo.tramo-negativo {
+  background: var(--humor-negativo);
+}
+.ranking-tramo.tramo-neutro {
+  background: var(--humor-neutro);
 }

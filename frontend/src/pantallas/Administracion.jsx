@@ -64,7 +64,7 @@ export default function Administracion() {
 
   return (
     <section className="pantalla">
-      <div className="admin-encabezado">
+      <div className="admin-encabezado encabezado-vista">
         <h2>Administración</h2>
         <p>Fuentes RSS, diccionario, parámetros, purgado y modelo de humor.</p>
       </div>

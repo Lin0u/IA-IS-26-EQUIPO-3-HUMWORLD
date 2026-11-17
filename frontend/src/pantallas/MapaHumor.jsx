@@ -1,45 +1,33 @@
 // HumWorld - pantalla "Mapa de humor".
-// Origen: HU-DASH-001-v3 (PDF, sección 4.3.2) y ADR-005. Muestra los datos de
-// GET /api/v1/dashboards/map, que App.jsx pide al backend, y el gráfico de
+// Origen: HU-DASH-001-v4 (PDF, sección 4.3.2), ADR-005 y ADR-006. Muestra los datos
+// de GET /api/v1/dashboards/map, que App.jsx pide al backend, y el gráfico de
 // evolución de GET /api/v1/sentiment (HU-SENT-004). Esta pantalla no calcula humor.
 // HU-DASH-004-v2: ayudas "?" junto a cada parte y escala de humor.
-import L from 'leaflet'
-import { MapContainer, Marker, TileLayer, Tooltip } from 'react-leaflet'
-import 'leaflet/dist/leaflet.css'
+// HU-DASH-005-v3 (mundo «Globo de escritorio», decisión de la PO del 2026-11-16):
+// a la izquierda el humor del mundo, al centro un globo con los continentes
+// pintados por su humor y a la derecha el catálogo ordenado de más positivo a más
+// negativo; al enfocar un continente el globo gira hacia él y los demás se atenúan.
+import { useState } from 'react'
 import Carita from '../componentes/Carita.jsx'
-import CerebroHumor from '../componentes/CerebroHumor.jsx'
 import EscalaHumor from '../componentes/EscalaHumor.jsx'
+import Globo from '../componentes/Globo.jsx'
 import GraficoEvolucion from '../componentes/GraficoEvolucion.jsx'
 import Ayuda from '../componentes/Ayuda.jsx'
 import '../componentes/GuiaVisual.css'
 import { buscarContinente } from '../datos/continentes.js'
-import { caritaComoTexto, formatoHumor, tipoHumor } from '../utilidades/humor.js'
+import { fechaLegible, formatoHumor, fraseHumorMundo, tipoHumor } from '../utilidades/humor.js'
 import './MapaHumor.css'
 
-// Esquinas del mapa al abrir: [abajo-izquierda, arriba-derecha] en [latitud, longitud].
-const VISTA_INICIAL = [
-  [-55, -150],
-  [72, 170],
-]
-
-// Hasta dónde se puede mover el mapa: una sola copia del mundo.
-const LIMITES_MUNDO = [
-  [-85, -180],
-  [85, 180],
-]
-
-// Arma el dibujo que marca un continente: una carita con el valor debajo.
-// Leaflet necesita el dibujo de sus marcadores como texto HTML.
-function marcadorContinente(humor) {
-  return L.divIcon({
-    className: 'marcador-humor',
-    html: caritaComoTexto(tipoHumor(humor), 46) + `<span class="marcador-valor">${formatoHumor(humor)}</span>`,
-    iconSize: [70, 72],
-    iconAnchor: [35, 30],
-  })
+// Del más positivo al más negativo; los continentes sin datos, al final.
+function porHumor(a, b) {
+  if (a.humor === null || a.humor === undefined) return 1
+  if (b.humor === null || b.humor === undefined) return -1
+  return b.humor - a.humor
 }
 
 export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
+  // Continente enfocado (mouse, teclado o clic): el globo gira y los demás se atenúan.
+  const [enfocado, setEnfocado] = useState(null)
   const fecha = mapa?.fecha ?? ''
   const primeraFecha = mapa?.fecha_minima_con_datos ?? undefined
   const ultimaFecha = mapa?.fecha_maxima_con_datos ?? undefined
@@ -52,60 +40,25 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
     humor: agregado.humor_promedio,
     noticias: agregado.cantidad_noticias_evaluadas,
   }))
+  const catalogo = [...continentes].sort(porHumor)
+
+  const hayDatos = Boolean(global && global.cantidad_noticias_evaluadas > 0)
+  const tipoGlobal = hayDatos ? tipoHumor(global.humor_promedio) : 'sinDatos'
+  const atenuado = (nombre) => enfocado !== null && enfocado !== nombre
 
   return (
-    <section className="pantalla">
-      <div className="mapa-encabezado">
-        <div>
-          <h2>Mapa de humor</h2>
-          <p>Humor promedio de cada continente en la fecha elegida.</p>
-        </div>
-        <div className="campo-con-ayuda">
-          <label className="campo">
-            Fecha
-            <input
-              type="date"
-              value={fecha}
-              min={primeraFecha}
-              max={ultimaFecha}
-              disabled={!ultimaFecha}
-              onChange={(evento) => evento.target.value && alCambiarFecha(evento.target.value)}
-            />
-          </label>
-          <Ayuda titulo="Elige un día" alinear="derecha">
-            El mapa, el cerebro y las caritas muestran el humor de las noticias de ese día.
-          </Ayuda>
-        </div>
-      </div>
+    <section className="pantalla-mapa">
+      <h2 className="solo-lector">Mapa de humor</h2>
 
-      {error && (
-        <p className="mapa-aviso mapa-error" role="alert">
-          No se pudieron cargar los datos del mapa. {error}
-        </p>
-      )}
-      {cargando && !error && <p className="mapa-aviso">Cargando datos…</p>}
-
-      <div className="mapa-global">
-        <CerebroHumor humor={global ? global.humor_promedio : null} tamano={84} />
-        {global && global.cantidad_noticias_evaluadas > 0 ? (
-          <div className="mapa-global-datos">
-            <p>
-              <span className="mapa-global-titulo">
-                Humor global
-                <Ayuda titulo="El cerebro es el mundo">
-                  Su número es el humor global: el promedio del humor de todas las noticias de ese día. La escala
-                  muestra dónde cae entre -10 y +10.
-                </Ayuda>
-              </span>
-              <strong className={`mapa-global-valor texto-${tipoHumor(global.humor_promedio)}`}>
-                {formatoHumor(global.humor_promedio)}
-              </strong>
-              <span>promedio de {global.cantidad_noticias_evaluadas} noticias evaluadas</span>
-            </p>
-            <EscalaHumor valor={global.humor_promedio} etiqueta="Mundo" />
-          </div>
-        ) : (
-          <p>
+      <div className="mapa-avisos">
+        {error && (
+          <p className="mapa-aviso mapa-error" role="alert">
+            No se pudieron cargar los datos del mapa. {error}
+          </p>
+        )}
+        {cargando && !error && <p className="mapa-aviso">Cargando datos…</p>}
+        {!cargando && !error && !hayDatos && (
+          <p className="mapa-aviso">
             {ultimaFecha
               ? `No hay datos para esa fecha. Elige una entre ${primeraFecha} y ${ultimaFecha}.`
               : 'Todavía no hay noticias con humor calculado.'}
@@ -113,76 +66,109 @@ export default function MapaHumor({ mapa, cargando, error, alCambiarFecha }) {
         )}
       </div>
 
-      <div className="mapa-contenedor">
-        <MapContainer
-          bounds={VISTA_INICIAL}
-          maxBounds={LIMITES_MUNDO}
-          maxBoundsViscosity={1}
-          zoomSnap={0.25}
-          minZoom={1}
-          maxZoom={5}
-          scrollWheelZoom={false}
-        >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            noWrap
-          />
-          {continentes
-            .filter((continente) => continente.ubicacion)
-            .map((continente) => (
-              <Marker
-                key={continente.nombre}
-                position={continente.ubicacion.centro}
-                icon={marcadorContinente(continente.humor)}
-                keyboard={false}
-              >
-                <Tooltip direction="top" offset={[0, -26]}>
-                  {continente.nombre}: {formatoHumor(continente.humor)}, promedio de {continente.noticias} noticias
-                </Tooltip>
-              </Marker>
-            ))}
-        </MapContainer>
+      <div className="mapa-escena">
+        {/* Lectura del día: el humor del mundo en grande. */}
+        <div className="mapa-lectura" aria-label="Resumen del día" role="group">
+          <span className="lectura-etiqueta">
+            Humor del mundo{fecha && ` · ${fechaLegible(fecha)}`}
+            <Ayuda titulo="Humor global">
+              El promedio del humor de todas las noticias del día elegido, en la escala de -10 a +10. La barra de abajo
+              muestra dónde cae.
+            </Ayuda>
+          </span>
+          <strong className={`lectura-valor texto-${tipoGlobal}`}>
+            {hayDatos ? formatoHumor(global.humor_promedio) : 'Sin datos'}
+          </strong>
+          <span className="lectura-frase">{fraseHumorMundo(hayDatos ? global.humor_promedio : null)}</span>
+          <p className="lectura-nota">
+            {hayDatos ? global.cantidad_noticias_evaluadas : 0} noticias evaluadas en{' '}
+            {continentes.filter((c) => c.noticias > 0).length} continentes, en una escala de -10 a +10.
+          </p>
+          <div className="campo-con-ayuda">
+            <label className="campo">
+              Fecha
+              <input
+                type="date"
+                value={fecha}
+                min={primeraFecha}
+                max={ultimaFecha}
+                disabled={!ultimaFecha}
+                onChange={(evento) => evento.target.value && alCambiarFecha(evento.target.value)}
+              />
+            </label>
+            <Ayuda titulo="Elige un día">
+              El globo, los continentes y la escala muestran el humor de las noticias de ese día.
+            </Ayuda>
+          </div>
+        </div>
+
+        <div className="mapa-globo">
+          <Globo continentes={continentes} enfocado={enfocado} alEnfocar={setEnfocado} />
+          <ul className="leyenda leyenda-mapa" aria-label="Significado de los colores">
+            <li>
+              <Carita tipo="negativo" tamano={18} /> Negativo
+            </li>
+            <li>
+              <Carita tipo="neutro" tamano={18} /> Neutro
+            </li>
+            <li>
+              <Carita tipo="positivo" tamano={18} /> Positivo
+            </li>
+            <li>
+              <Carita tipo="sinDatos" tamano={18} /> Sin datos
+            </li>
+            <li>
+              <Ayuda titulo="Cómo leer el globo" alinear="derecha">
+                Cada continente se pinta con el humor promedio de sus noticias del día. Rojo: negativo; amarillo: neutro
+                (entre -0.5 y +0.5); verde: positivo; gris: sin noticias ese día. Elige un continente para girar el
+                globo hacia él, o arrástralo. Cada noticia cuenta en el continente del medio que la publica, no en el
+                lugar donde ocurrió el hecho.
+              </Ayuda>
+            </li>
+          </ul>
+        </div>
+
+        {catalogo.length > 0 && (
+          <aside
+            className="mapa-continentes"
+            aria-labelledby="titulo-continentes"
+            onMouseLeave={() => setEnfocado(null)}
+          >
+            <h3 id="titulo-continentes">Continentes</h3>
+            <ul className="continentes">
+              {catalogo.map((continente) => (
+                <li key={continente.nombre} className={atenuado(continente.nombre) ? 'continente-atenuado' : undefined}>
+                  <button
+                    type="button"
+                    className="continente"
+                    aria-pressed={enfocado === continente.nombre}
+                    onMouseEnter={() => setEnfocado(continente.nombre)}
+                    onFocus={() => setEnfocado(continente.nombre)}
+                    onClick={() => setEnfocado(continente.nombre)}
+                  >
+                    <Carita tipo={tipoHumor(continente.humor)} tamano={26} />
+                    <span className="continente-nombre nombre-astro">{continente.nombre}</span>
+                    <span className="continente-noticias">{continente.noticias} noticias</span>
+                    <strong className={`continente-humor texto-${tipoHumor(continente.humor)}`}>
+                      {formatoHumor(continente.humor)}
+                    </strong>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        )}
       </div>
 
-      <ul className="leyenda" aria-label="Significado de las caritas">
-        <li>
-          <Carita tipo="negativo" tamano={20} /> Negativo
-        </li>
-        <li>
-          <Carita tipo="neutro" tamano={20} /> Neutro (entre -0.5 y +0.5)
-        </li>
-        <li>
-          <Carita tipo="positivo" tamano={20} /> Positivo
-        </li>
-        <li>
-          <Carita tipo="sinDatos" tamano={20} /> Sin datos
-        </li>
-        <li className="leyenda-nota">
-          Escala de -10 a +10
-          <Ayuda titulo="Cada carita es un continente">
-            Su número es el promedio de las noticias de ese continente. Rojo y triste: negativo; amarillo: neutro (entre
-            -0.5 y +0.5); verde y feliz: positivo.
-          </Ayuda>
-        </li>
-      </ul>
+      {hayDatos && (
+        <div className="mapa-escala">
+          <EscalaHumor valor={global.humor_promedio} etiqueta="Mundo" />
+        </div>
+      )}
 
-      <ul className="continentes">
-        {continentes.map((continente) => (
-          <li key={continente.nombre} className="continente">
-            <Carita tipo={tipoHumor(continente.humor)} tamano={40} />
-            <div>
-              <span className="continente-nombre">{continente.nombre}</span>
-              <strong className={`continente-humor texto-${tipoHumor(continente.humor)}`}>
-                {formatoHumor(continente.humor)}
-              </strong>
-              <span className="continente-noticias">promedio de {continente.noticias} noticias</span>
-            </div>
-          </li>
-        ))}
-      </ul>
-
-      <GraficoEvolucion primeraFecha={primeraFecha} ultimaFecha={ultimaFecha} fechaElegida={fecha} />
+      <div className="mapa-debajo">
+        <GraficoEvolucion primeraFecha={primeraFecha} ultimaFecha={ultimaFecha} fechaElegida={fecha} />
+      </div>
     </section>
   )
 }

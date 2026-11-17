@@ -1,37 +1,63 @@
-/* HumWorld - estilos generales. Estilo "cerebro con cara": colores vivos,
-   bordes gruesos, esquinas redondeadas y sombras duras, como una caricatura.
-   Los colores se definen una sola vez aquí arriba: para cambiar el aspecto de
-   toda la página basta con cambiar estos valores. */
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&display=swap');
+/* HumWorld - estilos generales. Mundo visual «Globo de escritorio» (HU-DASH-005-v3,
+   decisión de la PO del 2026-11-16): luz de lámpara sobre un escritorio claro,
+   módulos blancos en capas con sombras suaves, colores del humor apagados
+   (terracota, arena y salvia) y latón para el foco y la selección. Los colores y
+   medidas se definen una sola vez aquí arriba. */
+/* Tipografía: Young Serif para títulos y nombres de continentes; Figtree para
+   texto, controles y cifras. */
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Young+Serif&display=swap');
 
 :root {
-  --tinta: #2b2350;          /* violeta casi negro: textos, bordes y sombras */
-  --papel: #e5e5e5;          /* gris claro: fondo de la página */
-  --superficie: #ffffff;     /* fondo de las tarjetas */
-  --texto: #2b2350;
-  --texto-suave: #5a5380;
-  --acento: #6c4df6;         /* violeta de la cabecera */
-  --amarillo: #ffc93c;
-  --rosa: #ff8fb1;
+  /* Escritorio y luz. */
+  --papel: #e8edeb; /* fondo: escritorio claro */
+  --papel-hondo: #dde4e1; /* recuadros secundarios */
+  --luz: #f7f9f8; /* centro de la luz de la lámpara */
+  --superficie: #ffffff; /* módulos */
+  --globo: #f5f8f7; /* globos de ayuda, filas al pasar el mouse */
+  --tinta: #2a3a44; /* texto principal */
+  --texto: #2a3a44;
+  --texto-suave: #56666e; /* contraste 4,9:1 sobre el fondo y 6:1 sobre blanco */
+  --linea: #d6dedb; /* filetes finos */
+  --linea-fuerte: #b3c0bc; /* bordes de campos y botones */
+  --acento: #3f6f80; /* azul petróleo suave: botón principal (5,6:1 con blanco) */
+  --activo: #e3edee; /* fondo de elementos seleccionados (con texto --acento) */
+  --laton: #b8975a; /* latón del globo: foco y selección */
+  --laton-texto: #7d6230; /* latón legible sobre blanco */
+  --mar: #a9c4cf; /* mar del globo */
+  --ayuda: #d7e3e4; /* ícono "?" (con el signo en --tinta) */
 
-  /* Colores de humor para rellenos (caritas, puntos). */
-  --humor-positivo: #2ec4a0;
-  --humor-negativo: #ff5a5f;
-  --humor-neutro: #ffc93c;
-  --humor-sin-datos: #d9d4ea;
+  /* Colores de humor apagados para rellenos (países, caritas, puntos). */
+  --humor-positivo: #8fc2a7;
+  --humor-negativo: #d98a7d;
+  --humor-neutro: #e3c27d;
+  --humor-sin-datos: #cfd7d4;
 
-  /* Los mismos colores, más oscuros, para que los números se lean sobre blanco. */
-  --texto-positivo: #14806a;
-  --texto-negativo: #d0343a;
-  --texto-neutro: #946b00;
+  /* Los mismos colores, oscuros, para cifras y texto (AA sobre blanco). */
+  --texto-positivo: #2f7556;
+  --texto-negativo: #a8503f;
+  --texto-neutro: #7d6020;
 
-  --borde: 2px solid var(--tinta);
-  --sombra: 4px 4px 0 var(--tinta);
-  --radio: 16px;
-  --letra-titulos: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif;
+  --borde: 1px solid var(--linea);
+  --sombra: 0 1px 2px rgba(42, 58, 68, 0.05), 0 6px 18px rgba(42, 58, 68, 0.07);
+  --sombra-elevada: 0 18px 40px rgba(42, 58, 68, 0.18);
+  --foco: 0 0 0 3px rgba(184, 151, 90, 0.45);
+  --radio: 12px;
+  --radio-chico: 8px;
+  --letra-texto: 'Figtree', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --letra-titulos: 'Young Serif', Georgia, serif;
+  --letra-astro: 'Young Serif', Georgia, serif;
+  /* Banda superior de cada vista: sin color propio, sobre la luz del escritorio. */
+  --banda: transparent;
+  --montaje: 0px;
 
-  font-family: 'Nunito', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  font-family: var(--letra-texto);
+  font-size: 15px;
+  line-height: 1.55;
+  font-variant-numeric: tabular-nums;
+  /* Young Serif tiene un solo peso y sin itálica: el navegador no los inventa. */
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   color: var(--texto);
   background: var(--papel);
 }
@@ -45,6 +71,9 @@
 body {
   margin: 0;
   min-height: 100vh;
+  background:
+    radial-gradient(1200px 700px at 62% 0%, var(--luz) 0%, rgba(247, 249, 248, 0) 70%) no-repeat,
+    var(--papel);
 }
 
 h1,
@@ -54,19 +83,39 @@ p {
 }
 
 /* Colores de texto según el tipo de humor (los usan las tres pantallas). */
-.texto-positivo { color: var(--texto-positivo); }
-.texto-negativo { color: var(--texto-negativo); }
-.texto-neutro { color: var(--texto-neutro); }
-.texto-sinDatos { color: var(--texto-suave); }
+.texto-positivo {
+  color: var(--texto-positivo);
+}
+.texto-negativo {
+  color: var(--texto-negativo);
+}
+.texto-neutro {
+  color: var(--texto-neutro);
+}
+.texto-sinDatos {
+  color: var(--texto-suave);
+}
 
-/* La mascota flota suavemente. */
-.cerebro-animado {
-  animation: flotar 2.6s ease-in-out infinite;
+/* La mascota (el planeta del logo) flota y se mece suavemente. */
+.planeta-animado {
+  animation: flotar 3s ease-in-out infinite;
+  transform-origin: 50% 60%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .planeta-animado {
+    animation: none;
+  }
 }
 
 @keyframes flotar {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+  0%,
+  100% {
+    transform: translateY(0) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(3deg);
+  }
 }
 
 /* Cada pantalla aparece subiendo suavemente al entrar. */
@@ -89,4 +138,32 @@ p {
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* Nombres propios (continentes, países y medios) en la serif de títulos (HU-DASH-005-v3). */
+.nombre-astro {
+  font-family: var(--letra-astro);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+::selection {
+  background: rgba(184, 151, 90, 0.35);
+  color: var(--tinta);
+}
+
+:focus-visible {
+  outline: 2px solid var(--laton);
+  outline-offset: 2px;
+}
+
+/* Tramos de color por humor (barras de la nube y de cobertura). */
+.tramo-positivo {
+  background: var(--humor-positivo);
+}
+.tramo-negativo {
+  background: var(--humor-negativo);
+}
+.tramo-neutro {
+  background: var(--humor-neutro);
 }

@@ -467,7 +467,11 @@ export default function FuentesAdmin() {
                           >
                             Capturar ahora
                           </button>
-                          <button type="button" className="filtro" onClick={() => alternarEstado(fuente)}>
+                          <button
+                            type="button"
+                            className={fuente.activo ? 'filtro peligro' : 'filtro'}
+                            onClick={() => alternarEstado(fuente)}
+                          >
                             {fuente.activo ? 'Desactivar' : 'Reactivar'}
                           </button>
                         </div>

@@ -252,7 +252,7 @@ export default function DiccionarioAdmin() {
                           >
                             Editar
                           </button>
-                          <button type="button" className="filtro" onClick={() => eliminar(termino)}>
+                          <button type="button" className="filtro peligro" onClick={() => eliminar(termino)}>
                             Eliminar
                           </button>
                         </>

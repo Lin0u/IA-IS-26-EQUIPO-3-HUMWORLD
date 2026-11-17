@@ -42,11 +42,11 @@ describe('ListadoNoticias', () => {
 
     const primera = enlace.closest('li')
     expect(within(primera).getByText('-4.5')).toHaveClass('texto-negativo')
-    expect(within(primera).getByText('Chile, América')).toBeInTheDocument()
+    expect(within(primera).getByText('Medio de Chile, América')).toBeInTheDocument()
     expect(within(primera).getByText('Política')).toBeInTheDocument()
 
     const segunda = screen.getByRole('link', { name: 'Noticia 2' }).closest('li')
-    expect(within(segunda).getByText('América')).toBeInTheDocument()
+    expect(within(segunda).getByText('Medio de América')).toBeInTheDocument()
     expect(within(segunda).getByText('+2.0')).toBeInTheDocument()
   })
 
