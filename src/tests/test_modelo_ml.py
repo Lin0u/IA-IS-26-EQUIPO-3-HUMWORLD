@@ -247,6 +247,7 @@ def test_post_trainings_201(client, db, fuente):
     cuerpo = respuesta.json()
     assert set(cuerpo) == {
         "id", "version", "modelo_embeddings_usado", "mae_evaluacion", "fecha_entrenamiento", "activo",
+        "cantidad_noticias", "mae_referencia",
     }
     assert cuerpo["activo"] is True
     assert cuerpo["modelo_embeddings_usado"] == "tfidf-1-2"
@@ -344,3 +345,96 @@ def test_si_la_prediccion_falla_se_usa_el_diccionario(db, fuente):
     assert nueva.metodo_calculo == METODO_DICCIONARIO
     assert nueva.valor_humor == -8.0
     assert nueva.modelo_sentimiento_id is None
+
+
+# --- HU-SENT-010: tarjeta del modelo activo y prueba con un texto -------------
+
+def test_el_entrenamiento_registra_noticias_usadas_y_mae_de_referencia(db, fuente):
+    _datos(db, fuente)
+
+    modelo = entrenar_modelo(db, ahora=AHORA)
+
+    assert modelo.cantidad_noticias == 60
+    assert modelo.mae_referencia > modelo.mae_evaluacion  # el modelo mejora la referencia
+
+
+def test_get_modelo_activo_404_sin_modelo(client):
+    respuesta = client.get("/api/v1/trainings/active")
+    assert respuesta.status_code == 404
+    assert respuesta.json()["codigo"] == "MODELO_NO_ACTIVO"
+
+
+def test_get_modelo_activo_devuelve_sus_metricas(client, db, fuente):
+    _datos(db, fuente)
+    entrenar_modelo(db, ahora=AHORA)
+
+    cuerpo = client.get("/api/v1/trainings/active").json()
+
+    assert cuerpo["version"] == "20261117T120000000000Z"
+    assert cuerpo["cantidad_noticias"] == 60
+    assert cuerpo["mae_referencia"] > cuerpo["mae_evaluacion"]
+
+
+def test_modelo_antiguo_sin_metricas_se_muestra_con_nulos(client, db, tmp_path):
+    ruta = tmp_path / "viejo.joblib"
+    joblib.dump(construir_pipeline(), ruta)
+    ModeloSentimientoRepository().registrar_como_activo(
+        db,
+        ModeloSentimiento(
+            version="v-antigua",
+            ruta_archivo=str(ruta),
+            modelo_embeddings_usado="tfidf-1-2",
+            mae_evaluacion=1.5,
+            fecha_entrenamiento=AHORA,
+        ),
+    )
+
+    cuerpo = client.get("/api/v1/trainings/active").json()
+
+    assert (cuerpo["cantidad_noticias"], cuerpo["mae_referencia"]) == (None, None)
+
+
+def test_predecir_un_texto_con_el_modelo_activo(client, db, fuente):
+    _datos(db, fuente)
+    modelo = entrenar_modelo(db, ahora=AHORA)
+
+    negativa = client.post("/api/v1/trainings/active/predictions", json={"texto": "guerra y ataque en la ciudad"})
+    positiva = client.post("/api/v1/trainings/active/predictions", json={"texto": "acuerdo de paz en la ciudad"})
+
+    assert negativa.status_code == positiva.status_code == 200
+    assert negativa.json()["valor_humor"] < -1.0 < 1.0 < positiva.json()["valor_humor"]
+    assert negativa.json()["modelo_id"] == modelo.id
+    assert negativa.json()["version"] == modelo.version
+    assert db.execute(select(Noticia)).scalars().all().__len__() == 60  # no persiste nada
+
+
+def test_predecir_sin_modelo_activo_404(client):
+    respuesta = client.post("/api/v1/trainings/active/predictions", json={"texto": "hola"})
+    assert respuesta.status_code == 404
+    assert respuesta.json()["codigo"] == "MODELO_NO_ACTIVO"
+
+
+def test_predecir_con_modelo_incompatible_404(client, db, tmp_path):
+    ruta = tmp_path / "viejo.joblib"
+    joblib.dump(construir_pipeline(), ruta)
+    ModeloSentimientoRepository().registrar_como_activo(
+        db,
+        ModeloSentimiento(
+            version="v-gemini",
+            ruta_archivo=str(ruta),
+            modelo_embeddings_usado="gemini-embedding-001",
+            mae_evaluacion=1.0,
+            fecha_entrenamiento=AHORA,
+        ),
+    )
+
+    respuesta = client.post("/api/v1/trainings/active/predictions", json={"texto": "hola"})
+
+    assert respuesta.status_code == 404
+
+
+@pytest.mark.parametrize("cuerpo", [{"texto": "   "}, {"texto": ""}, {}, {"texto": "x" * 5001}])
+def test_predecir_con_texto_invalido_400(client, cuerpo):
+    respuesta = client.post("/api/v1/trainings/active/predictions", json=cuerpo)
+    assert respuesta.status_code == 400
+    assert respuesta.json()["codigo"] == "DATOS_INVALIDOS"

@@ -53,6 +53,10 @@ SEMILLA = 42
 PREFIJO_REPRESENTACION = "tfidf"
 
 
+class ModeloNoActivoError(Exception):
+    """No hay un modelo de ML activo y utilizable (HU-SENT-010)."""
+
+
 class DatosInsuficientesError(Exception):
     """No hay suficientes noticias evaluadas por diccionario (HU-SENT-006-v2)."""
 
@@ -144,6 +148,8 @@ def entrenar_modelo(
         modelo_embeddings_usado=representacion_actual(),
         mae_evaluacion=mae,
         fecha_entrenamiento=fecha,
+        cantidad_noticias=len(filas),
+        mae_referencia=mae_referencia,
     )
     try:
         modelo = repositorio.registrar_como_activo(db, modelo)
@@ -216,3 +222,27 @@ def proveedor_activo(db: Session) -> ProveedorRegresor | None:
     except Exception:  # noqa: BLE001 - p. ej. tabla inexistente sin migrar o pickle corrupto
         logger.exception("Error al obtener el modelo de ML activo; se usa diccionario")
         return None
+
+
+# --- HU-SENT-010: consulta y prueba del modelo activo -------------------------
+
+
+def modelo_activo(db: Session) -> ModeloSentimiento:
+    """Versión activa del modelo, o ModeloNoActivoError si no hay ninguna."""
+    modelo = ModeloSentimientoRepository().obtener_activo(db)
+    if modelo is None:
+        raise ModeloNoActivoError("No hay un modelo de ML activo.")
+    return modelo
+
+
+def predecir_texto(db: Session, texto: str) -> tuple[float, ModeloSentimiento]:
+    """Humor que el modelo activo asigna a un texto arbitrario. No persiste nada.
+
+    ModeloNoActivoError si no hay modelo activo o si no se puede usar
+    (incompatible con ADR-007 o archivo ilegible).
+    """
+    modelo = modelo_activo(db)
+    proveedor = proveedor_activo(db)
+    if proveedor is None or proveedor.modelo_id != modelo.id:
+        raise ModeloNoActivoError("El modelo activo no se puede usar; vuelve a entrenarlo.")
+    return proveedor.predecir(texto), modelo

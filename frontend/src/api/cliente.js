@@ -274,7 +274,27 @@ export function purgarNoticias(fecha = '') {
   return solicitar(`/news${consulta}`, { metodo: 'DELETE' })
 }
 
-// POST /trainings (HU-SENT-006).
+// POST /trainings (HU-SENT-006-v2).
 export function entrenarModelo() {
   return solicitar('/trainings', { metodo: 'POST', timeoutMs: TIMEOUT_ENTRENAMIENTO_MS })
+}
+
+// GET /trainings/active (HU-SENT-010). Sin modelo activo (404) devuelve null.
+export async function obtenerModeloActivo() {
+  try {
+    return await obtenerJson('/trainings/active')
+  } catch (error) {
+    if (error.status === 404) return null
+    throw error
+  }
+}
+
+// POST /trainings/active/predictions (HU-SENT-010): humor del modelo para un texto, sin guardarlo.
+export function predecirConModelo(texto) {
+  return solicitar('/trainings/active/predictions', { metodo: 'POST', cuerpo: { texto } })
+}
+
+// POST /sentiment (HU-SENT-005-v2): humor por diccionario de un texto, con sus términos.
+export function analizarTexto(texto) {
+  return solicitar('/sentiment', { metodo: 'POST', cuerpo: { texto } })
 }

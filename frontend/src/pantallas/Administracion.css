@@ -570,3 +570,127 @@
     flex: none;
   }
 }
+
+/* HU-SENT-010: pestaña Modelo ML. Tarjeta del modelo activo (reutiliza
+   .admin-cobertura) y comparación diccionario frente a modelo. */
+.modelo-tarjeta .modelo-dato-chico {
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.modelo-tarjeta .modelo-dato-mejora {
+  background: var(--activo);
+  border-color: var(--texto-positivo);
+}
+
+.modelo-tarjeta .modelo-dato-mejora dd {
+  color: var(--texto-positivo);
+}
+
+.modelo-prueba {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.modelo-campo-texto {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.modelo-campo-texto textarea {
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 15px;
+  color: var(--tinta);
+  background: var(--superficie);
+  border: 1px solid var(--linea-fuerte);
+  border-radius: var(--radio-chico);
+  resize: vertical;
+}
+
+.modelo-campo-texto textarea:focus-visible {
+  outline: none;
+  box-shadow: var(--foco);
+}
+
+.modelo-prueba-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.modelo-comparacion {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.modelo-resultado {
+  padding: 14px 16px;
+  background: var(--papel);
+  border: var(--borde);
+  border-top: 4px solid var(--linea-fuerte);
+  border-radius: var(--radio-chico);
+}
+
+.modelo-resultado-positivo {
+  border-top-color: var(--texto-positivo);
+}
+
+.modelo-resultado-negativo {
+  border-top-color: var(--texto-negativo);
+}
+
+.modelo-resultado h4 {
+  margin: 0 0 8px;
+  font-family: var(--letra-titulos);
+  font-size: 15px;
+}
+
+.modelo-resultado-valor {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.modelo-resultado-valor strong {
+  font-family: var(--letra-titulos);
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.pantalla .modelo-resultado p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.modelo-terminos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.modelo-terminos li {
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  background: var(--superficie);
+  border: var(--borde);
+}
+
+.modelo-terminos .termino-negativo {
+  color: var(--texto-negativo);
+}
+
+.modelo-terminos .termino-positivo {
+  color: var(--texto-positivo);
+}

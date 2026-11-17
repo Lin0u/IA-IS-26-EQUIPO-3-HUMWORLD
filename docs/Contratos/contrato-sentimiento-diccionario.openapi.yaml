@@ -15,7 +15,7 @@ info:
     servicios internos invocados tras la captura de cada noticia o desde los
     endpoints de este contrato) y por lo tanto no aparecen aquí — ver
     `HU-SENT-motor-sentimiento.md` para su detalle.
-  version: "1.6.0"
+  version: "1.7.0"
 servers:
   - url: /api/v1
     description: Base URL versionada (PDF, sección 10.3), misma convención que contrato-canales-fuentes-rss.openapi.yaml.
@@ -355,6 +355,65 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /trainings/active:
+    get:
+      tags: [trainings]
+      summary: Consultar la versión activa del modelo de ML y sus métricas
+      description: >
+        Origina en HU-SENT-010 (tarjeta del modelo activo en Administración →
+        Modelo ML). "active" identifica a la versión activa dentro de la
+        colección de entrenamientos; no es un verbo.
+      responses:
+        "200":
+          description: Versión activa del modelo.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModeloSentimiento"
+        "404":
+          description: No hay un modelo activo (codigo MODELO_NO_ACTIVO). Todo el humor se calcula por diccionario.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /trainings/active/predictions:
+    post:
+      tags: [trainings]
+      summary: Calcular con el modelo activo el humor de un texto arbitrario
+      description: >
+        Origina en HU-SENT-010 ("Probar el modelo"). Crea una predicción con el
+        modelo activo (ADR-007) sin persistir nada, igual que POST /sentiment
+        para el diccionario; el panel muestra ambos resultados lado a lado.
+        No aplica la lista de exclusión ni el mínimo de términos.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrediccionCrear"
+      responses:
+        "200":
+          description: Humor que el modelo activo asigna al texto.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrediccionResultado"
+        "400":
+          description: Texto vacío, solo espacios o de más de 5.000 caracteres (codigo DATOS_INVALIDOS).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: >
+            No hay un modelo activo o no se puede usar (incompatible con
+            ADR-007 o archivo ilegible); codigo MODELO_NO_ACTIVO.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /exclusions:
     get:
       tags: [exclusions]
@@ -681,8 +740,46 @@ components:
           format: date-time
         activo:
           type: boolean
-          description: Indica si esta es la versión actualmente en uso por HU-SENT-002-v2.
+          description: Indica si esta es la versión actualmente en uso por HU-SENT-002-v4.
+        cantidad_noticias:
+          type: integer
+          nullable: true
+          description: Noticias usadas para entrenar (HU-SENT-010). null en modelos entrenados antes de v1.7.0.
+        mae_referencia:
+          type: number
+          nullable: true
+          description: >
+            MAE de predecir siempre la media de entrenamiento, sobre la misma
+            partición de validación (referencia de ADR-007, punto 2). Si
+            mae_evaluacion no es menor, el modelo no aprendió. null en modelos
+            entrenados antes de v1.7.0.
       required: [id, version, modelo_embeddings_usado, mae_evaluacion, fecha_entrenamiento, activo]
+
+    PrediccionCrear:
+      type: object
+      description: Origina en HU-SENT-010. Texto a evaluar con el modelo activo.
+      properties:
+        texto:
+          type: string
+          minLength: 1
+          maxLength: 5000
+          description: No puede estar vacío ni tener solo espacios.
+      required: [texto]
+
+    PrediccionResultado:
+      type: object
+      description: Origina en HU-SENT-010. No se persiste.
+      properties:
+        valor_humor:
+          type: number
+          minimum: -10
+          maximum: 10
+        modelo_id:
+          type: integer
+        version:
+          type: string
+          description: Versión del modelo que hizo la predicción.
+      required: [valor_humor, modelo_id, version]
 
     Error:
       type: object
@@ -754,3 +851,8 @@ components:
 #   (SERVICIO_EMBEDDINGS_NO_DISPONIBLE) y 503 (ML_NO_CONFIGURADO). Cambia solo
 #   la descripción de ModeloSentimiento.modelo_embeddings_usado (mismo nombre y
 #   tipo). Cambio compatible para los clientes: solo se retiran respuestas de error.
+# v1.7.0 (2026-11-17): HU-SENT-010. Se agregan GET /trainings/active y POST
+#   /trainings/active/predictions (404 MODELO_NO_ACTIVO), los esquemas
+#   PrediccionCrear y PrediccionResultado, y los campos opcionales
+#   cantidad_noticias y mae_referencia en ModeloSentimiento (también en la
+#   respuesta 201 de POST /trainings). Cambio compatible: solo agrega.

@@ -5,6 +5,7 @@ import {
   TIMEOUT_ENTRENAMIENTO_MS,
   TIMEOUT_LARGO_MS,
   actualizarTermino,
+  analizarTexto,
   cambiarEstadoFuente,
   capturarFuente,
   capturarFuentes,
@@ -19,6 +20,8 @@ import {
   obtenerTerminos,
   purgarNoticias,
   obtenerMapa,
+  obtenerModeloActivo,
+  predecirConModelo,
   crearExclusion,
   eliminarExclusion,
   obtenerEstadisticasNoticias,
@@ -229,5 +232,24 @@ describe('panel de administración (HU-ADMIN-004)', () => {
       Promise.resolve({ ok: false, status: 502, json: () => Promise.reject(new SyntaxError('x')) }),
     )
     await expect(obtenerConfiguracion()).rejects.toThrow('El servidor respondió con el código 502.')
+  })
+
+  it('consulta el modelo activo, predice y analiza un texto (HU-SENT-010)', async () => {
+    await obtenerModeloActivo()
+    await predecirConModelo('acuerdo de paz')
+    await analizarTexto('acuerdo de paz')
+    expect(rutaLlamada(0)).toBe('/trainings/active')
+    expect(rutaLlamada(1)).toBe('/trainings/active/predictions')
+    expect(llamada(1).method).toBe('POST')
+    expect(cuerpo(1)).toEqual({ texto: 'acuerdo de paz' })
+    expect(rutaLlamada(2)).toBe('/sentiment')
+    expect(cuerpo(2)).toEqual({ texto: 'acuerdo de paz' })
+  })
+
+  it('sin modelo activo (404) devuelve null; otros errores se propagan', async () => {
+    fetchMock.mockReturnValueOnce(respuesta({ codigo: 'MODELO_NO_ACTIVO', mensaje: 'No hay.' }, 404))
+    await expect(obtenerModeloActivo()).resolves.toBeNull()
+    fetchMock.mockReturnValueOnce(respuesta({ codigo: 'X', mensaje: 'Falla.' }, 500))
+    await expect(obtenerModeloActivo()).rejects.toThrow('Falla.')
   })
 })

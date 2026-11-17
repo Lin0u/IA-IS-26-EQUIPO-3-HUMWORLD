@@ -69,7 +69,7 @@ El corpus mezcla español e inglés en un solo vocabulario. No se separan modelo
 - **Regresor:** `Ridge(alpha=1.0)`, sin cambios respecto de ADR-004 (valor propuesto).
 - **Artefacto único:** el vectorizador y el regresor se guardan juntos como un `sklearn.pipeline.Pipeline` en **un solo archivo `.joblib`**. Así es imposible usar un regresor con un vocabulario distinto del que se usó al entrenar.
 - **Partición y evaluación:** 20 % de validación con semilla 42, igual que hoy. El vectorizador se ajusta **solo con la partición de entrenamiento**, dentro del `Pipeline`, para que el MAE de validación no esté contaminado por vocabulario de las noticias de validación.
-- **Referencia de comparación:** además del MAE del modelo, el entrenamiento registra en el log el MAE de una predicción constante (la media de entrenamiento). Si el modelo no mejora esa referencia, no está aprendiendo nada útil. No se agrega un campo nuevo a la tabla ni al contrato.
+- **Referencia de comparación:** además del MAE del modelo, el entrenamiento calcula el MAE de una predicción constante (la media de entrenamiento). Si el modelo no mejora esa referencia, no está aprendiendo nada útil. Desde v1.1 se guarda en `modelos_sentimiento.mae_referencia`, junto con las noticias usadas, y el panel los muestra (HU-SENT-010).
 
 ### 3. Ciclo de vida que se conserva de ADR-004
 
@@ -175,6 +175,7 @@ Con un modelo activo, HU-SENT-002-v3 calcula por ML **todas** las noticias no ex
 - **HU-SENT-002-v4:** cálculo híbrido de humor (reemplaza a HU-SENT-002-v3).
 - **HU-SENT-007-v4:** método de diccionario. Es la fuente de las etiquetas de entrenamiento y la referencia del MAE. No cambia.
 - **HU-SENT-003:** persistencia de `metodo_calculo` y `modelo_sentimiento_id`. No cambia.
+- **HU-SENT-010:** visualización y prueba del modelo activo en el panel.
 
 ## Contratos afectados
 
@@ -185,3 +186,4 @@ Con un modelo activo, HU-SENT-002-v3 calcula por ML **todas** las noticias no ex
 | Versión | Fecha | Motivo del cambio |
 |---|---|---|
 | v1.0 | 2026-11-17 | Creación. Decisión de la PO del 2026-11-17, tras el diagnóstico de QA del entrenamiento (HTTP 429 persistente de Gemini por cuota agotada; 502; sin modelo activo). Reemplaza los puntos 1, 2 y 7 de ADR-004. |
+| v1.1 | 2026-11-17 | Decisión de la PO (HU-SENT-010): el MAE de referencia y la cantidad de noticias de entrenamiento se guardan en `modelos_sentimiento` y se exponen en el contrato v1.7.0, para mostrarlos en el panel. Sin cambios en la Decisión de arquitectura. |

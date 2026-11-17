@@ -20,8 +20,13 @@ class ModeloSentimiento(Base):
     id = Column(Integer, primary_key=True, index=True)
     version = Column(String(50), nullable=False, unique=True)
     ruta_archivo = Column(String(500), nullable=False)
-    # Crítico para detectar incompatibilidad si Google cambia su modelo (ADR-004).
+    # Representación del texto usada al entrenar. Desde ADR-007 es TF-IDF
+    # ("tfidf-1-2"); el nombre del campo viene de ADR-004 y se conserva.
     modelo_embeddings_usado = Column(String(100), nullable=False)
     mae_evaluacion = Column(Float, nullable=False)
+    # HU-SENT-010: noticias de entrenamiento y MAE de predecir siempre la media
+    # (referencia de ADR-007). NULL en los modelos anteriores a ese cambio.
+    cantidad_noticias = Column(Integer, nullable=True)
+    mae_referencia = Column(Float, nullable=True)
     fecha_entrenamiento = Column(DateTime, nullable=False)
     activo = Column(Boolean, nullable=False, default=False, index=True)

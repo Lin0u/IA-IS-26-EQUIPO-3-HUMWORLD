@@ -3,7 +3,7 @@
 **Proyecto:** HumWorld — Equipo 3
 **Origen:** PDF de especificaciones (`0 PROYECTO_FINAL_HUMWORLD 260714.pdf`), secciones 4.2.2 (Diccionario de palabras evaluables), 4.2.4 (Procesado de la información), 10.2 (Endpoints mínimos obligatorios: `/dictionary`, `/sentiment`) y 10.4 (Posible algoritmo para cálculo del humor). Algoritmo de agregación decidido y justificado en `ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`, conforme a la sección 11 de las instrucciones del proyecto.
 **Estado general:** Propuesto — historias generadas a partir de los títulos ya oficializados en la hoja "Backlog" de `HumWorld_Anexo_I_Planificacion_actualizado.xlsx` (entregable P3) y de la estimación en puntos ya realizada en Planning Poker (P3, `Anexo-I-Planificacion-entregado-P3.md`, Sprint 2 = 18 puntos). Pendiente de revisión crítica del equipo antes de iniciar Sprint 2.
-**Versión del documento:** v1.16. Ver la Tabla de control de versiones al final del documento para el historial completo.
+**Versión del documento:** v1.17. Ver la Tabla de control de versiones al final del documento para el historial completo.
  
 > **Nota de grounding general:** el PDF exige un algoritmo de análisis de sentimiento "basado en diccionario, LLM u otro método justificado" (Objetivos específicos, punto 2) y ofrece un algoritmo posible (§10.4) como referencia no vinculante ("Esta es solo una posible solución. Cada equipo puede determinar otra manera"). El backlog ya oficializado por el equipo (hoja Excel) eligió un enfoque **híbrido diccionario + ML** (HU-SENT-002-v2, HU-SENT-006, HU-SENT-007). Este documento formaliza esa elección ya tomada por el equipo; no la introduce de nuevo. La parte de diccionario está completamente grounded en el PDF y en la sección 11 de las instrucciones del proyecto (ver `ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`); la parte de ML no estaba especificada en ningún documento fuente más allá del título de la historia — el equipo definió esa arquitectura, documentada en `ADR-004-arquitectura-modelo-ml-sentimiento.md`.
  
@@ -1077,6 +1077,79 @@ Escenario: Las noticias sin humor no cuentan en la nube
 
 ---
 
+## HU-SENT-010 — Ver y probar el modelo de ML activo
+
+**Tipo:** Historia de Usuario
+**Como** administrador del sistema,
+**quiero** ver en el panel qué modelo de ML está activo, con cuántas noticias se entrenó y cuánto mejora frente a adivinar, y probarlo con un titular comparándolo con el diccionario,
+**para** saber si el modelo sirve antes de dejarlo activo y poder mostrar en vivo qué aporta frente al método de diccionario.
+
+**Prioridad:** Media
+**Estimación relativa:** M *(orientativa: dos endpoints de lectura sobre servicios ya existentes, dos columnas nuevas y una pestaña del panel. El equipo debe validarla con Planning Poker)*
+**Depende de contrato de API:** Sí — `contrato-sentimiento-diccionario.openapi.yaml` **v1.7.0**: `GET /api/v1/trainings/active`, `POST /api/v1/trainings/active/predictions` y los campos `cantidad_noticias` y `mae_referencia` de `ModeloSentimiento`. Reutiliza `POST /api/v1/sentiment` (HU-SENT-005-v2) para el lado del diccionario.
+**Variante del algoritmo:** muestra las dos variantes sin modificarlas: promedio simple de términos únicos (HU-SENT-007-v4, ADR-003) y Ridge sobre TF-IDF (ADR-007). La comparación usa el texto tal cual: no aplica la lista de exclusión ni el mínimo de términos.
+**Origen:** decisión de la PO del 2026-11-17, tras el primer entrenamiento real del modelo local (MAE 1,33 frente a 2,00 de la referencia), al constatar que el panel solo mostraba la versión y el MAE. ADR-004, punto 6, ya indicaba que el valor del modelo se observa "revisando casos de desacuerdo entre ambos métodos".
+
+**Ubicación:** Administración → pestaña Modelo ML (opcional en HU-ADMIN-004), con dos bloques: "1. Modelo activo" y "2. Probar el modelo".
+
+### Criterios de aceptación (Gherkin)
+
+```gherkin
+Escenario: Tarjeta del modelo activo
+  Dado que existe un modelo activo entrenado con 1.565 noticias, MAE 1,334 y MAE de referencia 2,002
+  Cuando el administrador abre la pestaña Modelo ML
+  Entonces ve la fecha de la versión activa, "1565" noticias usadas, el error del modelo "1.33", el de adivinar la media "2.00"
+  Y el error frente a adivinar "−33 %", calculado como 1 − MAE / MAE de referencia y redondeado al entero
+
+Escenario: Sin modelo activo
+  Dado que no existe un modelo activo
+  Cuando el administrador abre la pestaña Modelo ML
+  Entonces GET /api/v1/trainings/active responde 404 con codigo MODELO_NO_ACTIVO
+  Y el panel indica que todo el humor se calcula con el diccionario
+  Y el botón "Comparar" está deshabilitado
+
+Escenario: Modelo entrenado antes de guardar las métricas
+  Dado un modelo activo sin cantidad_noticias ni mae_referencia (null)
+  Cuando el administrador abre la pestaña Modelo ML
+  Entonces esos datos y la mejora se muestran como "Sin dato"
+
+Escenario: Al entrenar, la tarjeta se actualiza
+  Cuando el administrador entrena una versión nueva (HU-SENT-006-v2)
+  Entonces la tarjeta muestra la nueva versión sin recargar la página
+
+Escenario: Comparar diccionario y modelo
+  Dado un modelo activo
+  Cuando el administrador escribe "acuerdo de paz" y pulsa "Comparar"
+  Entonces el panel muestra lado a lado el humor del diccionario, con sus palabras y valores, y el humor del modelo
+  Y no se persiste ninguna noticia ni predicción
+
+Escenario: Texto sin palabras del diccionario
+  Dado un modelo activo
+  Cuando el administrador compara un texto sin palabras del diccionario
+  Entonces el lado del diccionario muestra "Sin humor" y explica que no encontró palabras
+  Y el lado del modelo muestra un valor entre -10 y +10
+
+Escenario: Texto inválido
+  Cuando se envía POST /api/v1/trainings/active/predictions con un texto vacío, solo espacios o de más de 5.000 caracteres
+  Entonces la API responde 400 con codigo DATOS_INVALIDOS
+
+Escenario: Modelo activo inutilizable
+  Dado que el modelo activo es incompatible con ADR-007 o su archivo no se puede leer
+  Cuando se envía POST /api/v1/trainings/active/predictions
+  Entonces la API responde 404 con codigo MODELO_NO_ACTIVO
+  Y el panel muestra el mensaje de la API
+```
+
+### Definition of Done
+(Bloque general DoD, sección 14.) Adicionalmente:
+- Migración `c4d9e7a1b2f5` (columnas nullable `cantidad_noticias` y `mae_referencia`), con `upgrade()` y `downgrade()`.
+- Pruebas de backend de los dos endpoints (200, 400, 404) con un modelo TF-IDF real y pequeño; prueba de que la predicción no persiste nada.
+- Pruebas del panel con la API simulada: tarjeta con y sin modelo, "Sin dato", comparación, texto sin palabras y error.
+- Validado visualmente en al menos una resolución de escritorio y una de celular (comparación en una columna).
+- Swagger y contrato v1.7.0 actualizados.
+
+---
+
 ## Resumen de trazabilidad
  
 | ID | Tipo | Prioridad | Puntos (P3) | Endpoint / mecanismo | Referencia PDF |
@@ -1096,6 +1169,7 @@ Escenario: Las noticias sin humor no cuentan en la nube
 | HU-SENT-007-v3 | **Deprecada** (ver HU-SENT-007-v4) | Alta | M (propuesta) | Interno — comparación por forma y lema (spaCy), detección de idioma | §4.4, §10.4 |
 | HU-SENT-007-v4 | Enabler Story | Alta | S (propuesta) | Interno + parámetro `minimo_terminos_humor` de `/config` — mínimo de términos únicos (2 por defecto) | §4.4, §10.4 |
 | HU-SENT-009 | Historia de Usuario | Media | M (propuesta) | `/api/v1/exclusions` (GET, POST, DELETE) y `GET /api/v1/news/statistics` | §2, §4.2.2 |
+| HU-SENT-010 | Historia de Usuario | Media | M (propuesta) | `GET /api/v1/trainings/active` y `POST /api/v1/trainings/active/predictions` (contrato v1.7.0) + `POST /sentiment`; pestaña Modelo ML | Objetivos específicos #2 (no detallado) |
  
 ## Tabla de control de versiones
  
@@ -1120,3 +1194,4 @@ Escenario: Las noticias sin humor no cuentan en la nube
 | HU-SENT-007-v4 | corrección | 2026-11-11 | Corrección detectada por la PO en la explicación del humor: si el diccionario tenía el singular y el plural de una palabra ("award" y "awards") y la noticia traía ambos, se contaban como dos términos. Ahora cada lema cuenta una sola vez, como ya exigía el criterio de términos únicos. Pruebas agregadas en `test_lematizacion.py`; las noticias por diccionario se recalculan (migración `b7e2c4a9d1f3`). ADR-003 v1.6. Sin cambios en los criterios de aceptación. |
 | HU-SENT-001-v2 → HU-SENT-001-v3 | v1.15 | 2026-11-12 | Decisión de la PO: `GET /api/v1/dictionary` agrega los filtros opcionales `idioma`, `valor_min` y `valor_max` (400 `RANGO_VALOR_INVALIDO` si el rango está invertido), y la pestaña Diccionario muestra la barra de búsqueda con esos filtros y, a su derecha, el botón "+ Agregar término", que abre el formulario de alta. Motivo: revisar los ~4.100 términos por idioma y valor; los campos del formulario de alta se confundían con filtros. HU-SENT-001-v2 queda Deprecada. Contrato sentimiento-diccionario v1.5.0. |
 | HU-SENT-006 → HU-SENT-006-v2, HU-SENT-002-v3 → HU-SENT-002-v4 | v1.16 | 2026-11-17 | Decisión de la PO tras el diagnóstico de QA del entrenamiento real: con 1.467 noticias, Gemini respondió HTTP 429 (cuota gratuita agotada) a cerca de un tercio del proceso y `POST /trainings` devolvió 502 sin modelo activo. El camino de ML pasa a TF-IDF + Ridge local, sin servicio externo (ADR-007, que reemplaza los puntos 1, 2 y 7 de ADR-004). HU-SENT-006 y HU-SENT-002-v3 quedan Deprecadas. Se retiran 502 y 503 de `POST /trainings` (contrato v1.6.0). HU-SENT-002-v4 registra la decisión pendiente de la PO sobre aplicar ML a las noticias bajo el mínimo de términos. |
+| HU-SENT-010 | v1.17 | 2026-11-17 | Nueva historia por decisión de la PO tras el primer entrenamiento real (MAE 1,33 frente a 2,00 de la referencia): la pestaña Modelo ML muestra la tarjeta del modelo activo (noticias usadas, MAE, referencia y mejora) y permite probarlo con un texto, comparado con el diccionario. Contrato sentimiento-diccionario v1.7.0; migración `c4d9e7a1b2f5`; ADR-007 v1.1. |
