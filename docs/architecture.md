@@ -27,11 +27,12 @@ arquitectura (`docs/Adr/ADR-001` a `ADR-005`) y el código del repositorio
 - pytest + pytest-asyncio + pytest-cov + respx/responses para pruebas (mocks
   obligatorios para servicios externos, nunca llamadas reales).
 
-**Motor de sentimiento (ADR-003, ADR-004):**
+**Motor de sentimiento (ADR-003, ADR-004, ADR-007):**
 - spaCy para lematización y detección de idioma (es/en) en el método de diccionario.
-- scikit-learn (regresor sobre embeddings) para el camino de ML, con embeddings
-  de Google Gemini Embedding como servicio externo. El camino de ML es opcional:
-  sin clave de API, el humor se calcula 100% por diccionario.
+- scikit-learn para el camino de ML: TF-IDF + regresor Ridge, entrenados y
+  ejecutados localmente, sin servicio externo (ADR-007, que reemplaza los
+  embeddings de Google Gemini de ADR-004). El camino de ML es opcional: sin un
+  modelo activo, el humor se calcula 100% por diccionario.
 
 **Frontend (ADR-005):**
 - React 19 con Vite; Leaflet (mapa) y Chart.js (gráfico de evolución); CSS plano
@@ -172,10 +173,10 @@ instrucciones del proyecto; ADR-002 y ADR-004):
 - **Captura RSS:** Timeout explícito, Retry acotado con backoff exponencial y
   Circuit Breaker por fuente. El fallo de una fuente no interrumpe el resto de
   la captura; nunca reintentos infinitos.
-- **Cálculo con ML:** Timeout sobre la llamada a Google Gemini Embedding y
-  fallback automático al método de diccionario si el servicio falla o no
-  responde. El purgado y las agregaciones operan solo sobre MySQL, sin servicios
-  externos.
+- **Cálculo con ML:** sin servicio externo desde ADR-007. Se conserva un
+  timeout sobre la predicción local y el fallback automático al método de
+  diccionario si el modelo falla. El purgado y las agregaciones operan solo
+  sobre MySQL, sin servicios externos.
 
 ## 10. Manejo de errores
 
@@ -188,8 +189,9 @@ controlada.
 
 `docker-compose.yml` levanta MySQL y la API; las migraciones de Alembic se
 aplican al arrancar y MySQL tiene healthcheck para que la API no arranque antes
-de tiempo. El camino de ML se activa con la variable `GEMINI_API_KEY` (opcional);
-sin ella, el humor se calcula solo por diccionario. El frontend se construye y
+de tiempo. El camino de ML se activa al entrenar un modelo desde el panel
+(`POST /api/v1/trainings`); mientras no haya un modelo activo, el humor se
+calcula solo por diccionario. El frontend se construye y
 sirve por separado. Pasos detallados en `README.md`.
 
 ## 12. Fuera de alcance
@@ -206,3 +208,4 @@ por correo, expansión automática del diccionario por LLM) no están implementa
 |---|---|---|
 | v1 | 2026-09-02 | Creación. Arquitectura del Sprint 1 (módulo de Captura RSS, EPIC-RSS): capas, stack, modelo de datos de canales/fuentes/noticias, API de EPIC-RSS, reglas y patrones de resiliencia. Declaraba fuera de alcance los módulos aún no implementados (sentimiento, dashboards, diccionario, purgado). |
 | v2 | 2026-10-29 | Actualización a la arquitectura del sistema completo (rol Documentación): se extiende a las cuatro épicas (RSS, SENT, DASH, ADMIN) y al frontend, reflejando el código implementado. Se añaden el modelo de datos extendido (TerminoDiccionario, CoincidenciaTermino, ModeloSentimiento, Configuracion, campos de humor en Noticia), el inventario de endpoints real, los jobs internos (captura, barrido de humor, purgado), la resiliencia del camino de ML y el despliegue con Docker. Se corrige la sección "Fuera de alcance" (solo autenticación y opcionales de §4.5). |
+| v3 | 2026-11-17 | ADR-007: el camino de ML pasa a TF-IDF + Ridge local, sin Google Gemini ni `GEMINI_API_KEY` (secciones 2, 9 y 11). |

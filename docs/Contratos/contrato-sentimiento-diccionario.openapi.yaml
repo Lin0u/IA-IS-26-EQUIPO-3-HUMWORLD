@@ -15,7 +15,7 @@ info:
     servicios internos invocados tras la captura de cada noticia o desde los
     endpoints de este contrato) y por lo tanto no aparecen aquí — ver
     `HU-SENT-motor-sentimiento.md` para su detalle.
-  version: "1.5.0"
+  version: "1.6.0"
 servers:
   - url: /api/v1
     description: Base URL versionada (PDF, sección 10.3), misma convención que contrato-canales-fuentes-rss.openapi.yaml.
@@ -330,9 +330,10 @@ paths:
       tags: [trainings]
       summary: Disparar manualmente el entrenamiento de una nueva versión del modelo de ML
       description: >
-        Origina en HU-SENT-006. Arquitectura completa (tipo de modelo,
-        proveedor de embeddings, versionado, criterio de evaluación,
-        patrones de resiliencia) documentada en ADR-004. Sin cuerpo de
+        Origina en HU-SENT-006-v2. Arquitectura vigente en ADR-007 (TF-IDF +
+        Ridge entrenados localmente, sin servicio externo); disparo manual,
+        umbral, versionado y criterio de evaluación heredados de ADR-004
+        (puntos 3 a 6). Sin cuerpo de
         solicitud: el entrenamiento usa como datos de entrada el histórico de
         noticias ya evaluadas por el método de diccionario, sin parámetros
         adicionales por parte del administrador.
@@ -349,28 +350,6 @@ paths:
             umbral mínimo configurado (valor propuesto: 1.000 — ver ADR-004;
             codigo DATOS_INSUFICIENTES). El modelo activo previo, si existe,
             no se ve afectado.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "502":
-          description: >
-            El servicio externo de embeddings (Google Gemini Embedding) falló
-            de forma persistente tras agotar los reintentos acotados con
-            backoff exponencial (ver ADR-004). El entrenamiento se cancela
-            sin afectar el modelo activo previo (codigo
-            SERVICIO_EMBEDDINGS_NO_DISPONIBLE). Implementado el 2026-10-19:
-            502 para el fallo del servicio externo y 503 para el despliegue
-            sin clave de API, pendiente de ratificación del equipo.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "503":
-          description: >
-            El camino de ML no está configurado en este despliegue (falta
-            GEMINI_API_KEY; codigo ML_NO_CONFIGURADO). No se llama al servicio
-            externo y el modelo activo previo no cambia.
           content:
             application/json:
               schema:
@@ -689,7 +668,11 @@ components:
           description: Identificador de versión del modelo (puede ser el propio timestamp de entrenamiento, ver ADR-004).
         modelo_embeddings_usado:
           type: string
-          description: Nombre y versión del modelo de embeddings de Google usado al entrenar.
+          description: >
+            Identificador de la representación del texto usada al entrenar.
+            Desde ADR-007 es TF-IDF local (por ejemplo "tfidf-1-2"); los
+            modelos anteriores registraban el modelo de embeddings de Google.
+            El nombre del campo se conserva por compatibilidad (ADR-007).
         mae_evaluacion:
           type: number
           description: Métrica de evaluación (MAE, error absoluto medio) contra el método de diccionario — ver limitación metodológica documentada en ADR-004.
@@ -766,3 +749,8 @@ components:
 #   valor_min y valor_max (HU-SENT-001-v3), combinables con busqueda. Un rango
 #   invertido responde 400 RANGO_VALOR_INVALIDO. Cambio compatible: sin los
 #   parámetros nuevos, la respuesta es la misma de v1.4.0.
+# v1.6.0 (2026-11-17): POST /trainings pasa a HU-SENT-006-v2 y ADR-007 (TF-IDF
+#   + Ridge local, sin Google Gemini). Se retiran las respuestas 502
+#   (SERVICIO_EMBEDDINGS_NO_DISPONIBLE) y 503 (ML_NO_CONFIGURADO). Cambia solo
+#   la descripción de ModeloSentimiento.modelo_embeddings_usado (mismo nombre y
+#   tipo). Cambio compatible para los clientes: solo se retiran respuestas de error.

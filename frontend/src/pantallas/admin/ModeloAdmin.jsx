@@ -1,6 +1,6 @@
 // HumWorld - pestaña "Modelo ML" del panel de administración (opcional en HU-ADMIN-004).
-// Origen: HU-SENT-006 y ADR-004. POST /api/v1/trainings. Muestra la versión creada o
-// el mensaje de la API (409 datos insuficientes, 502 servicio caído, 503 sin clave).
+// Origen: HU-SENT-006-v2 y ADR-007 (TF-IDF + Ridge local). POST /api/v1/trainings.
+// Muestra la versión creada o el mensaje de la API (409 datos insuficientes).
 import { useState } from 'react'
 import { entrenarModelo } from '../../api/cliente.js'
 import Aviso from './Aviso.jsx'
@@ -13,8 +13,7 @@ export default function ModeloAdmin() {
     setEnCurso(true)
     setAviso({
       tipo: 'info',
-      texto:
-        'Entrenando el modelo… Con la cuota gratuita de Gemini puede tardar varios minutos: no cierres esta página.',
+      texto: 'Entrenando el modelo… Suele tardar unos segundos.',
     })
     try {
       const modelo = await entrenarModelo()
@@ -32,8 +31,8 @@ export default function ModeloAdmin() {
   return (
     <div className="admin-formulario">
       <p>
-        Entrena una nueva versión del modelo con las noticias ya evaluadas por diccionario. Requiere la clave de Gemini
-        configurada en el servidor.
+        Entrena una nueva versión del modelo con las noticias ya evaluadas por diccionario. Se entrena en el propio
+        servidor, sin servicios externos.
       </p>
       <button type="button" className="filtro activo" disabled={enCurso} onClick={entrenar}>
         Entrenar modelo

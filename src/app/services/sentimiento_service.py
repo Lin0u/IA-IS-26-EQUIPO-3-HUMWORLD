@@ -12,9 +12,10 @@ AVISO (instrucciones del proyecto, sección 12): este módulo contiene lógica
 de negocio del algoritmo de sentimiento. Debe ser revisado por el equipo
 antes de fusionarse.
 
-Camino ML (HU-SENT-006, ADR-004): si hay GEMINI_API_KEY y un modelo activo en
-modelos_sentimiento, se usa su regresor (modelo_ml_service.proveedor_activo);
-si no, o si falla o excede el timeout, el diccionario.
+Camino ML (HU-SENT-006-v2 y HU-SENT-002-v4, ADR-007): si hay un modelo activo
+TF-IDF en modelos_sentimiento, se usa su Pipeline local
+(modelo_ml_service.proveedor_activo); si no, o si falla o excede el timeout,
+el diccionario.
 Calcula la polarización (HU-SENT-003) y persiste las coincidencias de HU-SENT-008
 junto con el resultado.
 
@@ -109,10 +110,10 @@ class ReglasRelevancia:
 
 
 class ProveedorModeloML(Protocol):
-    """Punto de extensión para HU-SENT-006 (ADR-004: embeddings + regresor).
+    """Punto de extensión para HU-SENT-006-v2 (ADR-007: TF-IDF + Ridge local).
 
-    La implementación real debe aplicar su propio timeout y reintentos
-    acotados al servicio de embeddings; este módulo agrega un timeout total.
+    La predicción es local; este módulo igual le aplica un timeout total como
+    salvaguarda (HU-SENT-002-v4).
     """
 
     def predecir(self, texto: str) -> float: ...

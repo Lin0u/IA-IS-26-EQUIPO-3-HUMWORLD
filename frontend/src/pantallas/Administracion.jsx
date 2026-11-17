@@ -42,7 +42,7 @@ const AYUDAS = {
       titulo: 'Qué hace',
       texto: 'Entrena un modelo que aprende a calcular el humor leyendo el texto completo, imitando al diccionario.',
     },
-    { titulo: 'Qué necesita', texto: 'La clave de Gemini en el servidor y al menos 1.000 noticias evaluadas.' },
+    { titulo: 'Qué necesita', texto: 'Al menos 1.000 noticias evaluadas por diccionario. No usa servicios externos.' },
     {
       titulo: 'Qué cambia',
       texto: 'Las noticias nuevas se calculan con el modelo. Si falla, el sistema vuelve solo al diccionario.',

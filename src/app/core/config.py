@@ -47,30 +47,16 @@ class Settings(BaseSettings):
     # False: se compara por forma exacta (solo para desarrollo sin spaCy).
     lematizacion_obligatoria: bool = True
 
-    # Modelo de ML (HU-SENT-006, ADR-004): embeddings de Google Gemini + regresor
-    # Ridge local. Sin GEMINI_API_KEY el camino ML queda desactivado y todo el
-    # humor se calcula por diccionario. La cuenta y la clave las gestiona el
-    # equipo (ADR-004, punto 2); nunca se versionan en el repositorio.
-    gemini_api_key: str = ""
-    gemini_url_base: str = "https://generativelanguage.googleapis.com/v1beta"
-    gemini_modelo_embeddings: str = "gemini-embedding-001"
-    # ADR-004, punto 7. Valores PROPUESTOS, pendientes de ratificación.
-    embeddings_timeout_segundos: float = 3.0
-    embeddings_max_reintentos: int = 3  # backoff exponencial acotado
-    embeddings_backoff_base_segundos: float = 0.5
-    embeddings_lote: int = 20  # textos por solicitud batchEmbedContents
-    # Entrenamiento (HU-SENT-006): la capa gratuita de Gemini limita las
-    # solicitudes por minuto y responde 429. Al entrenar se espera lo que pide
-    # el servicio (retryDelay) en vez de abandonar a los pocos segundos; la
-    # predicción de cada noticia mantiene los valores cortos de arriba y cae al
-    # diccionario. Valores PROPUESTOS, pendientes de ratificación.
-    embeddings_timeout_entrenamiento_segundos: float = 60.0
-    embeddings_reintentos_entrenamiento: int = 6
-    embeddings_espera_cuota_segundos: float = 15.0  # sin retryDelay: 15, 30, 60 s…
-    embeddings_espera_maxima_segundos: float = 65.0
-    embeddings_max_caracteres: int = 8000  # ~2.048 tokens de entrada del modelo
-    ml_circuit_umbral_fallos: int = 5
-    ml_circuit_espera_segundos: int = 60
+    # Modelo de ML (HU-SENT-006-v2, ADR-007): TF-IDF + Ridge entrenados y
+    # ejecutados localmente, sin servicios externos ni claves. Mientras no se
+    # entrene un modelo, todo el humor se calcula por diccionario.
+    # ADR-007, punto 1. Valores PROPUESTOS, pendientes de ratificación.
+    ml_tfidf_ngramas_min: int = 1
+    ml_tfidf_ngramas_max: int = 2
+    ml_tfidf_min_df: int = 2
+    ml_tfidf_max_df: float = 0.9
+    ml_tfidf_max_features: int = 20000
+    ml_ridge_alpha: float = 1.0
     # ADR-004, punto 4: umbral mínimo de entrenamiento (valor propuesto).
     ml_umbral_entrenamiento: int = 1000
     ml_proporcion_validacion: float = 0.2
@@ -81,7 +67,9 @@ class Settings(BaseSettings):
     # desarrollo de Vite. TODO(equipo): agregar el origen del frontend desplegado.
     cors_origenes: str = "http://localhost:5173,http://127.0.0.1:5173"
 
-    model_config = SettingsConfigDict(env_file=".env")
+    # extra="ignore": un .env antiguo con variables retiradas (p. ej.
+    # GEMINI_API_KEY, ADR-007) no debe impedir que la API arranque.
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     @property
     def cors_origenes_lista(self) -> list[str]:

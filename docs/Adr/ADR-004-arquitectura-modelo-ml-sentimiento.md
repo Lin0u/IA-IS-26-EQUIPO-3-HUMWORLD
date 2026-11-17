@@ -2,13 +2,15 @@
  
 **Proyecto:** HumWorld — Equipo 3
 **Fecha de creación:** 2026-09-28
-**Versión del documento:** v1.3 — historial completo en "Historial de revisión de este ADR", al final del documento.
+**Versión del documento:** v1.5 — historial completo en "Historial de revisión de este ADR", al final del documento.
  
 ---
  
 ## Estado
  
-**Aceptado.**
+**Deprecado parcialmente (2026-11-17)** — los puntos 1 (tipo de modelo y features), 2 (proveedor de embeddings) y 7 (patrones de resiliencia) de la Decisión quedan reemplazados por **`ADR-007-modelo-ml-local-tfidf.md`** (TF-IDF + Ridge local, sin servicio externo), tras agotarse la cuota gratuita de Google Gemini en el entrenamiento real (HTTP 429). Los puntos 3 a 6 (disparo manual, umbral mínimo, versionado y criterio de evaluación) siguen vigentes y ADR-007 los hereda. Se conserva el documento íntegro como registro histórico.
+
+*Estado anterior: Aceptado.*
  
 ---
  
@@ -216,3 +218,4 @@ Las condiciones de free tier de Google Gemini Embedding, y la comparación con O
  
 | v1.3 | 2026-10-19 | Se agrega el punto 8 "Implementación" con los parámetros concretos de la implementación de HU-SENT-006 (modelo `gemini-embedding-001`, reintentos, Circuit Breaker, Ridge, partición de validación y códigos 409/502/503) y el riesgo de cuota observado. Sin cambios en la Decisión, las Alternativas ni el Estado. |
 | v1.4 | 2026-11-11 | Punto 8: ajuste del entrenamiento ante la cuota por minuto de la capa gratuita de Gemini (lotes de 20, timeout de 60 s, 6 reintentos y espera según `retryDelay` con tope de 65 s), tras fallar el primer entrenamiento real con 502. La predicción no cambia. Sin cambios en la Decisión ni en las Alternativas. |
+| v1.5 | 2026-11-17 | Deprecación parcial: los puntos 1, 2 y 7 de la Decisión se reemplazan por ADR-007 (TF-IDF + Ridge local), por decisión de la PO tras el segundo entrenamiento real, que falló con HTTP 429 de Gemini (cuota agotada) después de procesar cerca de un tercio de las 1.467 noticias. Solo cambia el Estado; el resto del documento queda intacto como registro histórico. |

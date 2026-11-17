@@ -44,7 +44,6 @@ flowchart TB
         Slema["lematizacion.py"]
         Sconsulta["consulta_sentimiento_service.py"]
         Sml["modelo_ml_service.py"]
-        Semb["embeddings_service.py"]
         Sdash["dashboard_service.py"]
         Snoticia["noticia_consulta_service.py"]
         Spurgado["purgado_service.py"]
@@ -75,7 +74,6 @@ flowchart TB
 
     subgraph EXT["Servicios externos"]
         RSS[["Feeds RSS externos"]]
-        Gemini[["Google Gemini Embedding (ADR-004)"]]
     end
 
     FEapp --> FEmapa
@@ -118,10 +116,8 @@ flowchart TB
     Ssent --> RepoDict
     Ssent --> RepoNoticias
     Ssent -. "Timeout + fallback a diccionario" .-> Sml
-    Sml --> Semb
     Sml --> RepoModelos
     Sml --> Disco
-    Semb -. "embeddings (Timeout/Retry/Circuit Breaker)" .-> Gemini
     Sconsulta --> RepoSent
     Sdash --> RepoDash
     Snoticia --> RepoNoticias
@@ -146,8 +142,8 @@ flowchart TB
 
 - Los routers validan la entrada (Pydantic, según los contratos de `docs/Contratos/`) y delegan a Servicios. No acceden a MySQL ni a servicios externos.
 - Los servicios no dependen del framework web; toda sentencia de acceso a datos vive en los repositorios.
-- `sentimiento_service.py` es el orquestador del cálculo de humor: aplica Timeout sobre `modelo_ml_service.py` y cae a `lematizacion.py` + diccionario si el modelo falla o se excede el timeout (HU-SENT-002-v3, ADR-004).
-- `embeddings_service.py` es el único que llama a Google Gemini Embedding (cálculo e entrenamiento), con Timeout, Retry acotado y Circuit Breaker (ADR-004).
+- `sentimiento_service.py` es el orquestador del cálculo de humor: aplica Timeout sobre `modelo_ml_service.py` y cae a `lematizacion.py` + diccionario si el modelo falla o se excede el timeout (HU-SENT-002-v4, ADR-007).
+- El modelo de ML (`modelo_ml_service.py`) es local desde ADR-007: TF-IDF + Ridge en un solo `.joblib`, sin servicios externos (reemplaza a `embeddings_service.py` y Google Gemini Embedding de ADR-004).
 - `captura_service.py` es el único que llama a los feeds RSS externos, con los mismos patrones de resiliencia (ADR-002); tras cada captura dispara el cálculo de humor.
 - El scheduler (`jobs/scheduler.py`) registra tres jobs (captura, barrido de humor, purgado) y reprograma el de captura cuando cambia la periodicidad en `/config`.
 - El frontend (ADR-005) accede al backend solo a través de `api/cliente.js`; no calcula humor ni accede a MySQL. Las vistas de dashboards solo leen (`GET`); el panel de administración (HU-ADMIN-004) además crea, modifica y elimina mediante los endpoints existentes (`POST`, `PUT`, `PATCH`, `DELETE`).
@@ -165,3 +161,4 @@ Todos los nombres de fichero de este diagrama existen en el repositorio: routers
 | v1.0 | 2026-10-29 | Creación. Diagrama de componentes del sistema completo (las cuatro épicas + frontend), construido a partir del código real. Cubre el hueco de §4.7.3.c (no existía diagrama de componentes de EPIC-RSS) y reemplaza a `diagrama-componentes-sentimiento.md`, cuyos nombres de fichero eran propuestos y no coincidían con el código. |
 | v1.1 | 2026-11-11 | El frontend se desglosa por vista: mapa, nube, noticias con su explicación del humor, panel de administración y componentes de la guía visual (HU-ADMIN-004, HU-DASH-002-v3, HU-DASH-004). Se corrige la regla que decía que el frontend solo hacía `GET`: el panel de administración también escribe. |
 | v1.2 | 2026-11-12 | `GuiaPantalla.jsx` se reemplaza por `Ayuda.jsx` y `AyudaPasos.jsx` (HU-DASH-004-v2). Sin cambios en la arquitectura. |
+| v1.3 | 2026-11-17 | ADR-007: se retiran `embeddings_service.py` y el servicio externo Google Gemini Embedding; el modelo de ML es local (TF-IDF + Ridge). |

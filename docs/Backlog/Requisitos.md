@@ -69,7 +69,7 @@ Derivados de §4.4, §4.6, §7 y §10.3.
 | RNF-08 | CI/CD: pipeline que ejecute pruebas, análisis de calidad y build de imagen Docker. | §4.6.3 | `.github/workflows/ci.yml`: jobs `test`, `test-frontend`, `sonarqube`, `build-and-deploy`. |
 | RNF-09 | Dependencias entre jobs (`needs`) para que build/despliegue solo ocurra si tests y calidad pasan. | §4.6.3 (instrucciones de equipo) | `build-and-deploy` con `needs: [test, test-frontend, sonarqube]`. |
 | RNF-10 | Cobertura mínima de pruebas del 80%. | §7 | Backend: `pytest --cov-fail-under=80` en CI. Frontend: umbral 80% (líneas/sentencias/funciones/ramas) en `vite.config.js`. |
-| RNF-11 | Pruebas unitarias por módulo, con dependencias externas simuladas (mocks). | §7, DoD | Suite en `src/tests/` (RSS, respx; ML con Gemini mockeado) y `frontend/src/` (API simulada). |
+| RNF-11 | Pruebas unitarias por módulo, con dependencias externas simuladas (mocks). | §7, DoD | Suite en `src/tests/` (RSS con respx; ML con un modelo TF-IDF real y pequeño, sin servicios externos, ADR-007) y `frontend/src/` (API simulada). |
 | RNF-12 | Pruebas de integración (API ↔ BD, Frontend ↔ API). | §7 | Pruebas de endpoint con `TestClient` sobre SQLite en memoria; pruebas del cliente del frontend con `fetch` simulado. **Pendiente del equipo:** pruebas de integración extremo a extremo Frontend ↔ API real. |
 | RNF-13 | Pruebas de aceptación (escenarios de usuario) y de carga. | §7 | Escenarios Gherkin en cada HU cubiertos por pruebas automatizadas. **Pendiente del equipo:** pruebas de carga con múltiples fuentes RSS (no implementadas). |
 | RNF-14 | Contenerización con Docker. | §4.6.3, §6.2 | `Dockerfile` y `docker-compose.yml` (API + MySQL). |

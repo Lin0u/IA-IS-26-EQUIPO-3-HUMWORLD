@@ -9,9 +9,10 @@
 | [ADR-001](ADR-001-framework-api-backend.md) | Framework de la API backend (FastAPI) | Aceptado | 2026-08-19 | Equipo 3 | HU-RSS-001 a HU-RSS-010 |
 | [ADR-002](ADR-002-relacion-composicion-canal-fuente.md) | Relación de composición entre `CanalNoticias` y `FuenteRSS` | Aceptado | 2026-08-19 | Equipo 3 | HU-RSS-001 a HU-RSS-005, HU-RSS-010 |
 | [ADR-003](ADR-003-eleccion-algoritmo-agregacion-sentimiento.md) | Algoritmo de agregación de sentimiento (promedio simple, polarización, lematización y reglas de relevancia) | Propuesto | 2026-09-28 | Equipo 3 (PO y arquitectura) | HU-SENT-002-v3, HU-SENT-003, HU-SENT-005-v2, HU-SENT-007-v4, HU-SENT-009 |
-| [ADR-004](ADR-004-arquitectura-modelo-ml-sentimiento.md) | Arquitectura del modelo de ML para el cálculo de humor (Gemini Embedding + Ridge) | Aceptado | 2026-09-28 | Equipo 3 (PO y arquitectura) | HU-SENT-002-v3, HU-SENT-006 |
+| [ADR-004](ADR-004-arquitectura-modelo-ml-sentimiento.md) | Arquitectura del modelo de ML para el cálculo de humor (Gemini Embedding + Ridge) | Deprecado parcialmente (puntos 1, 2 y 7; ver ADR-007) | 2026-09-28 | Equipo 3 (PO y arquitectura) | HU-SENT-002-v3, HU-SENT-006 |
 | [ADR-005](ADR-005-stack-frontend-dashboards.md) | Stack y arquitectura del frontend (React, Vite, Leaflet, Chart.js) | Propuesto | 2026-10-03 | Equipo 3 (PO y frontend) | HU-DASH-001-v3, HU-DASH-002-v3, HU-DASH-003-v2, HU-DASH-004-v2, HU-ADMIN-004 |
 | [ADR-006](ADR-006-globo-d3-mapa-humor.md) | Globo con D3 (d3-geo) para el mapa de humor, en lugar de Leaflet | Propuesto | 2026-11-16 | Equipo 3 (PO y frontend) | HU-DASH-001-v4, HU-DASH-005-v3 |
+| [ADR-007](ADR-007-modelo-ml-local-tfidf.md) | Modelo de ML local (TF-IDF + Ridge) en reemplazo de los embeddings de Gemini | Propuesto | 2026-11-17 | Equipo 3 (PO y arquitectura) | HU-SENT-006-v2, HU-SENT-002-v4 |
 
 ## Estados
 
@@ -19,7 +20,7 @@
 - **Aceptado:** ratificado por el equipo.
 - **Rechazado** o **Deprecado:** se conserva el archivo, con el motivo, por trazabilidad.
 
-**Pendiente del equipo:** ratificar ADR-003 y ADR-005 y, al hacerlo, cambiar su estado aquí y en el propio archivo.
+**Pendiente del equipo:** ratificar ADR-003, ADR-005, ADR-006 y ADR-007 y, al hacerlo, cambiar su estado aquí y en el propio archivo.
 
 ## Cómo agregar un ADR
 
@@ -29,7 +30,7 @@
 
 ## Coherencia con el resto de la documentación
 
-- `docs/architecture.md` resume las decisiones de ADR-001 a ADR-005 (sección 2).
+- `docs/architecture.md` resume las decisiones de ADR-001 a ADR-007 (sección 2).
 - Los contratos de `docs/Contratos/` y las historias de `docs/Backlog/` citan el ADR que los origina.
 
 ## Tabla de control de versiones
@@ -40,3 +41,4 @@
 | v1.1 | 2026-11-11 | ADR-003 v1.5 (reglas de relevancia): se actualizan su título y sus historias. |
 | v1.2 | 2026-11-12 | ADR-005: su historia HU-DASH-004 pasa a HU-DASH-004-v2 (ayudas "?"). |
 | v1.3 | 2026-11-16 | Se agrega ADR-006 (globo con D3 para el mapa de humor; reemplaza la sección 4 de ADR-005 en esa vista). |
+| v1.4 | 2026-11-17 | Se agrega ADR-007 (modelo de ML local con TF-IDF + Ridge) y ADR-004 pasa a Deprecado parcialmente (puntos 1, 2 y 7). |

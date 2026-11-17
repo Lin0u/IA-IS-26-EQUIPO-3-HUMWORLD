@@ -1,15 +1,13 @@
 """
 Router: /api/v1/trainings
 
-Origina en: HU-SENT-006 (entrenamiento manual del modelo de ML). ADR-004.
-Contrato: contrato-sentimiento-diccionario.openapi.yaml, tag trainings.
+Origina en: HU-SENT-006-v2 (entrenamiento manual del modelo de ML). ADR-007.
+Contrato: contrato-sentimiento-diccionario.openapi.yaml v1.6.0, tag trainings.
 
-Códigos de error (decisión de implementación, pendiente de ratificación):
-- 409 DATOS_INSUFICIENTES: no se alcanza el umbral de noticias evaluadas.
-- 502 SERVICIO_EMBEDDINGS_NO_DISPONIBLE: Gemini falló tras agotar los
-  reintentos (el fallo es del servicio externo: "Bad Gateway").
-- 503 ML_NO_CONFIGURADO: falta GEMINI_API_KEY en este despliegue.
-En los tres casos el modelo activo previo no cambia.
+Códigos de error:
+- 409 DATOS_INSUFICIENTES: no se alcanza el umbral de noticias evaluadas. El
+  modelo activo previo no cambia.
+Desde ADR-007 el entrenamiento es local: ya no existen 502 ni 503.
 """
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
@@ -18,12 +16,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.schemas.common import Error
 from app.schemas.modelo_sentimiento import ModeloSentimientoLeer
-from app.services.embeddings_service import ErrorServicioEmbeddings
-from app.services.modelo_ml_service import (
-    DatosInsuficientesError,
-    MLNoConfiguradoError,
-    entrenar_modelo,
-)
+from app.services.modelo_ml_service import DatosInsuficientesError, entrenar_modelo
 
 router = APIRouter(prefix="/trainings", tags=["trainings"])
 
@@ -39,10 +32,10 @@ def _error(status: int, codigo: str, mensaje: str) -> JSONResponse:
     "",
     status_code=201,
     response_model=ModeloSentimientoLeer,
-    responses={409: {"model": Error}, 502: {"model": Error}, 503: {"model": Error}},
+    responses={409: {"model": Error}},
 )
 def entrenar(db: Session = Depends(get_db)):
-    """Entrena y activa una nueva versión del modelo de humor (HU-SENT-006)."""
+    """Entrena y activa una nueva versión del modelo de humor (HU-SENT-006-v2)."""
     try:
         return entrenar_modelo(db)
     except DatosInsuficientesError as exc:
@@ -50,12 +43,4 @@ def entrenar(db: Session = Depends(get_db)):
             409,
             "DATOS_INSUFICIENTES",
             f"Hay {exc.disponibles} noticias evaluadas por diccionario; se requieren {exc.umbral}.",
-        )
-    except MLNoConfiguradoError:
-        return _error(503, "ML_NO_CONFIGURADO", "El servicio de embeddings no está configurado (GEMINI_API_KEY).")
-    except ErrorServicioEmbeddings as exc:
-        return _error(
-            502,
-            "SERVICIO_EMBEDDINGS_NO_DISPONIBLE",
-            f"El servicio de embeddings falló tras agotar los reintentos ({exc}); el modelo activo no cambió.",
         )

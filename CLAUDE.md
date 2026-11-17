@@ -54,7 +54,7 @@ npx prettier --write src/ruta/Archivo.jsx src/ruta/otro.js --print-width 120 --n
 - Una noticia necesita un mínimo configurable de términos coincidentes para tener humor (`minimo_terminos_humor`, 2 por defecto); si no lo alcanza, queda sin humor.
 - Si el título contiene una palabra de la lista de exclusión (lotería, horóscopo…), la noticia no se evalúa.
 - Los términos políticos se evalúan por la conducta descrita (corrupción, censura, autoritarismo…), nunca por el actor ni la ideología (no hay términos de partidos, políticos ni etiquetas como "izquierda"/"derecha").
-- El modelo de ML (opcional, Gemini + Ridge) requiere al menos 1000 noticias evaluadas por diccionario antes de poder entrenarse.
+- El modelo de ML (opcional, TF-IDF + Ridge local, ADR-007) requiere al menos 1000 noticias evaluadas por diccionario antes de poder entrenarse. No usa servicios externos ni claves.
 
 ## Convenciones
 
@@ -62,7 +62,7 @@ npx prettier --write src/ruta/Archivo.jsx src/ruta/otro.js --print-width 120 --n
 - Al modificar una historia ya publicada: la versión original se conserva marcada como **Deprecada** con su ID intacto, y se crea una nueva con sufijo `-vN` (ej. `HU-RSS-009-v2`).
 - Contratos de API en formato OpenAPI/YAML dentro de `docs/Contratos`, versionados (`v1/`), con rutas en sustantivos plurales y el verbo HTTP según la acción.
 - En el frontend, reutilizar los tokens de `index.css` (colores, tipografías Inter/Montserrat, radios, sombras) en vez de valores sueltos.
-- Los tests unitarios aíslan los servicios externos (RSS, Gemini) con mocks (ej. `respx` para HTTP).
+- Los tests unitarios aíslan los servicios externos (feeds RSS) con mocks (ej. `respx` para HTTP).
 
 ## Flujo de trabajo
 
