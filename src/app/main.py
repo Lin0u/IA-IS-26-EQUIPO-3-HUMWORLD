@@ -5,6 +5,7 @@ Origina en: HU-RSS-001 a HU-RSS-009.
 ADRs relacionados: ADR-001 (stack backend), ADR-002 (arquitectura de captura RSS).
 Contrato: contrato-canales-fuentes-rss.openapi.yaml.
 """
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -28,6 +29,25 @@ from app.routers import (
     trainings,
 )
 
+
+
+def _configurar_logs() -> None:
+    """Muestra los mensajes INFO de la aplicación en `docker compose logs api`.
+
+    Sin esto, Python solo imprimía advertencias y errores: el avance de la
+    captura y el resultado del entrenamiento no aparecían (hallazgo de QA M1,
+    2026-11-17). Solo agrega un manejador a los loggers "app.*"; los de uvicorn no cambian.
+    """
+    logger_app = logging.getLogger("app")
+    if logger_app.handlers:
+        return
+    manejador = logging.StreamHandler()
+    manejador.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
+    logger_app.addHandler(manejador)
+    logger_app.setLevel(logging.INFO)
+
+
+_configurar_logs()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

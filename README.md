@@ -94,11 +94,10 @@ El pipeline de GitHub Actions (`.github/workflows/ci.yml`) corre ambos en cada P
 
 ## Modelo de ML (opcional)
 
-Sin configuración, todo el humor se calcula por diccionario. Para activar el modelo de ADR-004:
+Mientras no haya un modelo entrenado, todo el humor se calcula por diccionario. El modelo (ADR-007: TF-IDF + Ridge) se entrena y se ejecuta localmente: no necesita claves ni servicios externos.
 
-1. Crear una clave de la Gemini API (cuenta del equipo) y dejarla en un archivo `.env` junto a `docker-compose.yml`: `GEMINI_API_KEY=...`. Ese archivo no se sube al repositorio y la clave no se comparte por chat ni en capturas. Las variables disponibles están en `src/.env.example`.
-2. `docker compose up -d` para recargar la variable.
-3. Con al menos 1.000 noticias evaluadas por diccionario, en el panel **Administración → Modelo ML → Entrenar modelo** (o `POST /api/v1/trainings`). Desde ese momento el cálculo de humor usa el modelo activo y vuelve al diccionario si Gemini falla o no responde.
+1. Con al menos 1.000 noticias evaluadas por diccionario, en el panel **Administración → Modelo ML → Entrenar modelo** (o `POST /api/v1/trainings`). Tarda unos segundos.
+2. Desde ese momento el cálculo de humor de las noticias nuevas usa el modelo activo y vuelve al diccionario si la predicción falla.
 
 ## Administración
 

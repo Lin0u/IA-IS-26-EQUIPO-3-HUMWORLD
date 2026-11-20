@@ -3,7 +3,7 @@
 **Proyecto:** HumWorld — Equipo 3
 **Origen:** PDF de especificaciones (`0 PROYECTO_FINAL_HUMWORLD 260714.pdf`), secciones 4.2.2 (Diccionario de palabras evaluables), 4.2.4 (Procesado de la información), 10.2 (Endpoints mínimos obligatorios: `/dictionary`, `/sentiment`) y 10.4 (Posible algoritmo para cálculo del humor). Algoritmo de agregación decidido y justificado en `ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`, conforme a la sección 11 de las instrucciones del proyecto.
 **Estado general:** Propuesto — historias generadas a partir de los títulos ya oficializados en la hoja "Backlog" de `HumWorld_Anexo_I_Planificacion_actualizado.xlsx` (entregable P3) y de la estimación en puntos ya realizada en Planning Poker (P3, `Anexo-I-Planificacion-entregado-P3.md`, Sprint 2 = 18 puntos). Pendiente de revisión crítica del equipo antes de iniciar Sprint 2.
-**Versión del documento:** v1.12. Ver la Tabla de control de versiones al final del documento para el historial completo.
+**Versión del documento:** v1.17. Ver la Tabla de control de versiones al final del documento para el historial completo.
  
 > **Nota de grounding general:** el PDF exige un algoritmo de análisis de sentimiento "basado en diccionario, LLM u otro método justificado" (Objetivos específicos, punto 2) y ofrece un algoritmo posible (§10.4) como referencia no vinculante ("Esta es solo una posible solución. Cada equipo puede determinar otra manera"). El backlog ya oficializado por el equipo (hoja Excel) eligió un enfoque **híbrido diccionario + ML** (HU-SENT-002-v2, HU-SENT-006, HU-SENT-007). Este documento formaliza esa elección ya tomada por el equipo; no la introduce de nuevo. La parte de diccionario está completamente grounded en el PDF y en la sección 11 de las instrucciones del proyecto (ver `ADR-003-eleccion-algoritmo-agregacion-sentimiento.md`); la parte de ML no estaba especificada en ningún documento fuente más allá del título de la historia — el equipo definió esa arquitectura, documentada en `ADR-004-arquitectura-modelo-ml-sentimiento.md`.
  
@@ -245,7 +245,105 @@ Escenario: Barrido de respaldo sobre noticias sin humor calculado
 - Prueba del job de barrido: dado un fixture con noticias `valor_humor = NULL`, tras ejecutar el job todas quedan con un valor calculado (mock del método de cálculo, sin llamadas reales).
 ---
  
+## HU-SENT-002-v4 — Cálculo híbrido de humor (diccionario + ML local)
+
+**Reemplaza a:** HU-SENT-002-v3 (Deprecada). **Qué cambia:** el camino de ML predice con un modelo **local** (TF-IDF + Ridge, `ADR-007-modelo-ml-local-tfidf.md`) en lugar de llamar a Google Gemini Embedding por cada noticia. Desaparecen el Circuit Breaker y los reintentos del servicio de embeddings. Se conservan el timeout de la predicción, el fallback a diccionario y el barrido. Un modelo activo que no sea TF-IDF (entrenado con embeddings de Gemini) se ignora. **Por qué:** el 2026-11-17 la cuota gratuita de Gemini se agotó durante el entrenamiento (HTTP 429), y con una llamada por noticia la predicción tampoco era sostenible. Decisión de la PO del 2026-11-17.
+
+**Tipo:** Historia Técnica / Enabler Story *(el actor es el propio sistema)*
+**Como** sistema HumWorld,
+**quiero** calcular el valor de humor de cada noticia capturada usando el modelo de ML local entrenado y versionado (HU-SENT-006-v2) cuando esté disponible, o el método determinista de diccionario (HU-SENT-007-v4) en caso contrario, y mantenerlo coherente con el diccionario vigente,
+**para** asignar automáticamente un valor de sentimiento a toda noticia nueva sin intervención manual, sin depender de servicios externos y sin reprocesos innecesarios.
+
+**Prioridad:** Alta
+**Estimación relativa:** S *(orientativa: el cambio respecto de v3 es acotado al proveedor del modelo; el equipo debe validarla con Planning Poker)*
+**Depende de contrato de API:** No expone endpoint propio. Se dispara tras cada captura (HU-RSS-006/HU-RSS-008) y tras cada cambio del diccionario (HU-SENT-001-v3).
+**Variante del algoritmo:** promedio simple de términos únicos agrupados por lema (HU-SENT-007-v4, ADR-003) en el camino de diccionario; **regresor Ridge sobre TF-IDF local** (ADR-007) en el camino de ML.
+
+Se mantienen sin cambios las decisiones de HU-SENT-002-v3: marca de pendiente `metodo_calculo IS NULL`, recálculo tras cambios del diccionario, cálculo síncrono tras la captura con fallback a diccionario, barrido de respaldo y descarte de una cola de mensajes.
+
+**Valores propuestos, pendientes de validación del equipo:**
+- Timeout de la predicción local: **3 segundos** (salvaguarda; una predicción normal tarda milisegundos).
+- Periodicidad del barrido: **cada 30 minutos**; **500** noticias por ejecución (sin cambios).
+
+**Decisión pendiente de la PO (antes de activar un modelo en la demostración):** con un modelo activo, el camino de ML calcula **todas** las noticias no excluidas por la lista de HU-SENT-009, incluidas las que el diccionario deja sin humor por no alcanzar el mínimo de términos de HU-SENT-007-v4. Opciones: (a) mantenerlo así; (b) usar ML solo en noticias con al menos el mínimo de términos; (c) usar ML solo en las que el diccionario no puede evaluar. Ver ADR-007, "Riesgo de producto". Hasta que la PO decida, rige (a), que es el comportamiento actual.
+
+### Criterios de aceptación (Gherkin)
+
+```gherkin
+Escenario: Cálculo con modelo de ML local disponible
+  Dado que existe un modelo de ML activo con representación TF-IDF (ver HU-SENT-006-v2)
+  Cuando se captura una noticia nueva
+  Entonces el sistema calcula su valor de humor con ese modelo, sin realizar ninguna solicitud HTTP a servicios externos
+  Y el valor queda recortado a la escala de -10 a +10
+  Y persiste el resultado (HU-SENT-003) con metodo_calculo="ml" y el identificador de la versión del modelo usado
+
+Escenario: Cálculo sin modelo de ML disponible (fallback)
+  Dado que no existe un modelo de ML activo
+  Cuando se captura una noticia nueva
+  Entonces el sistema calcula su valor de humor con el método de diccionario (HU-SENT-007-v4)
+  Y persiste el resultado con metodo_calculo="diccionario"
+
+Escenario: Modelo activo incompatible (entrenado con embeddings de Gemini)
+  Dado que el modelo activo registra una representación distinta de TF-IDF
+  Cuando se captura una noticia nueva
+  Entonces el sistema no carga ese modelo
+  Y calcula el humor con el método de diccionario
+  Y registra en el log que el modelo activo es incompatible
+
+Escenario: Fallo del modelo de ML durante el cálculo
+  Dado que existe un modelo de ML activo pero su predicción lanza un error (por ejemplo, un archivo .joblib corrupto)
+  Cuando el sistema calcula el humor de una noticia
+  Entonces recae automáticamente en el método de diccionario para esa noticia
+  Y el incidente queda registrado en el log del sistema
+
+Escenario: Timeout excedido durante la predicción
+  Dado que existe un modelo de ML activo pero su predicción no termina dentro del timeout configurado
+  Cuando el sistema calcula el humor de una noticia
+  Entonces no espera más allá del timeout configurado
+  Y recae en el método de diccionario para esa noticia
+  Y el incidente queda registrado en el log del sistema
+
+Escenario: Fallo del cálculo sin pérdida de la noticia capturada
+  Dado que el cálculo de humor de una noticia recién capturada falla por un error inesperado
+  Cuando termina el flujo de captura
+  Entonces la noticia queda persistida con metodo_calculo = NULL
+  Y el fallo no impide persistir ni calcular las demás noticias de la captura
+
+Escenario: Barrido de respaldo sobre noticias pendientes
+  Dado que existe al menos 1 noticia con metodo_calculo = NULL
+  Cuando se ejecuta el job periódico de barrido
+  Entonces el sistema calcula y persiste su humor (con ML si hay un modelo activo, o con diccionario en caso contrario)
+  Y registra su metodo_calculo
+
+Escenario: Noticia sin términos coincidentes no se reprocesa
+  Dado que una noticia fue procesada con metodo_calculo = "diccionario" y 0 términos coincidentes (valor_humor = NULL)
+  Cuando se ejecuta el job periódico de barrido
+  Entonces la noticia no se vuelve a calcular
+
+Escenario: Recálculo tras el alta de un término
+  Dado una noticia calculada por diccionario con "guerra" (es, -8), cuyo texto también contiene "crisis", y valor_humor = -8.0
+  Cuando se da de alta el término "crisis" (es, -6) mediante POST /api/v1/dictionary
+  Entonces la noticia queda con metodo_calculo = NULL y conserva valor_humor = -8.0
+  Y tras el siguiente barrido queda con valor_humor = -7.0 y cantidad_terminos_evaluados = 2
+
+Escenario: Noticias calculadas con ML no se recalculan por cambios del diccionario
+  Dado una noticia con metodo_calculo = "ml"
+  Cuando se modifica cualquier término del diccionario
+  Entonces la noticia conserva su metodo_calculo y su valor_humor
+```
+
+### Definition of Done
+(Bloque general DoD, sección 14.) Adicionalmente:
+- Pruebas del camino de ML con un modelo TF-IDF **real y pequeño** entrenado en la propia prueba (dataset de fixture determinista), sin servicios externos ni mocks HTTP.
+- Prueba del modelo incompatible (representación distinta de TF-IDF) y del `.joblib` ilegible: ambos caen al diccionario.
+- Se mantienen las pruebas de fallo forzado, timeout forzado, barrido y recálculo de HU-SENT-002-v3.
+- Revisión del equipo de la lógica del algoritmo (sección 12 de las instrucciones del proyecto).
+
+---
+
 ## HU-SENT-002-v3 — Cálculo híbrido de humor (diccionario + ML)
+
+**Estado:** **Deprecada (2026-11-17)** — reemplazada por **HU-SENT-002-v4** (ver arriba), que usa un modelo de ML local (TF-IDF + Ridge, ADR-007) en lugar de Google Gemini Embedding. Se conserva este bloque íntegro como registro histórico, conforme a la sección 3 de las instrucciones del proyecto.
 
 **Tipo:** Historia Técnica / Enabler Story *(el actor es el propio sistema)*
 **Como** sistema HumWorld,
@@ -503,8 +601,77 @@ Escenario: Texto sin términos del diccionario coincidentes
  
 ---
  
+## HU-SENT-006-v2 — Entrenamiento y versionado del modelo de ML (local, TF-IDF + Ridge)
+
+**Reemplaza a:** HU-SENT-006 (Deprecada). **Qué cambia:** el texto de cada noticia se representa con **TF-IDF calculado localmente** (`scikit-learn`) en lugar de embeddings de Google Gemini, y el vectorizador y el regresor se guardan juntos en un solo archivo. El entrenamiento ya no llama a ningún servicio externo: desaparecen las respuestas **502** (`SERVICIO_EMBEDDINGS_NO_DISPONIBLE`) y **503** (`ML_NO_CONFIGURADO`) y la variable `GEMINI_API_KEY`. **Por qué:** el 2026-11-17 el entrenamiento real con 1.467 noticias falló con HTTP 429 de Gemini (cuota gratuita agotada a cerca de un tercio del proceso), sin dejar modelo activo. Decisión de la PO del 2026-11-17; arquitectura en `ADR-007-modelo-ml-local-tfidf.md`.
+
+**Tipo:** Historia de Usuario *(disparo manual por el administrador del sistema)*
+**Como** administrador del sistema,
+**quiero** disparar manualmente el entrenamiento de una nueva versión del modelo de aprendizaje automático para el cálculo de humor, con el histórico de noticias ya evaluadas por el método de diccionario y sin depender de servicios externos,
+**para** contar con un modelo de humor propio, versionado y reentrenable en cualquier momento, incluida la demostración del proyecto.
+
+**Prioridad:** Media
+**Estimación relativa:** M *(orientativa: se reutilizan el endpoint, el versionado y la evaluación de HU-SENT-006; cambia la representación del texto y se retira el cliente de Gemini. El equipo debe validarla con Planning Poker)*
+**Depende de contrato de API:** Sí — `POST /api/v1/trainings`, `contrato-sentimiento-diccionario.openapi.yaml` **v1.6.0** (tag `trainings`).
+**Variante del algoritmo:** regresor `Ridge` sobre TF-IDF (ADR-007). Las etiquetas de entrenamiento son los valores del promedio simple de términos únicos (HU-SENT-007-v4, ADR-003).
+
+Se heredan de HU-SENT-006 (y de ADR-004, puntos 3 a 6): disparo manual, umbral mínimo configurable (**valor propuesto: 1.000 noticias evaluadas por diccionario**), solo noticias con `metodo_calculo = "diccionario"` y `valor_humor` no nulo como datos de entrenamiento, versionado en `modelos_sentimiento` + `.joblib` en el volumen `modelos_ml`, y evaluación por MAE contra el diccionario sobre un 20 % de validación con semilla 42 (valores propuestos).
+
+**Valores propuestos, pendientes de validación del equipo** (configurables, ADR-007 punto 1): `ngram_range` (1, 2), `min_df` 2, `max_df` 0,9, `max_features` 20.000, `sublinear_tf`, sin tildes ni mayúsculas; `Ridge(alpha=1.0)`. Tiempo máximo esperado de entrenamiento con unas 1.500 noticias: **60 s** (orientativo; ajustar con la medición real).
+
+### Criterios de aceptación (Gherkin)
+
+```gherkin
+Escenario: Entrenamiento exitoso con datos suficientes
+  Dado que existen al menos 1.000 noticias evaluadas por el método de diccionario (umbral configurable)
+  Cuando el administrador envía POST a /api/v1/trainings
+  Entonces el sistema responde con código HTTP 201 en menos de 60 segundos con 1.500 noticias
+  Y entrena localmente un Pipeline TF-IDF + Ridge sin realizar ninguna solicitud HTTP a servicios externos
+  Y la nueva versión queda registrada como activa en modelos_sentimiento con su identificador, fecha, representación ("tfidf-…") y MAE de validación
+  Y la versión activa anterior, si existía, queda inactiva
+
+Escenario: Entrenamiento con datos insuficientes
+  Dado que el volumen de noticias evaluadas no alcanza el umbral mínimo configurado
+  Cuando el administrador envía POST a /api/v1/trainings
+  Entonces el sistema responde con código HTTP 409 y codigo DATOS_INSUFICIENTES, indicando las disponibles y las requeridas
+  Y el modelo de ML activo (si existe) no se ve afectado
+
+Escenario: Entrenamiento sin conexión a internet ni clave de API
+  Dado que el contenedor de la API no tiene acceso a internet ni la variable GEMINI_API_KEY
+  Y existen al menos 1.000 noticias evaluadas por diccionario
+  Cuando el administrador envía POST a /api/v1/trainings
+  Entonces el sistema responde con código HTTP 201
+
+Escenario: Evaluación sin fuga de vocabulario
+  Dado un conjunto de entrenamiento con partición de validación del 20 % y semilla 42
+  Cuando se entrena el modelo
+  Entonces el vectorizador TF-IDF se ajusta solo con la partición de entrenamiento
+  Y el MAE se calcula sobre la partición de validación
+  Y el log registra también el MAE de una predicción constante (media de entrenamiento) como referencia
+
+Escenario: Fallo al guardar la nueva versión
+  Dado que el entrenamiento termina pero el registro en modelos_sentimiento falla
+  Cuando se procesa POST /api/v1/trainings
+  Entonces el archivo .joblib recién creado se elimina
+  Y el modelo activo previo no cambia
+```
+
+**Nota de grounding:** el PDF no exige un modelo de ML; lo permite como opción ("basado en diccionario, LLM u otro método justificado", Objetivos específicos punto 2). La arquitectura es decisión del equipo: ADR-004 (original) y ADR-007 (vigente).
+
+### Definition of Done
+(Bloque general DoD, sección 14.) Adicionalmente:
+- Pruebas del entrenamiento con un dataset de fixture pequeño y determinista y un modelo real (sin mocks de servicios externos, porque ya no existen), incluidas: datos insuficientes (409), registro fallido (se borra el `.joblib`) y la partición sin fuga de vocabulario.
+- Se eliminan `embeddings_service.py`, sus pruebas, los parámetros `gemini_*` y `embeddings_*` y la variable `GEMINI_API_KEY` (compose, `.env.example`, README).
+- Contrato `contrato-sentimiento-diccionario.openapi.yaml` v1.6.0 y Swagger sin 502 ni 503 en `POST /trainings`.
+- Textos del panel Administración → Modelo ML sin referencias a Gemini ni a su cuota.
+- La limitación metodológica (MAE contra diccionario; TF-IDF tiende a reaprender el diccionario) queda declarada en ADR-007.
+
+---
+
 ## HU-SENT-006 — Entrenamiento y versionado del modelo de ML
  
+**Estado:** **Deprecada (2026-11-17)** — reemplazada por **HU-SENT-006-v2** (ver arriba), que entrena con TF-IDF local en lugar de embeddings de Google Gemini (ADR-007). Se conserva este bloque íntegro como registro histórico, conforme a la sección 3 de las instrucciones del proyecto.
+
 **Tipo:** Historia de Usuario *(el entrenamiento se dispara manualmente por el administrador del sistema, no automáticamente — por lo que no se clasifica como Enabler Story, mismo criterio aplicado en HU-RSS-009)*
 **Como** administrador del sistema,
 **quiero** disparar manualmente el entrenamiento de una nueva versión del modelo de aprendizaje automático para el cálculo de humor, usando como datos de entrenamiento el histórico de noticias ya evaluadas por el método de diccionario,
@@ -910,6 +1077,79 @@ Escenario: Las noticias sin humor no cuentan en la nube
 
 ---
 
+## HU-SENT-010 — Ver y probar el modelo de ML activo
+
+**Tipo:** Historia de Usuario
+**Como** administrador del sistema,
+**quiero** ver en el panel qué modelo de ML está activo, con cuántas noticias se entrenó y cuánto mejora frente a adivinar, y probarlo con un titular comparándolo con el diccionario,
+**para** saber si el modelo sirve antes de dejarlo activo y poder mostrar en vivo qué aporta frente al método de diccionario.
+
+**Prioridad:** Media
+**Estimación relativa:** M *(orientativa: dos endpoints de lectura sobre servicios ya existentes, dos columnas nuevas y una pestaña del panel. El equipo debe validarla con Planning Poker)*
+**Depende de contrato de API:** Sí — `contrato-sentimiento-diccionario.openapi.yaml` **v1.7.0**: `GET /api/v1/trainings/active`, `POST /api/v1/trainings/active/predictions` y los campos `cantidad_noticias` y `mae_referencia` de `ModeloSentimiento`. Reutiliza `POST /api/v1/sentiment` (HU-SENT-005-v2) para el lado del diccionario.
+**Variante del algoritmo:** muestra las dos variantes sin modificarlas: promedio simple de términos únicos (HU-SENT-007-v4, ADR-003) y Ridge sobre TF-IDF (ADR-007). La comparación usa el texto tal cual: no aplica la lista de exclusión ni el mínimo de términos.
+**Origen:** decisión de la PO del 2026-11-17, tras el primer entrenamiento real del modelo local (MAE 1,33 frente a 2,00 de la referencia), al constatar que el panel solo mostraba la versión y el MAE. ADR-004, punto 6, ya indicaba que el valor del modelo se observa "revisando casos de desacuerdo entre ambos métodos".
+
+**Ubicación:** Administración → pestaña Modelo ML (opcional en HU-ADMIN-004), con dos bloques: "1. Modelo activo" y "2. Probar el modelo".
+
+### Criterios de aceptación (Gherkin)
+
+```gherkin
+Escenario: Tarjeta del modelo activo
+  Dado que existe un modelo activo entrenado con 1.565 noticias, MAE 1,334 y MAE de referencia 2,002
+  Cuando el administrador abre la pestaña Modelo ML
+  Entonces ve la fecha de la versión activa, "1565" noticias usadas, el error del modelo "1.33", el de adivinar la media "2.00"
+  Y el error frente a adivinar "−33 %", calculado como 1 − MAE / MAE de referencia y redondeado al entero
+
+Escenario: Sin modelo activo
+  Dado que no existe un modelo activo
+  Cuando el administrador abre la pestaña Modelo ML
+  Entonces GET /api/v1/trainings/active responde 404 con codigo MODELO_NO_ACTIVO
+  Y el panel indica que todo el humor se calcula con el diccionario
+  Y el botón "Comparar" está deshabilitado
+
+Escenario: Modelo entrenado antes de guardar las métricas
+  Dado un modelo activo sin cantidad_noticias ni mae_referencia (null)
+  Cuando el administrador abre la pestaña Modelo ML
+  Entonces esos datos y la mejora se muestran como "Sin dato"
+
+Escenario: Al entrenar, la tarjeta se actualiza
+  Cuando el administrador entrena una versión nueva (HU-SENT-006-v2)
+  Entonces la tarjeta muestra la nueva versión sin recargar la página
+
+Escenario: Comparar diccionario y modelo
+  Dado un modelo activo
+  Cuando el administrador escribe "acuerdo de paz" y pulsa "Comparar"
+  Entonces el panel muestra lado a lado el humor del diccionario, con sus palabras y valores, y el humor del modelo
+  Y no se persiste ninguna noticia ni predicción
+
+Escenario: Texto sin palabras del diccionario
+  Dado un modelo activo
+  Cuando el administrador compara un texto sin palabras del diccionario
+  Entonces el lado del diccionario muestra "Sin humor" y explica que no encontró palabras
+  Y el lado del modelo muestra un valor entre -10 y +10
+
+Escenario: Texto inválido
+  Cuando se envía POST /api/v1/trainings/active/predictions con un texto vacío, solo espacios o de más de 5.000 caracteres
+  Entonces la API responde 400 con codigo DATOS_INVALIDOS
+
+Escenario: Modelo activo inutilizable
+  Dado que el modelo activo es incompatible con ADR-007 o su archivo no se puede leer
+  Cuando se envía POST /api/v1/trainings/active/predictions
+  Entonces la API responde 404 con codigo MODELO_NO_ACTIVO
+  Y el panel muestra el mensaje de la API
+```
+
+### Definition of Done
+(Bloque general DoD, sección 14.) Adicionalmente:
+- Migración `c4d9e7a1b2f5` (columnas nullable `cantidad_noticias` y `mae_referencia`), con `upgrade()` y `downgrade()`.
+- Pruebas de backend de los dos endpoints (200, 400, 404) con un modelo TF-IDF real y pequeño; prueba de que la predicción no persiste nada.
+- Pruebas del panel con la API simulada: tarjeta con y sin modelo, "Sin dato", comparación, texto sin palabras y error.
+- Validado visualmente en al menos una resolución de escritorio y una de celular (comparación en una columna).
+- Swagger y contrato v1.7.0 actualizados.
+
+---
+
 ## Resumen de trazabilidad
  
 | ID | Tipo | Prioridad | Puntos (P3) | Endpoint / mecanismo | Referencia PDF |
@@ -917,16 +1157,19 @@ Escenario: Las noticias sin humor no cuentan en la nube
 | HU-SENT-001 | **Deprecada** (ver HU-SENT-001-v2) | Alta | 5 | `/api/v1/dictionary` (CRUD) — ver `contrato-sentimiento-diccionario.openapi.yaml` | §4.2.2, §10.2 |
 | HU-SENT-001-v2 | **Deprecada** (ver HU-SENT-001-v3) | Alta | 5 | `/api/v1/dictionary` (CRUD, listado paginado v1.2.0) — ver `contrato-sentimiento-diccionario.openapi.yaml` | §4.2.2, §10.2 |
 | HU-SENT-001-v3 | Historia de Usuario | Media | S (propuesta) | `/api/v1/dictionary` (CRUD; listado paginado con filtros de idioma y valor, v1.5.0) — ver `contrato-sentimiento-diccionario.openapi.yaml` | §4.2.2 |
-| HU-SENT-002-v3 | Enabler Story | Alta | 5 | Interno — síncrono + Timeout explícito (propuesto: 3s) + fallback a diccionario + job de barrido de respaldo (propuesto: cada 30 min) sobre `metodo_calculo IS NULL` + recálculo tras cambios del diccionario | §4.2.4, Objetivos específicos #2 |
+| HU-SENT-002-v3 | **Deprecada** (ver HU-SENT-002-v4) | Alta | 5 | Interno — Gemini Embedding + Circuit Breaker en el camino de ML | §4.2.4, Objetivos específicos #2 |
+| HU-SENT-002-v4 | Enabler Story | Alta | S (propuesta) | Interno — síncrono + fallback a diccionario + barrido sobre `metodo_calculo IS NULL` + recálculo tras cambios del diccionario; camino de ML con TF-IDF + Ridge local (ADR-007), timeout de predicción propuesto: 3 s | §4.2.4, Objetivos específicos #2 |
 | HU-SENT-003 | Enabler Story | Alta | 3 | Extiende modelo `Noticia` | §4.2.4 |
 | HU-SENT-004 | Historia de Usuario | Alta | 1 | `GET /api/v1/sentiment` — ver `contrato-sentimiento-diccionario.openapi.yaml` | §4.1, §10.2 |
 | HU-SENT-005 | Historia de Usuario — **Deprecada**, reemplazada por HU-SENT-005-v2 | — | — | — | — |
 | HU-SENT-005-v2 | Historia de Usuario | Media | 2 (por revalidar) | `POST /api/v1/sentiment` — ver `contrato-sentimiento-diccionario.openapi.yaml` (v1.3.0) | §10.2 |
-| HU-SENT-006 | Historia de Usuario | Media | 5 | `POST /api/v1/trainings` — ver `contrato-sentimiento-diccionario.openapi.yaml` — embeddings externos (Google Gemini Embedding) + regresor local scikit-learn, disparo manual, umbral propuesto: 1.000 noticias (ver ADR-004) | Objetivos específicos #2 (no detallado) |
+| HU-SENT-006 | **Deprecada** (ver HU-SENT-006-v2) | Media | 5 | `POST /api/v1/trainings` — embeddings de Google Gemini + Ridge (ADR-004) | Objetivos específicos #2 (no detallado) |
+| HU-SENT-006-v2 | Historia de Usuario | Media | M (propuesta) | `POST /api/v1/trainings` (contrato v1.6.0: 201/409) — TF-IDF + Ridge local, disparo manual, umbral propuesto: 1.000 noticias (ADR-007) | Objetivos específicos #2 (no detallado) |
 | HU-SENT-007-v2 | **Deprecada** (ver HU-SENT-007-v3) | Alta | 2 | Interno (servicio compartido) — n = términos únicos; palabra completa, sin mayúsculas ni tildes (conserva ñ), sin lematización | §10.4, sección 11 instrucciones proyecto |
 | HU-SENT-007-v3 | **Deprecada** (ver HU-SENT-007-v4) | Alta | M (propuesta) | Interno — comparación por forma y lema (spaCy), detección de idioma | §4.4, §10.4 |
 | HU-SENT-007-v4 | Enabler Story | Alta | S (propuesta) | Interno + parámetro `minimo_terminos_humor` de `/config` — mínimo de términos únicos (2 por defecto) | §4.4, §10.4 |
 | HU-SENT-009 | Historia de Usuario | Media | M (propuesta) | `/api/v1/exclusions` (GET, POST, DELETE) y `GET /api/v1/news/statistics` | §2, §4.2.2 |
+| HU-SENT-010 | Historia de Usuario | Media | M (propuesta) | `GET /api/v1/trainings/active` y `POST /api/v1/trainings/active/predictions` (contrato v1.7.0) + `POST /sentiment`; pestaña Modelo ML | Objetivos específicos #2 (no detallado) |
  
 ## Tabla de control de versiones
  
@@ -950,3 +1193,5 @@ Escenario: Las noticias sin humor no cuentan en la nube
 | HU-SENT-002-v3 | corrección | 2026-11-11 | Corrección de rendimiento detectada al recalcular 2.200 noticias: cada commit por noticia daba por vencidos los términos del diccionario y SQLAlchemy los recargaba uno por uno (unas 950 consultas por noticia con 1.000 términos; la API llegó al 142 % de CPU y dejó de responder). Los términos se separan de la sesión al cargarlos: 4 consultas por noticia. Prueba de regresión agregada. Sin cambios en los criterios de aceptación. |
 | HU-SENT-007-v4 | corrección | 2026-11-11 | Corrección detectada por la PO en la explicación del humor: si el diccionario tenía el singular y el plural de una palabra ("award" y "awards") y la noticia traía ambos, se contaban como dos términos. Ahora cada lema cuenta una sola vez, como ya exigía el criterio de términos únicos. Pruebas agregadas en `test_lematizacion.py`; las noticias por diccionario se recalculan (migración `b7e2c4a9d1f3`). ADR-003 v1.6. Sin cambios en los criterios de aceptación. |
 | HU-SENT-001-v2 → HU-SENT-001-v3 | v1.15 | 2026-11-12 | Decisión de la PO: `GET /api/v1/dictionary` agrega los filtros opcionales `idioma`, `valor_min` y `valor_max` (400 `RANGO_VALOR_INVALIDO` si el rango está invertido), y la pestaña Diccionario muestra la barra de búsqueda con esos filtros y, a su derecha, el botón "+ Agregar término", que abre el formulario de alta. Motivo: revisar los ~4.100 términos por idioma y valor; los campos del formulario de alta se confundían con filtros. HU-SENT-001-v2 queda Deprecada. Contrato sentimiento-diccionario v1.5.0. |
+| HU-SENT-006 → HU-SENT-006-v2, HU-SENT-002-v3 → HU-SENT-002-v4 | v1.16 | 2026-11-17 | Decisión de la PO tras el diagnóstico de QA del entrenamiento real: con 1.467 noticias, Gemini respondió HTTP 429 (cuota gratuita agotada) a cerca de un tercio del proceso y `POST /trainings` devolvió 502 sin modelo activo. El camino de ML pasa a TF-IDF + Ridge local, sin servicio externo (ADR-007, que reemplaza los puntos 1, 2 y 7 de ADR-004). HU-SENT-006 y HU-SENT-002-v3 quedan Deprecadas. Se retiran 502 y 503 de `POST /trainings` (contrato v1.6.0). HU-SENT-002-v4 registra la decisión pendiente de la PO sobre aplicar ML a las noticias bajo el mínimo de términos. |
+| HU-SENT-010 | v1.17 | 2026-11-17 | Nueva historia por decisión de la PO tras el primer entrenamiento real (MAE 1,33 frente a 2,00 de la referencia): la pestaña Modelo ML muestra la tarjeta del modelo activo (noticias usadas, MAE, referencia y mejora) y permite probarlo con un texto, comparado con el diccionario. Contrato sentimiento-diccionario v1.7.0; migración `c4d9e7a1b2f5`; ADR-007 v1.1. |

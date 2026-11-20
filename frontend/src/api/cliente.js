@@ -12,9 +12,9 @@ const TIMEOUT_MS = 10000
 // (src/app/core/config.py), más el cálculo del humor; varias fuentes se capturan en
 // serie. Con 10 s el navegador abandonaba la espera aunque el backend terminara bien.
 export const TIMEOUT_LARGO_MS = 180000
-// El entrenamiento manda todas las noticias a Gemini en lotes y espera su cuota por
-// minuto (HU-SENT-006): con la capa gratuita puede tardar varios minutos.
-export const TIMEOUT_ENTRENAMIENTO_MS = 30 * 60 * 1000
+// El entrenamiento es local (HU-SENT-006-v2, ADR-007) y tarda segundos; se deja
+// margen para bases grandes o equipos lentos.
+export const TIMEOUT_ENTRENAMIENTO_MS = 5 * 60 * 1000
 
 // Error de la API con el código HTTP y el "codigo" de negocio que devuelve el
 // backend (por ejemplo, TERMINO_DUPLICADO). El mensaje es el que manda la API,
@@ -274,7 +274,27 @@ export function purgarNoticias(fecha = '') {
   return solicitar(`/news${consulta}`, { metodo: 'DELETE' })
 }
 
-// POST /trainings (HU-SENT-006).
+// POST /trainings (HU-SENT-006-v2).
 export function entrenarModelo() {
   return solicitar('/trainings', { metodo: 'POST', timeoutMs: TIMEOUT_ENTRENAMIENTO_MS })
+}
+
+// GET /trainings/active (HU-SENT-010). Sin modelo activo (404) devuelve null.
+export async function obtenerModeloActivo() {
+  try {
+    return await obtenerJson('/trainings/active')
+  } catch (error) {
+    if (error.status === 404) return null
+    throw error
+  }
+}
+
+// POST /trainings/active/predictions (HU-SENT-010): humor del modelo para un texto, sin guardarlo.
+export function predecirConModelo(texto) {
+  return solicitar('/trainings/active/predictions', { metodo: 'POST', cuerpo: { texto } })
+}
+
+// POST /sentiment (HU-SENT-005-v2): humor por diccionario de un texto, con sus términos.
+export function analizarTexto(texto) {
+  return solicitar('/sentiment', { metodo: 'POST', cuerpo: { texto } })
 }

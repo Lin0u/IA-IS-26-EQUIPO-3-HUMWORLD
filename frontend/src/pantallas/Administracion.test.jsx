@@ -21,6 +21,9 @@ vi.mock('../api/cliente.js', () => ({
   guardarConfiguracion: vi.fn(),
   purgarNoticias: vi.fn(),
   entrenarModelo: vi.fn(),
+  obtenerModeloActivo: vi.fn(),
+  predecirConModelo: vi.fn(),
+  analizarTexto: vi.fn(),
   obtenerExclusiones: vi.fn(),
   crearExclusion: vi.fn(),
   eliminarExclusion: vi.fn(),
@@ -75,6 +78,7 @@ beforeEach(() => {
     pendientes: 0,
     minimo_terminos_humor: 2,
   })
+  api.obtenerModeloActivo.mockResolvedValue(null)
   confirmar = vi.spyOn(window, 'confirm').mockReturnValue(true)
 })
 
@@ -621,12 +625,25 @@ describe('Purgado', () => {
   })
 })
 
+const MODELO = {
+  id: 1,
+  version: '20261117T200448459543Z',
+  modelo_embeddings_usado: 'tfidf-1-2',
+  mae_evaluacion: 1.334,
+  mae_referencia: 2.002,
+  cantidad_noticias: 1565,
+  fecha_entrenamiento: '2026-11-17T20:04:48',
+  activo: true,
+}
+
 describe('Modelo ML', () => {
-  it('entrena y muestra la versión activa', async () => {
-    api.entrenarModelo.mockResolvedValue({ version: 2, mae_evaluacion: 1.234 })
+  it('entrena, muestra la versión activa y actualiza la tarjeta', async () => {
+    api.entrenarModelo.mockResolvedValue({ ...MODELO, version: 2, mae_evaluacion: 1.234 })
     const usuario = await abrir('Modelo ML')
+    expect(await screen.findByText(/Todavía no hay un modelo activo/)).toBeInTheDocument()
     await usuario.click(screen.getByRole('button', { name: 'Entrenar modelo' }))
     expect(await screen.findByRole('status')).toHaveTextContent('Versión 2 activa (MAE contra diccionario: 1.23).')
+    expect(screen.getByText('1565')).toBeInTheDocument()
   })
 
   it('muestra el error de datos insuficientes', async () => {
@@ -634,5 +651,78 @@ describe('Modelo ML', () => {
     const usuario = await abrir('Modelo ML')
     await usuario.click(screen.getByRole('button', { name: 'Entrenar modelo' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('No hay suficientes noticias para entrenar.')
+  })
+
+  it('muestra la tarjeta del modelo activo con su mejora frente a la referencia', async () => {
+    api.obtenerModeloActivo.mockResolvedValue(MODELO)
+    await abrir('Modelo ML')
+    expect(await screen.findByText('1565')).toBeInTheDocument()
+    expect(screen.getByText('1.33')).toBeInTheDocument()
+    expect(screen.getByText('2.00')).toBeInTheDocument()
+    expect(screen.getByText('−33 %')).toBeInTheDocument()
+  })
+
+  it('muestra "Sin dato" en un modelo antiguo sin métricas de referencia', async () => {
+    api.obtenerModeloActivo.mockResolvedValue({ ...MODELO, mae_referencia: null, cantidad_noticias: null })
+    await abrir('Modelo ML')
+    expect(await screen.findAllByText('Sin dato')).toHaveLength(3)
+  })
+
+  it('sin modelo activo no permite comparar', async () => {
+    const usuario = await abrir('Modelo ML')
+    await usuario.click(screen.getByRole('button', { name: 'Usar un ejemplo' }))
+    expect(await screen.findByText('Entrena un modelo para poder probarlo.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Comparar' })).toBeDisabled()
+  })
+
+  it('compara el diccionario y el modelo para un texto', async () => {
+    api.obtenerModeloActivo.mockResolvedValue(MODELO)
+    api.analizarTexto.mockResolvedValue({
+      valor_humor: 5,
+      cantidad_terminos_evaluados: 1,
+      polarizacion_terminos: 0,
+      terminos: [{ palabra: 'paz', idioma: 'es', valor: 5 }],
+    })
+    api.predecirConModelo.mockResolvedValue({ valor_humor: 2.4, modelo_id: 1, version: MODELO.version })
+    const usuario = await abrir('Modelo ML')
+    await screen.findByText('1565')
+    await usuario.type(screen.getByLabelText('Texto a evaluar'), 'acuerdo de paz')
+    await usuario.click(screen.getByRole('button', { name: 'Comparar' }))
+
+    const region = await screen.findByRole('region', { name: 'Comparación diccionario y modelo' })
+    expect(api.analizarTexto).toHaveBeenCalledWith('acuerdo de paz')
+    expect(api.predecirConModelo).toHaveBeenCalledWith('acuerdo de paz')
+    expect(within(region).getByText('+5.0')).toBeInTheDocument()
+    expect(within(region).getByText('+2.4')).toBeInTheDocument()
+    expect(within(region).getByText('Promedio de 1 palabra del diccionario.')).toBeInTheDocument()
+    expect(within(region).getByRole('list', { name: 'Palabras del diccionario: Diccionario' })).toHaveTextContent(
+      'paz +5.0',
+    )
+  })
+
+  it('cuando el diccionario no encuentra palabras lo dice y el modelo igual responde', async () => {
+    api.obtenerModeloActivo.mockResolvedValue(MODELO)
+    api.analizarTexto.mockResolvedValue({ valor_humor: null, cantidad_terminos_evaluados: 0, terminos: [] })
+    api.predecirConModelo.mockResolvedValue({ valor_humor: -1.2, modelo_id: 1, version: MODELO.version })
+    const usuario = await abrir('Modelo ML')
+    await screen.findByText('1565')
+    await usuario.type(screen.getByLabelText('Texto a evaluar'), 'reunión del gabinete')
+    await usuario.click(screen.getByRole('button', { name: 'Comparar' }))
+
+    const region = await screen.findByRole('region', { name: 'Comparación diccionario y modelo' })
+    expect(within(region).getByText('Sin humor')).toBeInTheDocument()
+    expect(within(region).getByText('Ninguna palabra del diccionario: no puede darle humor.')).toBeInTheDocument()
+    expect(within(region).getByText('-1.2')).toBeInTheDocument()
+  })
+
+  it('muestra el error si la comparación falla', async () => {
+    api.obtenerModeloActivo.mockResolvedValue(MODELO)
+    api.analizarTexto.mockResolvedValue({ valor_humor: null, cantidad_terminos_evaluados: 0, terminos: [] })
+    api.predecirConModelo.mockRejectedValue(new Error('El modelo activo no se puede usar; vuelve a entrenarlo.'))
+    const usuario = await abrir('Modelo ML')
+    await screen.findByText('1565')
+    await usuario.type(screen.getByLabelText('Texto a evaluar'), 'hola')
+    await usuario.click(screen.getByRole('button', { name: 'Comparar' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('vuelve a entrenarlo')
   })
 })
