@@ -23,7 +23,7 @@ Cada requisito funcional (RF) deriva de una función descrita en el PDF (§4.1 a
 | RF-03 | Consulta y listado paginado/filtrado de fuentes RSS, y detalle de una fuente. | §4.2.1, §10.2 | HU-RSS-003-v2 |
 | RF-04 | Modificación de una fuente RSS (completa y parcial). | §10.2 | HU-RSS-004 |
 | RF-05 | Eliminación de una fuente RSS. | §10.2 | HU-RSS-005 |
-| RF-06 | Captura automática periódica de noticias desde las fuentes RSS activas (cron). | §4.2.3, §4.2.4 | HU-RSS-006 |
+| RF-06 | Captura automática periódica de noticias desde las fuentes RSS activas (cron). | §4.2.3, §4.2.4 | HU-RSS-006-v2 |
 | RF-07 | Configuración, modificable por el usuario, de la periodicidad del cron de captura. | §4.2.3 | HU-RSS-007 |
 | RF-08 | Actualización manual de la captura para una o varias fuentes RSS. | §4.2.3 | HU-RSS-008 |
 | RF-09 | Carga inicial de fuentes RSS por continente. | §4.2.1 | HU-RSS-009-v2 |
@@ -89,7 +89,7 @@ Trazabilidad **requisito → historia → endpoint/mecanismo → prueba**. El en
 | RF-02 | HU-RSS-002 | `POST /api/v1/sources` | canales-fuentes-rss | `test_sources.py` |
 | RF-04 | HU-RSS-004 | `PUT /api/v1/sources/{id}`, `PATCH /api/v1/sources/{id}` | canales-fuentes-rss | `test_sources.py` |
 | RF-05 | HU-RSS-005 | `DELETE /api/v1/sources/{id}` (soft delete) | canales-fuentes-rss | `test_sources.py` |
-| RF-06 | HU-RSS-006 | Cron interno (APScheduler) | — (sin endpoint) | `test_captura_automatica.py` |
+| RF-06 | HU-RSS-006-v2 | Cron interno (APScheduler) | — (sin endpoint) | `test_captura_automatica.py` |
 | RF-07 | HU-RSS-007 | `GET /api/v1/config`, `PUT /api/v1/config` | canales-fuentes-rss | `test_configuracion_periodicidad.py` |
 | RF-08 | HU-RSS-008 | `POST /api/v1/sources/{id}/captures`, `POST /api/v1/captures` | canales-fuentes-rss | `test_captura_manual.py` |
 | RF-09 | HU-RSS-009-v2 | Script `python -m scripts.seed` | — (sin endpoint) | `test_seed.py` |

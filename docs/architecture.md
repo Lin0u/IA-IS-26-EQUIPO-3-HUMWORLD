@@ -86,7 +86,7 @@ Entidades implementadas (`src/app/models/`), con sus migraciones en
 - **FuenteRSS** (EPIC-RSS): id, canal_id (FK), url, categoria_iptc, activo,
   fecha_ultima_captura_exitosa, estado_circuit_breaker.
 - **Noticia** (EPIC-RSS + EPIC-SENT): id, fuente_rss_id (FK),
-  identificador_item_rss (dedup), titulo, contenido, enlace_original,
+  identificador_item_rss (dedup por canal, ver nota abajo), titulo, contenido, enlace_original,
   fecha_publicacion, fecha_registro, idioma_detectado, categoria_iptc y los
   campos de humor poblados por EPIC-SENT: valor_humor, metodo_calculo
   ("diccionario" | "ml" | NULL), cantidad_terminos_evaluados,
@@ -104,6 +104,18 @@ Relaciones UML: CanalNoticias ◆── FuenteRSS (composición); FuenteRSS ─�
 TerminoDiccionario ──< CoincidenciaTermino (referencia); ModeloSentimiento ──o
 Noticia (agregación). Detalle del modelo de datos completo en
 `docs/UML/diagrama-clases.md`.
+
+**Regla de deduplicación de noticias (HU-RSS-006-v2, decisión de la PO del
+2026-11-17).** El identificador de un ítem RSS (`guid`/`id`; si faltan, el
+enlace — R7) solo es único dentro de un feed, no entre medios distintos. Por eso
+la deduplicación es **por canal**: una noticia es duplicada si ya existe otra del
+mismo `CanalNoticias` con el mismo `identificador_item_rss`. En la base, la
+unicidad es compuesta `(fuente_rss_id, identificador_item_rss)` (migración
+`d4b8e1f6a2c9`, reemplaza al índice único global anterior); la exclusión por
+canal se aplica en el servicio de captura, uniendo `noticias` con `fuentes_rss`
+por `canal_id`. Consecuencia aceptada: un mismo artículo que un canal publica en
+dos de sus feeds de sección se guarda una sola vez (se conserva el primero
+capturado); el mismo identificador en canales distintos se guarda en ambos.
 
 ## 6. API (bajo `/api/v1`)
 
@@ -171,7 +183,14 @@ instrucciones del proyecto; ADR-002 y ADR-004):
 
 - **Captura RSS:** Timeout explícito, Retry acotado con backoff exponencial y
   Circuit Breaker por fuente. El fallo de una fuente no interrumpe el resto de
-  la captura; nunca reintentos infinitos.
+  la captura; nunca reintentos infinitos. El Circuit Breaker usa dos parámetros,
+  **valores propuestos** pendientes de ratificación del equipo (`app/core/config.py`):
+  el **umbral de fallos** para abrir el circuito (`circuit_breaker_umbral_fallos`,
+  propuesto en **5** fallos consecutivos) y la **espera** que la fuente permanece
+  en ABIERTO antes de admitir un intento de prueba SEMI_ABIERTO
+  (`circuit_breaker_espera_minutos`, propuesto en **60 min**; ADR-002 admite como
+  alternativa medir la espera en N ejecuciones del cron). La captura manual
+  (HU-RSS-008) fuerza el intento de prueba aunque la espera siga vigente.
 - **Cálculo con ML:** Timeout sobre la llamada a Google Gemini Embedding y
   fallback automático al método de diccionario si el servicio falla o no
   responde. El purgado y las agregaciones operan solo sobre MySQL, sin servicios
@@ -206,3 +225,4 @@ por correo, expansión automática del diccionario por LLM) no están implementa
 |---|---|---|
 | v1 | 2026-09-02 | Creación. Arquitectura del Sprint 1 (módulo de Captura RSS, EPIC-RSS): capas, stack, modelo de datos de canales/fuentes/noticias, API de EPIC-RSS, reglas y patrones de resiliencia. Declaraba fuera de alcance los módulos aún no implementados (sentimiento, dashboards, diccionario, purgado). |
 | v2 | 2026-10-29 | Actualización a la arquitectura del sistema completo (rol Documentación): se extiende a las cuatro épicas (RSS, SENT, DASH, ADMIN) y al frontend, reflejando el código implementado. Se añaden el modelo de datos extendido (TerminoDiccionario, CoincidenciaTermino, ModeloSentimiento, Configuracion, campos de humor en Noticia), el inventario de endpoints real, los jobs internos (captura, barrido de humor, purgado), la resiliencia del camino de ML y el despliegue con Docker. Se corrige la sección "Fuera de alcance" (solo autenticación y opcionales de §4.5). |
+| v2.1 | 2026-11-17 | §5: se documenta la regla de deduplicación de noticias **por canal** (HU-RSS-006-v2, decisión de la PO del 2026-11-17): unicidad compuesta `(fuente_rss_id, identificador_item_rss)` (migración `d4b8e1f6a2c9`) y exclusión por canal en el servicio de captura; identificador por enlace cuando falta el `guid` (R7). Acompaña a las correcciones de captura RSS de la rama `fix/captura-rss` (R1 a R7). Sin cambios en los contratos OpenAPI (los campos nuevos de resiliencia por fuente son internos). |

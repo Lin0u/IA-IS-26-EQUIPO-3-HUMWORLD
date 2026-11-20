@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     captura_max_reintentos: int = 3  # TODO(equipo): validar (backoff exponencial acotado)
     captura_concurrencia_maxima: int = 10  # TODO(equipo): validar límite de semáforo
     circuit_breaker_umbral_fallos: int = 5  # TODO(equipo): validar umbral
+    # R1 (ADR-002, resiliencia). Minutos que una fuente permanece en circuito
+    # ABIERTO antes de permitir un intento de prueba (SEMI_ABIERTO). El ADR
+    # también admite medir la espera en "N ejecuciones del cron"; se eligió un
+    # valor fijo en minutos por simplicidad y se deja esa alternativa anotada
+    # en el PR. TODO(equipo): valor propuesto, pendiente de ratificación.
+    circuit_breaker_espera_minutos: int = 60
 
     # Cálculo de humor (HU-SENT-002-v2, ADR-004). Valores PROPUESTOS en el
     # backlog, pendientes de ratificación del equipo.

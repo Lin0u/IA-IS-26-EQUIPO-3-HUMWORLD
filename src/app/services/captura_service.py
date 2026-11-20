@@ -1,8 +1,9 @@
 """Servicio de captura RSS y composición del cron automático."""
 
 import asyncio
+import hashlib
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import feedparser
 import httpx
@@ -10,9 +11,14 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.exceptions import FuenteRSSInactiveError, FuenteRSSNotFoundError
+from app.exceptions import (
+    FeedInvalidoError,
+    FuenteRSSInactiveError,
+    FuenteRSSNotFoundError,
+)
 from app.models.fuente import EstadoCircuitBreaker, FuenteRSS
 from app.models.noticia import Noticia
+from app.database import SessionLocal
 from app.repositories.fuentes import FuenteRSSRepository
 from app.repositories.noticias import NoticiaRepository
 from app.schemas.captura import EstadoResultadoCaptura, ResultadoCaptura
@@ -20,12 +26,45 @@ from app.services.sentimiento_service import procesar_noticias
 
 logger = logging.getLogger(__name__)
 
+# R7 (feedback PO 2026-11-20): límites de longitud de las columnas de Noticia
+# (ver app/models/noticia.py). MySQL rechaza el INSERT con DataError cuando un
+# valor los supera, y como DataError no es IntegrityError, antes reventaba el
+# lote completo, la fuente dejaba de capturar y el circuito no contaba el fallo
+# (SQLite no valida longitudes, por eso las pruebas no lo veían).
+MAX_IDENTIFICADOR_ITEM_RSS = 255
+MAX_ENLACE_ORIGINAL = 500
+
+
+def _a_utc_naive(valor: datetime) -> datetime:
+    """Normaliza un datetime a UTC sin zona.
+
+    La columna DateTime de la BD se lee sin tzinfo; para comparar con `ahora`
+    (aware) sin TypeError, se convierte todo a UTC-naive.
+    """
+    if valor.tzinfo is not None:
+        valor = valor.astimezone(timezone.utc).replace(tzinfo=None)
+    return valor
+
 
 def _identificador_item(item: dict) -> str | None:
-    identificador = item.get("guid") or item.get("id")
+    # R7 (decisión PO 2026-11-17): si el ítem no trae guid/id, se usa el enlace
+    # como identificador en vez de descartarlo. Solo se descarta (en _mapear_item)
+    # si tampoco hay enlace o título.
+    identificador = item.get("guid") or item.get("id") or item.get("link")
     if not identificador:
         return None
-    return str(identificador).strip() or None
+    identificador = str(identificador).strip()
+    if not identificador:
+        return None
+    # R7 (feedback PO 2026-11-20): algunos guid/enlace superan los 255 caracteres
+    # de la columna. En lugar de perder el ítem (y romper el lote en MySQL), se
+    # usa un sustituto estable "sha256:<hexdigest>" (71 caracteres). Es
+    # determinista, así que el mismo ítem conserva el mismo identificador entre
+    # capturas y la deduplicación por canal (HU-RSS-006-v2) sigue funcionando.
+    if len(identificador) > MAX_IDENTIFICADOR_ITEM_RSS:
+        digest = hashlib.sha256(identificador.encode("utf-8")).hexdigest()
+        return f"sha256:{digest}"
+    return identificador
 
 
 def _fecha_publicacion(item: dict) -> datetime | None:
@@ -49,6 +88,17 @@ def _mapear_item(item: dict, fuente: FuenteRSS, fecha_registro: datetime) -> Not
     titulo = str(item.get("title") or "").strip()
     enlace = str(item.get("link") or "").strip()
     if not identificador or not titulo or not enlace:
+        return None
+    # R7 (feedback PO 2026-11-20): el enlace es dato de salida (no se deduplica
+    # por él), así que un enlace que no cabe en la columna no se puede sustituir
+    # sin perder información. Se omite el ítem con un warning, en vez de dejar que
+    # MySQL rechace el lote entero.
+    if len(enlace) > MAX_ENLACE_ORIGINAL:
+        logger.warning(
+            "Omitido ítem con enlace demasiado largo fuente_id=%s longitud=%s",
+            fuente.id,
+            len(enlace),
+        )
         return None
 
     contenido = item.get("content") or item.get("summary") or item.get("description")
@@ -87,17 +137,38 @@ async def _descargar_feed(fuente: FuenteRSS) -> feedparser.FeedParserDict:
 
 async def _capturar_con_retries(
     fuente: FuenteRSS,
+    max_reintentos: int | None = None,
 ) -> tuple[bool, str | None, list[dict]]:
+    # R1: en SEMI_ABIERTO se hace un único intento de prueba (max_reintentos=0).
+    if max_reintentos is None:
+        max_reintentos = settings.captura_max_reintentos
     ultimo_error: Exception | None = None
-    for intento in range(settings.captura_max_reintentos + 1):
+    for intento in range(max_reintentos + 1):
         try:
             parsed = await _descargar_feed(fuente)
-            if parsed.bozo or not parsed.feed and not parsed.entries:
-                raise ValueError("El feed no contiene contenido válido")
+            # R2: un feed sin ítems es un error de CONTENIDO (no se reintenta).
+            # bozo=1 por sí solo NO invalida el feed: feedparser lo marca ante
+            # detalles de formato comunes (entidades HTML, codificación,
+            # Content-Type) que no impiden entregar los ítems.
+            if not parsed.entries:
+                raise FeedInvalidoError("El feed no contiene ítems")
+            if parsed.bozo:
+                logger.warning(
+                    "Feed con bozo=1 pero con ítems fuente_id=%s tipo=%s",
+                    fuente.id,
+                    type(parsed.get("bozo_exception")).__name__,
+                )
             return True, None, list(parsed.entries)
-        except (httpx.HTTPError, ValueError, TypeError) as exc:
+        except FeedInvalidoError as exc:
+            # Error de contenido: fallar de inmediato, sin reintentos.
+            logger.error(
+                "Feed inválido fuente_id=%s motivo=%s", fuente.id, exc
+            )
+            return False, str(exc), []
+        except (httpx.HTTPError, TypeError) as exc:
+            # Error transitorio: reintentar con backoff exponencial acotado.
             ultimo_error = exc
-            if intento >= settings.captura_max_reintentos:
+            if intento >= max_reintentos:
                 break
             delay = min(0.5 * (2**intento), 5.0)
             logger.warning(
@@ -110,44 +181,146 @@ async def _capturar_con_retries(
     return False, str(ultimo_error), []
 
 
+def _calcular_humor_en_hilo(noticia_ids: list[int], session_factory) -> None:
+    """Calcula el humor en un hilo, con una sesión propia (R5).
+
+    `ejecutar_captura_multiple` comparte una única Session entre corrutinas y la
+    Session de SQLAlchemy no es segura entre hilos. Por eso el hilo recibe solo
+    los IDs, abre su propia sesión, carga las noticias y la cierra siempre.
+    """
+    db = session_factory()
+    try:
+        noticias = (
+            db.query(Noticia).filter(Noticia.id.in_(noticia_ids)).all()
+            if noticia_ids
+            else []
+        )
+        procesar_noticias(db, noticias)
+    except Exception:  # noqa: BLE001
+        # Un fallo aquí no revierte la captura: las noticias quedan sin
+        # metodo_calculo y las retoma el barrido (procesar_pendientes).
+        logger.exception("Fallo del cálculo de humor (hilo) ids=%s", noticia_ids)
+    finally:
+        db.close()
+
+
 async def _persistir_captura(
     db: Session,
     fuente: FuenteRSS,
     entries: list[dict],
     fecha_registro: datetime,
+    session_factory=None,
 ) -> tuple[int, bool]:
-    noticias: list[Noticia] = []
+    if session_factory is None:
+        session_factory = SessionLocal
     noticias_repository = NoticiaRepository()
+
+    # R3: deduplicar DENTRO del lote. Un feed puede repetir el mismo guid
+    # (medios que republican); sin esto, dos ítems idénticos pasan el filtro y
+    # chocan con el índice único al insertar, lo que revertía TODO el lote.
+    # Se conserva el primer ítem de cada identificador.
+    mapeadas: list[Noticia] = []
+    vistos: set[str] = set()
     for entry in entries:
         noticia = _mapear_item(entry, fuente, fecha_registro)
         if noticia is None:
             logger.warning("Omitido ítem inválido fuente_id=%s", fuente.id)
             continue
-        if noticias_repository.buscar_por_identificador(db, noticia.identificador_item_rss):
+        if noticia.identificador_item_rss in vistos:
             continue
-        noticias.append(noticia)
+        vistos.add(noticia.identificador_item_rss)
+        mapeadas.append(noticia)
+
+    # R6 + dedup por canal (HU-RSS-006-v2): una sola consulta que excluye los
+    # identificadores ya presentes en cualquier fuente del mismo canal. Así, el
+    # mismo ítem publicado por dos fuentes de secciones distintas del mismo canal
+    # se guarda una sola vez (se conserva la primera noticia guardada).
+    existentes = noticias_repository.identificadores_existentes_en_canal(
+        db, fuente.canal_id, list(vistos)
+    )
+    noticias = [n for n in mapeadas if n.identificador_item_rss not in existentes]
 
     try:
         noticias_repository.insertar_lote(db, noticias)
         fuente.fecha_ultima_captura_exitosa = fecha_registro
+        # R1: un éxito cierra el circuito y reinicia el contador de fallos,
+        # tanto desde CERRADO como desde el intento de prueba SEMI_ABIERTO.
         fuente.estado_circuit_breaker = EstadoCircuitBreaker.CERRADO
+        fuente.fallos_consecutivos = 0
+        fuente.circuito_abierto_desde = None
         db.commit()
     except IntegrityError:
+        # Resguardo ante una carrera con otra captura de la misma fuente: no se
+        # silencia (se registra) y se reporta como fallo de persistencia.
+        logger.exception("IntegrityError al insertar lote fuente_id=%s", fuente.id)
         db.rollback()
         return 0, False
 
-    # HU-SENT-002-v2: cálculo síncrono del humor DESPUÉS de confirmar la
-    # captura, en transacciones propias. Un fallo aquí no revierte las
-    # noticias; quedan sin metodo_calculo y las retoma el barrido.
-    try:
-        procesar_noticias(db, noticias)
-    except Exception:  # noqa: BLE001
-        logger.exception("Fallo del cálculo de humor fuente_id=%s", fuente.id)
+    # HU-SENT-002-v2: cálculo del humor DESPUÉS de confirmar la captura.
+    # R5: se ejecuta en un hilo con sesión propia para no bloquear el event
+    # loop de FastAPI mientras lematiza o llama a Gemini. Se pasan solo los IDs
+    # porque la Session compartida no es segura entre hilos. Un fallo del
+    # cálculo no revierte las noticias ya confirmadas.
+    noticia_ids = [n.id for n in noticias]
+    await asyncio.to_thread(_calcular_humor_en_hilo, noticia_ids, session_factory)
     return len(noticias), True
 
 
-async def ejecutar_captura(fuente_id: int, db: Session) -> ResultadoCaptura:
-    """Ejecuta una captura de una fuente activa y devuelve su resultado."""
+def _registrar_fallo_circuito(
+    db: Session, fuente: FuenteRSS, desde_semiabierto: bool, ahora: datetime
+) -> None:
+    """Contabiliza un fallo y abre el circuito si corresponde (R1).
+
+    Antes, en una falla no se persistía nada: el contador nunca subía y el
+    circuito jamás se abría. Ahora cada fallo suma uno y, al alcanzar el umbral
+    —o si el fallo ocurre durante el intento de prueba SEMI_ABIERTO—, la fuente
+    pasa a ABIERTO y se registra el momento de apertura.
+    """
+    fuente.fallos_consecutivos = (fuente.fallos_consecutivos or 0) + 1
+    if (
+        desde_semiabierto
+        or fuente.fallos_consecutivos >= settings.circuit_breaker_umbral_fallos
+    ):
+        fuente.estado_circuit_breaker = EstadoCircuitBreaker.ABIERTO
+        fuente.circuito_abierto_desde = _a_utc_naive(ahora)
+        logger.warning(
+            "Circuito ABIERTO fuente_id=%s fallos=%s",
+            fuente.id,
+            fuente.fallos_consecutivos,
+        )
+    try:
+        db.commit()
+    except IntegrityError:
+        logger.exception("No se pudo persistir el estado del circuito fuente_id=%s", fuente.id)
+        db.rollback()
+
+
+async def ejecutar_captura(
+    fuente_id: int,
+    db: Session,
+    ahora: datetime | None = None,
+    session_factory=None,
+    forzar: bool = False,
+) -> ResultadoCaptura:
+    """Ejecuta una captura de una fuente activa y devuelve su resultado.
+
+    `ahora` se inyecta en los tests para ejercitar la ventana de espera del
+    Circuit Breaker sin depender del reloj real ni de sleeps. `session_factory`
+    permite que el cálculo de humor en hilo (R5) use la misma BD en memoria que
+    los tests.
+
+    `forzar` (feedback PO 2026-11-20, HU-RSS-008): en la captura manual el
+    usuario pide explícitamente "forzar" la captura. Con el circuito ABIERTO y
+    la espera aún vigente, el cron se rechaza, pero la captura manual hace el
+    intento de prueba (SEMI_ABIERTO) igualmente, en vez de responder
+    "Circuit breaker abierto".
+    """
+    if ahora is None:
+        ahora = datetime.now(timezone.utc)
+    # Se resuelve en cada llamada (no como default del parámetro) para que los
+    # tests puedan sustituir captura_service.SessionLocal (R5).
+    if session_factory is None:
+        session_factory = SessionLocal
     fuente = FuenteRSSRepository().buscar_activa(db, fuente_id)
     if fuente is None:
         return ResultadoCaptura(
@@ -157,18 +330,37 @@ async def ejecutar_captura(fuente_id: int, db: Session) -> ResultadoCaptura:
             mensaje="La fuente no existe o está inactiva",
         )
 
+    # R1: con el circuito ABIERTO, mientras no termine la espera NO se descarga.
+    # Cuando la espera termina, se permite un único intento de prueba
+    # (SEMI_ABIERTO, sin reintentos).
+    semiabierto = False
     if fuente.estado_circuit_breaker == EstadoCircuitBreaker.ABIERTO:
-        return ResultadoCaptura(
-            fuente_id=fuente_id,
-            estado=EstadoResultadoCaptura.FALLIDA_CIRCUITO_ABIERTO,
-            noticias_nuevas=0,
-            mensaje="Circuit breaker abierto",
+        espera = timedelta(minutes=settings.circuit_breaker_espera_minutos)
+        abierto_desde = fuente.circuito_abierto_desde
+        # La BD devuelve el DateTime sin zona (naive); se comparan ambos en
+        # UTC-naive para evitar el TypeError entre aware y naive.
+        espera_terminada = (
+            abierto_desde is not None
+            and _a_utc_naive(ahora) - _a_utc_naive(abierto_desde) >= espera
         )
+        # R1 + HU-RSS-008 "forzar": el cron espera a que termine la ventana; la
+        # captura manual (forzar=True) no espera y hace el intento de prueba.
+        if not espera_terminada and not forzar:
+            return ResultadoCaptura(
+                fuente_id=fuente_id,
+                estado=EstadoResultadoCaptura.FALLIDA_CIRCUITO_ABIERTO,
+                noticias_nuevas=0,
+                mensaje="Circuit breaker abierto",
+            )
+        fuente.estado_circuit_breaker = EstadoCircuitBreaker.SEMI_ABIERTO
+        semiabierto = True
 
     try:
-        capturado, error, entries = await _capturar_con_retries(fuente)
+        max_reintentos = 0 if semiabierto else None
+        capturado, error, entries = await _capturar_con_retries(fuente, max_reintentos)
         if not capturado:
             logger.error("Fallo de captura fuente_id=%s motivo=%s", fuente_id, error)
+            _registrar_fallo_circuito(db, fuente, semiabierto, ahora)
             return ResultadoCaptura(
                 fuente_id=fuente_id,
                 estado=EstadoResultadoCaptura.FALLIDA_TRANSITORIA,
@@ -177,7 +369,7 @@ async def ejecutar_captura(fuente_id: int, db: Session) -> ResultadoCaptura:
             )
 
         noticias_nuevas, persistido = await _persistir_captura(
-            db, fuente, entries, datetime.now(timezone.utc)
+            db, fuente, entries, ahora, session_factory
         )
         if not persistido:
             return ResultadoCaptura(
@@ -210,7 +402,9 @@ async def ejecutar_captura_manual_fuente(
         raise FuenteRSSNotFoundError(fuente_id)
     if not fuente.activo:
         raise FuenteRSSInactiveError(fuente_id)
-    return await ejecutar_captura(fuente_id, db)
+    # HU-RSS-008: la captura manual "fuerza" el intento aunque el circuito esté
+    # abierto (feedback PO 2026-11-20).
+    return await ejecutar_captura(fuente_id, db, forzar=True)
 
 
 async def ejecutar_captura_manual_multiple(
@@ -220,7 +414,9 @@ async def ejecutar_captura_manual_multiple(
     resultados: list[ResultadoCaptura] = []
     for fuente_id in fuente_ids:
         try:
-            resultados.append(await ejecutar_captura(fuente_id, db))
+            # HU-RSS-008: el lote manual también fuerza el intento (feedback PO
+            # 2026-11-20).
+            resultados.append(await ejecutar_captura(fuente_id, db, forzar=True))
         except Exception as exc:
             logger.exception("La captura manual falló fuente_id=%s", fuente_id)
             resultados.append(

@@ -28,6 +28,8 @@ classDiagram
         +bool activo
         +datetime fecha_ultima_captura_exitosa
         +EstadoCircuitBreaker estado_circuit_breaker
+        +int fallos_consecutivos
+        +datetime circuito_abierto_desde
     }
 
     class Noticia {
@@ -110,7 +112,8 @@ classDiagram
 - **`Noticia` ◆── `CoincidenciaTermino` (Composición, HU-SENT-008):** una coincidencia no tiene sentido sin su noticia; al eliminarse la noticia (purgado) se eliminan sus coincidencias (`ON DELETE CASCADE`, migración `e5a1c7d3f9b2`).
 - **`TerminoDiccionario` ──< `CoincidenciaTermino` (Referencia, HU-SENT-008):** al eliminarse un término, sus coincidencias se borran en cascada. La tabla de unión `noticia_termino` (clave compuesta `noticia_id`+`termino_id`) alimenta la nube de palabras (HU-DASH-003-v2, `GET /api/v1/dashboards/word-cloud`): registra qué términos coincidieron en cada noticia sin reprocesar el texto en cada lectura.
 - **`ModeloSentimiento` ──o `Noticia` (Agregación):** una `Noticia` calculada con un modelo referencia su versión (`modelo_sentimiento_id`, nullable, `ON DELETE SET NULL`), pero ambos tienen ciclos de vida independientes: la noticia conserva su `valor_humor` aunque el modelo desaparezca, y un modelo recién entrenado puede existir con cero noticias.
-- **`estado_circuit_breaker`** es un atributo de `FuenteRSS`, no una entidad propia; modela el Circuit Breaker por fuente (regla de resiliencia de `docs/architecture.md`, sección 9).
+- **`estado_circuit_breaker`** es un atributo de `FuenteRSS`, no una entidad propia; modela el Circuit Breaker por fuente (regla de resiliencia de `docs/architecture.md`, sección 9). Lo acompañan `fallos_consecutivos` (contador que dispara la apertura al llegar al umbral) y `circuito_abierto_desde` (marca temporal para medir la espera antes del intento semiabierto), ambos agregados en la migración `c9a1f3b7e2d5` (R1).
+- **Unicidad de `identificador_item_rss` en `Noticia`:** compuesta por `(fuente_rss_id, identificador_item_rss)` (migración `d4b8e1f6a2c9`), no global. La deduplicación efectiva es **por canal** y se resuelve en el servicio de captura (HU-RSS-006-v2; ver `docs/architecture.md`, sección 5).
 
 ## Notas de los campos de sentimiento en `Noticia`
 

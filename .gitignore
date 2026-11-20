@@ -15,3 +15,6 @@ modelos/
 
 # Registros locales (por ejemplo, salida de pytest)
 *.log
+
+# Bases SQLite locales (pruebas manuales de migraciones / smoke tests)
+*.db

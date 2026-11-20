@@ -213,3 +213,70 @@ async def test_captura_manual_lote_aisla_fallo_y_procesa_todas_las_fuentes(
     assert database_session.execute(
         select(Noticia).where(Noticia.fuente_rss_id == valida.id)
     ).scalars().one()
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_captura_manual_con_circuito_abierto_fuerza_el_intento(
+    client, database_session
+):
+    # HU-RSS-008 "forzar" (feedback PO 2026-11-20): con el circuito ABIERTO y la
+    # espera aún vigente, la captura manual NO se rechaza (como sí haría el cron):
+    # hace el intento de prueba (SEMI_ABIERTO). Aquí el intento tiene éxito, así
+    # que el circuito se cierra y la noticia se guarda.
+    from datetime import datetime, timezone
+
+    url = "https://example.test/forzada.xml"
+    fuente = crear_fuente(database_session, 31, url)
+    fuente.estado_circuit_breaker = EstadoCircuitBreaker.ABIERTO
+    fuente.fallos_consecutivos = 5
+    fuente.circuito_abierto_desde = datetime.now(timezone.utc)  # espera vigente
+    database_session.commit()
+    respx.get(url).mock(
+        return_value=httpx.Response(
+            200,
+            content=feed_xml("forzada-1", "Noticia", "https://example.test/forzada-1"),
+            headers={"content-type": "application/rss+xml"},
+        )
+    )
+
+    response = client.post("/api/v1/sources/31/captures")
+
+    assert response.status_code == 201
+    assert response.json()["estado"] == "exitosa"
+    assert response.json()["noticias_nuevas"] == 1
+    assert respx.calls.call_count >= 1  # se intentó la descarga pese al circuito
+    database_session.expire_all()
+    fuente = database_session.get(FuenteRSS, 31)
+    assert fuente.estado_circuit_breaker == EstadoCircuitBreaker.CERRADO
+    assert fuente.fallos_consecutivos == 0
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_captura_manual_con_circuito_abierto_que_falla_reabre(
+    client, database_session, monkeypatch
+):
+    # HU-RSS-008 "forzar": si el intento forzado también falla, el circuito
+    # vuelve a ABIERTO (comportamiento SEMI_ABIERTO), no queda semiabierto.
+    from datetime import datetime, timezone
+
+    url = "https://example.test/forzada-falla.xml"
+    fuente = crear_fuente(database_session, 32, url)
+    fuente.estado_circuit_breaker = EstadoCircuitBreaker.ABIERTO
+    fuente.fallos_consecutivos = 5
+    fuente.circuito_abierto_desde = datetime.now(timezone.utc)
+    database_session.commit()
+    respx.get(url).mock(return_value=httpx.Response(500))
+
+    async def no_sleep(_delay):
+        return None
+
+    monkeypatch.setattr("app.services.captura_service.asyncio.sleep", no_sleep)
+    response = client.post("/api/v1/sources/32/captures")
+
+    assert response.status_code == 201
+    assert response.json()["estado"] == "fallida_transitoria"
+    database_session.expire_all()
+    fuente = database_session.get(FuenteRSS, 32)
+    assert fuente.estado_circuit_breaker == EstadoCircuitBreaker.ABIERTO

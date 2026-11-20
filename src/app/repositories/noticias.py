@@ -5,6 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.models.coincidencia_termino import CoincidenciaTermino
+from app.models.fuente import FuenteRSS
 from app.models.noticia import Noticia
 
 
@@ -17,6 +18,29 @@ class NoticiaRepository:
                 Noticia.identificador_item_rss == identificador_item_rss
             )
         ).scalar_one_or_none()
+
+    def identificadores_existentes_en_canal(
+        self, db: Session, canal_id: int, identificadores: list[str]
+    ) -> set[str]:
+        """Identificadores del lote que ya existen en CUALQUIER fuente del canal.
+
+        HU-RSS-006-v2 (decisión PO 2026-11-17): la deduplicación es por canal, no
+        por fuente ni global. En UNA sola consulta (R6) se obtiene, de entre los
+        identificadores del lote, cuáles ya tiene alguna fuente del mismo canal,
+        uniendo noticias con fuentes_rss por canal_id. El servicio los filtra
+        antes de insertar (R3 + dedup por canal).
+        """
+        if not identificadores:
+            return set()
+        filas = db.execute(
+            select(Noticia.identificador_item_rss)
+            .join(FuenteRSS, Noticia.fuente_rss_id == FuenteRSS.id)
+            .where(
+                FuenteRSS.canal_id == canal_id,
+                Noticia.identificador_item_rss.in_(identificadores),
+            )
+        ).scalars().all()
+        return set(filas)
 
     def insertar(
         self,
