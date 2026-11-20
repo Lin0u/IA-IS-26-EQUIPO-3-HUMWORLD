@@ -1,6 +1,7 @@
 """Servicio de captura RSS y composición del cron automático."""
 
 import asyncio
+import hashlib
 import logging
 from datetime import datetime, timedelta, timezone
 
@@ -25,6 +26,14 @@ from app.services.sentimiento_service import procesar_noticias
 
 logger = logging.getLogger(__name__)
 
+# R7 (feedback PO 2026-11-20): límites de longitud de las columnas de Noticia
+# (ver app/models/noticia.py). MySQL rechaza el INSERT con DataError cuando un
+# valor los supera, y como DataError no es IntegrityError, antes reventaba el
+# lote completo, la fuente dejaba de capturar y el circuito no contaba el fallo
+# (SQLite no valida longitudes, por eso las pruebas no lo veían).
+MAX_IDENTIFICADOR_ITEM_RSS = 255
+MAX_ENLACE_ORIGINAL = 500
+
 
 def _a_utc_naive(valor: datetime) -> datetime:
     """Normaliza un datetime a UTC sin zona.
@@ -44,7 +53,18 @@ def _identificador_item(item: dict) -> str | None:
     identificador = item.get("guid") or item.get("id") or item.get("link")
     if not identificador:
         return None
-    return str(identificador).strip() or None
+    identificador = str(identificador).strip()
+    if not identificador:
+        return None
+    # R7 (feedback PO 2026-11-20): algunos guid/enlace superan los 255 caracteres
+    # de la columna. En lugar de perder el ítem (y romper el lote en MySQL), se
+    # usa un sustituto estable "sha256:<hexdigest>" (71 caracteres). Es
+    # determinista, así que el mismo ítem conserva el mismo identificador entre
+    # capturas y la deduplicación por canal (HU-RSS-006-v2) sigue funcionando.
+    if len(identificador) > MAX_IDENTIFICADOR_ITEM_RSS:
+        digest = hashlib.sha256(identificador.encode("utf-8")).hexdigest()
+        return f"sha256:{digest}"
+    return identificador
 
 
 def _fecha_publicacion(item: dict) -> datetime | None:
@@ -68,6 +88,17 @@ def _mapear_item(item: dict, fuente: FuenteRSS, fecha_registro: datetime) -> Not
     titulo = str(item.get("title") or "").strip()
     enlace = str(item.get("link") or "").strip()
     if not identificador or not titulo or not enlace:
+        return None
+    # R7 (feedback PO 2026-11-20): el enlace es dato de salida (no se deduplica
+    # por él), así que un enlace que no cabe en la columna no se puede sustituir
+    # sin perder información. Se omite el ítem con un warning, en vez de dejar que
+    # MySQL rechace el lote entero.
+    if len(enlace) > MAX_ENLACE_ORIGINAL:
+        logger.warning(
+            "Omitido ítem con enlace demasiado largo fuente_id=%s longitud=%s",
+            fuente.id,
+            len(enlace),
+        )
         return None
 
     contenido = item.get("content") or item.get("summary") or item.get("description")
@@ -269,6 +300,7 @@ async def ejecutar_captura(
     db: Session,
     ahora: datetime | None = None,
     session_factory=None,
+    forzar: bool = False,
 ) -> ResultadoCaptura:
     """Ejecuta una captura de una fuente activa y devuelve su resultado.
 
@@ -276,6 +308,12 @@ async def ejecutar_captura(
     Circuit Breaker sin depender del reloj real ni de sleeps. `session_factory`
     permite que el cálculo de humor en hilo (R5) use la misma BD en memoria que
     los tests.
+
+    `forzar` (feedback PO 2026-11-20, HU-RSS-008): en la captura manual el
+    usuario pide explícitamente "forzar" la captura. Con el circuito ABIERTO y
+    la espera aún vigente, el cron se rechaza, pero la captura manual hace el
+    intento de prueba (SEMI_ABIERTO) igualmente, en vez de responder
+    "Circuit breaker abierto".
     """
     if ahora is None:
         ahora = datetime.now(timezone.utc)
@@ -305,7 +343,9 @@ async def ejecutar_captura(
             abierto_desde is not None
             and _a_utc_naive(ahora) - _a_utc_naive(abierto_desde) >= espera
         )
-        if not espera_terminada:
+        # R1 + HU-RSS-008 "forzar": el cron espera a que termine la ventana; la
+        # captura manual (forzar=True) no espera y hace el intento de prueba.
+        if not espera_terminada and not forzar:
             return ResultadoCaptura(
                 fuente_id=fuente_id,
                 estado=EstadoResultadoCaptura.FALLIDA_CIRCUITO_ABIERTO,
@@ -362,7 +402,9 @@ async def ejecutar_captura_manual_fuente(
         raise FuenteRSSNotFoundError(fuente_id)
     if not fuente.activo:
         raise FuenteRSSInactiveError(fuente_id)
-    return await ejecutar_captura(fuente_id, db)
+    # HU-RSS-008: la captura manual "fuerza" el intento aunque el circuito esté
+    # abierto (feedback PO 2026-11-20).
+    return await ejecutar_captura(fuente_id, db, forzar=True)
 
 
 async def ejecutar_captura_manual_multiple(
@@ -372,7 +414,9 @@ async def ejecutar_captura_manual_multiple(
     resultados: list[ResultadoCaptura] = []
     for fuente_id in fuente_ids:
         try:
-            resultados.append(await ejecutar_captura(fuente_id, db))
+            # HU-RSS-008: el lote manual también fuerza el intento (feedback PO
+            # 2026-11-20).
+            resultados.append(await ejecutar_captura(fuente_id, db, forzar=True))
         except Exception as exc:
             logger.exception("La captura manual falló fuente_id=%s", fuente_id)
             resultados.append(

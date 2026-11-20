@@ -183,7 +183,14 @@ instrucciones del proyecto; ADR-002 y ADR-004):
 
 - **Captura RSS:** Timeout explícito, Retry acotado con backoff exponencial y
   Circuit Breaker por fuente. El fallo de una fuente no interrumpe el resto de
-  la captura; nunca reintentos infinitos.
+  la captura; nunca reintentos infinitos. El Circuit Breaker usa dos parámetros,
+  **valores propuestos** pendientes de ratificación del equipo (`app/core/config.py`):
+  el **umbral de fallos** para abrir el circuito (`circuit_breaker_umbral_fallos`,
+  propuesto en **5** fallos consecutivos) y la **espera** que la fuente permanece
+  en ABIERTO antes de admitir un intento de prueba SEMI_ABIERTO
+  (`circuit_breaker_espera_minutos`, propuesto en **60 min**; ADR-002 admite como
+  alternativa medir la espera en N ejecuciones del cron). La captura manual
+  (HU-RSS-008) fuerza el intento de prueba aunque la espera siga vigente.
 - **Cálculo con ML:** Timeout sobre la llamada a Google Gemini Embedding y
   fallback automático al método de diccionario si el servicio falla o no
   responde. El purgado y las agregaciones operan solo sobre MySQL, sin servicios

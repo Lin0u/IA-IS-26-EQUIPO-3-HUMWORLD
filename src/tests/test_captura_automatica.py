@@ -432,6 +432,80 @@ async def test_item_sin_guid_ni_enlace_se_descarta(database_session):
 
 @pytest.mark.asyncio
 @respx.mock
+async def test_identificador_mayor_a_255_se_colapsa_a_sha256(database_session):
+    # R7 (feedback PO 2026-11-20): un guid de 300 caracteres supera el String(255)
+    # de la columna y MySQL rechazaría el lote con DataError. El servicio lo
+    # sustituye por "sha256:<hexdigest>" (determinista y de longitud fija), de
+    # modo que la noticia se guarda y la deduplicación sigue funcionando.
+    # SQLite no valida longitudes; esta prueba verifica la sustitución, no el
+    # error de MySQL.
+    import hashlib
+
+    url = "https://example.test/guid-largo"
+    fuente = crear_fuente(database_session, 1, url)
+    guid_largo = "g" * 300
+    esperado = "sha256:" + hashlib.sha256(guid_largo.encode("utf-8")).hexdigest()
+    respx.get(url).mock(
+        return_value=httpx.Response(
+            200,
+            content=feed_xml(
+                {
+                    "guid": guid_largo,
+                    "title": "Noticia con guid larguísimo",
+                    "link": "https://example.test/noticia-larga",
+                }
+            ),
+            headers={"content-type": "application/rss+xml"},
+        )
+    )
+
+    resultado = await ejecutar_captura(fuente.id, database_session)
+
+    assert resultado.estado.value == "exitosa"
+    assert resultado.noticias_nuevas == 1
+    noticia = database_session.execute(select(Noticia)).scalars().one()
+    assert noticia.identificador_item_rss == esperado
+    assert len(noticia.identificador_item_rss) <= 255
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_enlace_mayor_a_500_omite_el_item_sin_romper_el_lote(database_session):
+    # R7 (feedback PO 2026-11-20): el enlace es dato de salida (no se deduplica
+    # por él), así que un enlace que no cabe en String(500) se omite con warning
+    # en vez de reventar el lote. El resto de ítems del lote se guardan.
+    url = "https://example.test/enlace-largo"
+    fuente = crear_fuente(database_session, 1, url)
+    enlace_largo = "https://example.test/" + ("x" * 500)
+    respx.get(url).mock(
+        return_value=httpx.Response(
+            200,
+            content=feed_xml(
+                {
+                    "guid": "item-malo",
+                    "title": "Enlace demasiado largo",
+                    "link": enlace_largo,
+                },
+                {
+                    "guid": "item-bueno",
+                    "title": "Noticia válida",
+                    "link": "https://example.test/ok",
+                },
+            ),
+            headers={"content-type": "application/rss+xml"},
+        )
+    )
+
+    resultado = await ejecutar_captura(fuente.id, database_session)
+
+    assert resultado.estado.value == "exitosa"
+    assert resultado.noticias_nuevas == 1
+    noticia = database_session.execute(select(Noticia)).scalars().one()
+    assert noticia.identificador_item_rss == "item-bueno"
+
+
+@pytest.mark.asyncio
+@respx.mock
 async def test_circuito_se_abre_tras_umbral_de_fallos(database_session, monkeypatch):
     # R1: tras 5 fallos consecutivos (umbral) el circuito queda ABIERTO.
     from app.core.config import settings
